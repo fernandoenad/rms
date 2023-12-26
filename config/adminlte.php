@@ -296,7 +296,13 @@ return [
             'text'         => 'RMS',
             'url'          => '/admin',
             'topnav'       => true,
-            'active'       => ['/admin']
+            'active'       => ['/admin', '/admin/change_password']
+        ],
+        [
+            'text'  => 'Change Password',
+            'route' => 'admin.change_password',
+            'topnav_user' => true,
+            'icon'  => 'fas fa-fw fa-lock',
         ],
         /*
         [

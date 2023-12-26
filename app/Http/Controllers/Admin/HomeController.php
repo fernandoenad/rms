@@ -8,6 +8,8 @@ use Auth;
 use App\Models\User;
 use App\Models\Application;
 use App\Models\Inquiry;
+use Illuminate\Support\Facades\Hash;
+
 
 class HomeController extends Controller
 {
@@ -33,6 +35,34 @@ class HomeController extends Controller
         $users = User::all();
         
         return view('admin.index', ['applications' => $applications, 'inquiries' => $inquiries, 'users' => $users]);
+    }
+
+    public function change_password()
+    {
+        return view('admin.change_password');
+    }
+
+    public function change_password_ok(Request $request)
+    {
+        //dd(Auth::user());
+        //dd($request);
+        $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|confirmed',
+        ]);
+
+        $user = Auth::user();
+
+        if (Hash::check($request->current_password, $user->password)) {
+            // Update the password
+            $user->update([
+                'password' => Hash::make($request->password),
+            ]);
+    
+            return redirect()->route('admin.change_password')->with('status', 'Password changed successfully.');
+        } else {
+            return back()->withErrors(['current_password' => 'Incorrect current password.']);
+        }
     }
 
 }

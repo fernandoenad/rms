@@ -23,10 +23,12 @@ Route::post('/', [GuestHome::class, 'lookup'])->name('guest.lookup');
 Route::get('/application/{application}', [GuestHome::class, 'show'])->name('guest.application.show');
 Route::post('/application/{application}', [GuestHome::class, 'store'])->name('guest.application.store');
 
-Auth::routes();
+Auth::routes(['register' => false]);
 
 Route::group(['middleware' => ['active']], function () {
     Route::get('/admin', [AdminHome::class, 'index'])->name('admin.index');
+    Route::get('/admin/change_password', [AdminHome::class, 'change_password'])->name('admin.change_password');
+    Route::put('/admin/change_password', [AdminHome::class, 'change_password_ok'])->name('admin.change_password_ok');
 
     Route::get('/admin/applications', [ApplicationController::class, 'index'])->name('admin.applications.index');
     Route::get('/admin/applications/create', [ApplicationController::class, 'create'])->name('admin.applications.create');
