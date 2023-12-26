@@ -65,7 +65,10 @@
 @stop
 
 @section('footer')
-    <strong>{{ config('app.name', 'Laravel') }}</strong>. Developed by Dr. Fernando B. Enad
+    <div class="float-right d-none d-sm-inline">
+        Developed by Dr. Fernando B. Enad
+    </div>
+    <strong>Copyright &copy; 2023 <a href="/">{{ config('app.name', '') }}</a>.</strong> All rights reserved.
 @stop
 
 @section('css')
