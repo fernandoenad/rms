@@ -5,7 +5,7 @@
 @endsection
 
 @section('navTitle')
-    ({{ config('app.name', '') }})
+    {{ config('app.name', '') }}
 @endsection
 
 @section('main')
