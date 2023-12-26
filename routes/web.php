@@ -34,7 +34,6 @@ Route::group(['middleware' => ['active']], function () {
     Route::post('/admin/applications/import', [ApplicationController::class, 'import'])->name('admin.applications.import');
     Route::get('/admin/applications/{application}', [ApplicationController::class, 'show'])->name('admin.applications.show');
     Route::get('/admin/applications/{application}/delete', [ApplicationController::class, 'delete'])->name('admin.applications.delete');
-    Route::delete('/admin/applications/{application}', [ApplicationController::class, 'destroy'])->name('admin.applications.destroy');
     Route::get('/admin/applications/{application}/edit', [ApplicationController::class, 'edit'])->name('admin.applications.edit');
     Route::put('/admin/applications/{application}', [ApplicationController::class, 'update'])->name('admin.applications.update');
     Route::patch('/admin/applications/{application}', [ApplicationController::class, 'saveInquiry'])->name('admin.applications.saveInquiry');
@@ -43,6 +42,8 @@ Route::group(['middleware' => ['active']], function () {
 });
 
 Route::group(['middleware' => ['admin']], function () {
+    Route::delete('/admin/applications/{application}', [ApplicationController::class, 'destroy'])->name('admin.applications.destroy');
+
     Route::get('/admin/users', [UserController::class, 'index'])->name('admin.users.index');
     Route::get('/admin/users/create', [UserController::class, 'create'])->name('admin.users.create');
     Route::post('/admin/users', [UserController::class, 'store'])->name('admin.users.store');
