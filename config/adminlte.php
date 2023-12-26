@@ -293,7 +293,7 @@ return [
         // Navbar items:
         
         [
-            'text'         => 'RMS',
+            'text'         => 'RMS v1.0',
             'url'          => '/admin',
             'topnav'       => true,
             'active'       => ['/admin', '/admin/change_password']

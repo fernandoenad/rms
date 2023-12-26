@@ -26,7 +26,7 @@
                     <div class="card-body box-profile">
                         <div class="text-center">
                             <img class="profile-user-img img-fluid img-circle"
-                                src="{{url('/')}}/images/bohol.png"
+                                src="{{url('/')}}/images/user.png"
                                 alt="User profile picture">
                         </div>
                         <h3 class="profile-username text-center">{{$application->applicant_fullname}}</h3>
@@ -66,7 +66,7 @@
             </div>
             <!-- /.col -->
             <div class="col-md-9">
-                <div class="card">
+                <div class="card card-default direct-chat direct-chat-primary">
                     <div class="card-header p-2">
                         <h7>Show inquiry history of ID# <strong>{{$application->id}}</strong></h7>
                         <a href="{{route('admin.applications.index')}}" class="btn btn-sm btn-default float-right" title="Back">
@@ -75,37 +75,38 @@
                     </div>
                     <!-- /.card-header -->
                     <div class="card-body">
-                        <!-- Post -->
-                        <div class="post clearfix">
-                            @if(sizeof($applicationInquiries) > 0)
-                                @foreach($applicationInquiries as $applicationInquiry)
-                                    <div class="user-block">
-                                        <img class="img-circle img-bordered-sm" src="{{url('/')}}/images/user.png" alt="user image">
-                                        <span class="username">
-                                            <a href="#">{{$applicationInquiry->author}} </a>
-                                        </span>
-                                        <span class="description">{{$applicationInquiry->created_at->toDayDateTimeString();}}</span>
-                                    </div>
-                                    <!-- /.user-block -->
-                                    <p>
-                                        {{$applicationInquiry->message}} 
-                                    </p>
-                                    <!-- /.post -->
-                                @endforeach
-                            @endif
-                            <form class="form-horizontal" method="post" action="{{route('admin.applications.saveInquiry', $application)}}">
-                                @csrf 
-                                @method('patch')
-                                <div class="input-group input-group-sm mb-0">
-                                    <input class="form-control form-control-sm" name="message" required placeholder="Inquiry message">
-                                    <div class="input-group-append">
-                                        <button type="submit"  class="btn btn-danger">Send</button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
+                        <div class="direct-chat-messages" style="min-height: 480px">
+                                @if(sizeof($applicationInquiries) > 0)
+                                    @foreach($applicationInquiries as $applicationInquiry)
+                                        <!-- Post -->
+                                        <div class="direct-chat-msg {{$applicationInquiry->author == $application->applicant_fullname ?'left':'right'}}">
+                                            <div class="direct-chat-infos clearfix">
+                                                <span class="direct-chat-name float-{{$applicationInquiry->author == $application->applicant_fullname ?'left':'right'}}">{{$applicationInquiry->author}}</span>
+                                                <span class="direct-chat-timestamp float-{{$applicationInquiry->author == $application->applicant_fullname ?'right':'left'}}">{{$applicationInquiry->created_at->setTimezone('Asia/Shanghai')->toDayDateTimeString();}}</span>
+                                            </div>
+                                            <img class="direct-chat-img" src="{{url('/')}}/images/user.png" alt="user image">
+                                            <div class="direct-chat-text">
+                                                {{$applicationInquiry->message}} 
+                                            </div>
+                                        </div>
+                                        <!-- /.post -->
+                                    @endforeach
+                                @endif
+                            </div>
                     </div>
                     <!-- /.card-body -->
+                    <div class="card-footer">
+                        <form class="form-horizontal" method="post" action="{{route('admin.applications.saveInquiry', $application)}}">
+                            @csrf 
+                            @method('patch')
+                            <div class="input-group input-group-sm mb-0">
+                                <textarea class="form-control form-control-sm" name="message" required placeholder="Inquiry message"></textarea>
+                                <div class="input-group-append">
+                                    <button type="submit"  class="btn btn-danger">Send</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
                 </div>
                 <!-- /.row -->
     </div><!-- /.container-fluid -->
