@@ -65,4 +65,29 @@ class HomeController extends Controller
         }
     }
 
+    public function get_notifications(Request $request)
+    {
+        $inquiries = Inquiry::where('status', '=', 1)->orderBy('created_at','desc')->get();
+        $notifications = $inquiries->take(5);
+        
+        $dropdownHtml = '';
+        
+        foreach ($notifications as $notification) {
+            $icon = "<i class='mr-2 fas fa-fw fa-paper-plane text-primary'></i>";
+    
+            $dropdownHtml .= "<a href='/admin/applications/{$notification->application_id}' class='dropdown-item'>
+                                {$icon}{$notification->author}
+                              </a>";
+        }
+
+        $dropdownHtml .= "<div class='dropdown-divider'></div>";
+
+        return [
+            'label'       => count($inquiries),
+            'label_color' => 'danger',
+            'icon_color'  => 'dark',
+            'dropdown'    => $dropdownHtml,
+        ];
+    }
+
 }

@@ -27,6 +27,7 @@ Auth::routes(['register' => false]);
 
 Route::group(['middleware' => ['active']], function () {
     Route::get('/admin', [AdminHome::class, 'index'])->name('admin.index');
+    Route::get('/admin/get-notifications', [AdminHome::class, 'get_notifications'])->name('admin.get_notifications');
     Route::get('/admin/change_password', [AdminHome::class, 'change_password'])->name('admin.change_password');
     Route::put('/admin/change_password', [AdminHome::class, 'change_password_ok'])->name('admin.change_password_ok');
 
