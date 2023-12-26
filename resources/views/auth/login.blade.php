@@ -5,7 +5,7 @@
 @endsection
 
 @section('navTitle')
-    Recruitment Management System ({{ config('app.name', '') }})
+    ({{ config('app.name', '') }})
 @endsection
 
 @section('main')
