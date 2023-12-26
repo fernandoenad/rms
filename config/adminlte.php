@@ -291,13 +291,14 @@ return [
 
     'menu' => [
         // Navbar items:
-        /*
+        
         [
-            'text'         => 'Home',
+            'text'         => 'RMS',
             'url'          => '/admin',
             'topnav'       => true,
             'active'       => ['/admin']
         ],
+        /*
         [
             'type'         => 'navbar-search',
             'text'         => 'search',
