@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->integer('application_id');
             $table->string('author');
-            $table->string('message');
+            $table->text('message');
             $table->integer('status');
             $table->timestamps();
         });
