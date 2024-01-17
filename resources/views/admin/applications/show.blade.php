@@ -86,7 +86,7 @@
                                             </div>
                                             <img class="direct-chat-img" src="{{url('/')}}/images/user.png" alt="user image">
                                             <div class="direct-chat-text">
-                                                {{$applicationInquiry->message}} 
+                                                {!!nl2br($applicationInquiry->message)!!}
                                             </div>
                                         </div>
                                         <!-- /.post -->
