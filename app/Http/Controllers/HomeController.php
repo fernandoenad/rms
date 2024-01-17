@@ -31,7 +31,7 @@ class HomeController extends Controller
         //dd($application->inquiries);
         $applicationInquiries = $application->inquiries;
 
-        $oldDate = Carbon::parse($application->created_at);
+        $oldDate = Carbon::parse($application->updated_at);
         $nowDate = Carbon::parse(date('Y-m-d h:i:s'));
         $diffInDays =  $oldDate->diffInDays($nowDate);
         
