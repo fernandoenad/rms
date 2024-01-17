@@ -98,7 +98,7 @@
                                 <div class="input-group input-group-sm mb-0">
                                     <textarea class="form-control form-control-sm" name="message" required placeholder="Inquiry message"></textarea>
                                     <div class="input-group-append">
-                                        <button type="submit"  class="btn btn-danger" {{$diffInDays > 10 ? "disabled" : ""}}>Send</button>
+                                        <button type="submit"  class="btn btn-danger" {{$diffInDays >= 10 ? "disabled" : ""}}>Send</button>
                                     </div>
                                 </div>
                             </form>
