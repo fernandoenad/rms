@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Application;
 use App\Models\Inquiry;
+use Carbon\Carbon;
 
 class HomeController extends Controller
 {
@@ -29,8 +30,12 @@ class HomeController extends Controller
     public function show(Application $application){
         //dd($application->inquiries);
         $applicationInquiries = $application->inquiries;
+
+        $oldDate = Carbon::parse($application->created_at);
+        $nowDate = Carbon::parse(date('Y-m-d h:i:s'));
+        $diffInDays =  $oldDate->diffInDays($nowDate);
         
-        return view('show', ['application' => $application, 'applicationInquiries' => $applicationInquiries]);
+        return view('show', ['application' => $application, 'applicationInquiries' => $applicationInquiries, 'diffInDays' => $diffInDays]);
     }
 
     public function store(Application $application, Request $request){
