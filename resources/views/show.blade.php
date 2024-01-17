@@ -96,7 +96,9 @@
                                 @csrf 
                                 @method('post')
                                 <div class="input-group input-group-sm mb-0">
-                                    <textarea class="form-control form-control-sm" name="message" required placeholder="Inquiry message"></textarea>
+                                    <textarea class="form-control form-control-sm" name="message" required 
+                                        {{$diffInDays >= 10 ? "readonly" : ""}}
+                                        placeholder="Inquiry message">{{$diffInDays >= 10 ? "Sending messages are no longer allowed past 10 days of posting." : ""}}</textarea>
                                     <div class="input-group-append">
                                         <button type="submit"  class="btn btn-danger" {{$diffInDays >= 10 ? "disabled" : ""}}>Send</button>
                                     </div>
