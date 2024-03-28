@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'title' => 'RMS v1.0',
+    'title' => 'RMS [Admin]',
     'title_prefix' => '',
     'title_postfix' => '',
 
@@ -63,7 +63,7 @@ return [
     |
     */
 
-    'logo' => '<b>RMS</b> v1.0',
+    'logo' => '<b>RMS</b> Admin',
     'logo_img' => 'images/bohol.png',
     'logo_img_class' => 'brand-image img-circle elevation-3',
     'logo_img_xl' => null,
@@ -293,7 +293,7 @@ return [
         // Navbar items:
         
         [
-            'text'         => 'RMS v1.0',
+            'text'         => 'Administration',
             'url'          => '/admin',
             'topnav'       => true,
             'active'       => ['/admin', '/admin/change_password']
@@ -356,6 +356,12 @@ return [
             'url'  => 'admin',
             'icon' => 'fas fa-fw fa-home',
             'active' => ['admin']
+        ],
+        [
+            'text' => 'Vacancies',
+            'url'  => 'admin/vacancies',
+            'icon' => 'fas fa-fw fa-list',
+            'active' => ['admin/vacancies', 'admin/vacancies/create', 'regex:@^admin/vacancies/[0-9]+$@', 'regex:@^admin/vacancies/\d+/delete+$@', 'regex:@^admin/vacancies/\d+/edit+$@']
         ],
         [
             'text' => 'Applications',

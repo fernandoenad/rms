@@ -2,10 +2,13 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController as GuestHome;
+use App\Http\Controllers\Guest\ApplicationController as GuestApplication;
+use App\Http\Controllers\Guest\VacancyController as GuestVacancy;
 use App\Http\Controllers\Admin\HomeController as AdminHome;
-use App\Http\Controllers\Admin\ApplicationController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\InquiryController;
+use App\Http\Controllers\Admin\ApplicationController as AdminApplication;
+use App\Http\Controllers\Admin\UserController as AdminUser;
+use App\Http\Controllers\Admin\InquiryController as AdminInquiry;
+use App\Http\Controllers\Admin\VacancyController as AdminVacancy;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,44 +21,68 @@ use App\Http\Controllers\Admin\InquiryController;
 |
 */
 
+// root route
 Route::get('/', [GuestHome::class, 'index'])->name('guest.index');
-Route::post('/', [GuestHome::class, 'lookup'])->name('guest.lookup');
-Route::get('/application/{application}', [GuestHome::class, 'show'])->name('guest.application.show');
-Route::post('/application/{application}', [GuestHome::class, 'store'])->name('guest.application.store');
 
+// not yet applied
+Route::get('/vacancies', [GuestVacancy::class, 'index'])->name('guest.vacancies.index');
+Route::get('/vacancies/{vacancy}', [GuestVacancy::class, 'show'])->name('guest.vacancies.show');
+Route::get('/vacancies/{vacancy}/apply', [GuestVacancy::class, 'apply'])->name('guest.vacancies.apply');
+
+Route::get('/applications', [GuestApplication::class, 'index'])->name('guest.applications.index');
+
+// already applied
+Route::post('/applications/{vacancy}/apply', [GuestApplication::class, 'store'])->name('guest.applications.store');
+
+Route::post('/applications', [GuestApplication::class, 'lookup'])->name('guest.applications.lookup');
+Route::get('/applications/my', [GuestApplication::class, 'my'])->name('guest.applications.my');
+Route::get('/applications/{application}', [GuestApplication::class, 'show'])->name('guest.applications.show');
+Route::post('/applications/{application}/inquire', [GuestApplication::class, 'inquire'])->name('guest.applications.inquire');
+
+
+// auth routes
 Auth::routes(['register' => false]);
 
+// user login
 Route::group(['middleware' => ['active']], function () {
     Route::get('/admin', [AdminHome::class, 'index'])->name('admin.index');
     Route::get('/admin/get-notifications', [AdminHome::class, 'get_notifications'])->name('admin.get_notifications');
     Route::get('/admin/change_password', [AdminHome::class, 'change_password'])->name('admin.change_password');
     Route::put('/admin/change_password', [AdminHome::class, 'change_password_ok'])->name('admin.change_password_ok');
 
-    Route::get('/admin/applications', [ApplicationController::class, 'index'])->name('admin.applications.index');
-    Route::get('/admin/applications/create', [ApplicationController::class, 'create'])->name('admin.applications.create');
-    Route::post('/admin/applications/', [ApplicationController::class, 'store'])->name('admin.applications.store');
-    Route::post('/admin/applications/import', [ApplicationController::class, 'import'])->name('admin.applications.import');
-    Route::get('/admin/applications/{application}', [ApplicationController::class, 'show'])->name('admin.applications.show');
-    Route::get('/admin/applications/{application}/delete', [ApplicationController::class, 'delete'])->name('admin.applications.delete');
-    Route::get('/admin/applications/{application}/edit', [ApplicationController::class, 'edit'])->name('admin.applications.edit');
-    Route::put('/admin/applications/{application}', [ApplicationController::class, 'update'])->name('admin.applications.update');
-    Route::patch('/admin/applications/{application}', [ApplicationController::class, 'saveInquiry'])->name('admin.applications.saveInquiry');
+    Route::get('/admin/applications', [AdminApplication::class, 'index'])->name('admin.applications.index');
+    Route::get('/admin/applications/create', [AdminApplication::class, 'create'])->name('admin.applications.create');
+    Route::post('/admin/applications/', [AdminApplication::class, 'store'])->name('admin.applications.store');
+    Route::post('/admin/applications/import', [AdminApplication::class, 'import'])->name('admin.applications.import');
+    Route::get('/admin/applications/{application}', [AdminApplication::class, 'show'])->name('admin.applications.show');
+    Route::get('/admin/applications/{application}/delete', [AdminApplication::class, 'delete'])->name('admin.applications.delete');
+    Route::get('/admin/applications/{application}/edit', [AdminApplication::class, 'edit'])->name('admin.applications.edit');
+    Route::put('/admin/applications/{application}', [AdminApplication::class, 'update'])->name('admin.applications.update');
+    Route::patch('/admin/applications/{application}', [AdminApplication::class, 'saveInquiry'])->name('admin.applications.saveInquiry');
 
-    Route::get('/admin/inquiries', [InquiryController::class, 'index'])->name('admin.inquiries.index');
+    Route::get('/admin/vacancies', [AdminVacancy::class, 'index'])->name('admin.vacancies.index');
+    Route::get('/admin/vacancies/create', [AdminVacancy::class, 'create'])->name('admin.vacancies.create');
+    Route::post('/admin/vacancies', [AdminVacancy::class, 'store'])->name('admin.vacancies.store');
+    Route::get('/admin/vacancies/{vacancy}', [AdminVacancy::class, 'edit'])->name('admin.vacancies.edit');
+    Route::put('/admin/vacancies/', [AdminVacancy::class, 'update'])->name('admin.vacancies.update');
+    Route::get('/admin/vacancies/{vacancy}/delete', [AdminVacancy::class, 'delete'])->name('admin.vacancies.delete');
+
+    Route::get('/admin/inquiries', [AdminInquiry::class, 'index'])->name('admin.inquiries.index');
 });
 
 Route::group(['middleware' => ['admin']], function () {
-    Route::delete('/admin/applications/{application}', [ApplicationController::class, 'destroy'])->name('admin.applications.destroy');
+    Route::delete('/admin/applications/{application}', [AdminApplication::class, 'destroy'])->name('admin.applications.destroy');
+    Route::delete('/admin/vacancies/{vacancy}', [AdminVacancy::class, 'destroy'])->name('admin.vacancies.destroy');
 
-    Route::get('/admin/users', [UserController::class, 'index'])->name('admin.users.index');
-    Route::get('/admin/users/create', [UserController::class, 'create'])->name('admin.users.create');
-    Route::post('/admin/users', [UserController::class, 'store'])->name('admin.users.store');
-    Route::get('/admin/users/{user}/delete', [UserController::class, 'delete'])->name('admin.users.delete');
-    Route::get('/admin/users/{user}/reset', [UserController::class, 'reset'])->name('admin.users.reset');
-    Route::put('/admin/users/{user}/reset', [UserController::class, 'resetOk'])->name('admin.users.resetOk');
-    Route::delete('/admin/users/{user}', [UserController::class, 'destroy'])->name('admin.users.destroy');
-    Route::get('/admin/users/{user}/edit', [UserController::class, 'edit'])->name('admin.users.edit');
-    Route::put('/admin/users/{user}', [UserController::class, 'update'])->name('admin.users.update');
+    Route::get('/admin/users', [AdminUser::class, 'index'])->name('admin.users.index');
+    Route::get('/admin/users/create', [AdminUser::class, 'create'])->name('admin.users.create');
+    Route::post('/admin/users', [AdminUser::class, 'store'])->name('admin.users.store');
+    Route::get('/admin/users/{user}/delete', [AdminUser::class, 'delete'])->name('admin.users.delete');
+    Route::get('/admin/users/{user}/reset', [AdminUser::class, 'reset'])->name('admin.users.reset');
+    Route::put('/admin/users/{user}/reset', [AdminUser::class, 'resetOk'])->name('admin.users.resetOk');
+    Route::delete('/admin/users/{user}', [AdminUser::class, 'destroy'])->name('admin.users.destroy');
+    Route::get('/admin/users/{user}/edit', [AdminUser::class, 'edit'])->name('admin.users.edit');
+    Route::put('/admin/users/{user}', [AdminUser::class, 'update'])->name('admin.users.update');
 });
 
 

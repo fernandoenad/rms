@@ -1,16 +1,21 @@
 @extends('adminlte::page')
 
-@section('title', 'RMS v1.0 | User Management')
+@php
+    $title = "User Management";
+    $app_name = config('app.name', '') . ' [Admin]';
+@endphp 
+
+@section('title', config('app.name', '') . ' | ' . $title)
 
 @section('content_header')
     <div class="row mb-2">
         <div class="col-sm-6">
-            <h1 class="m-0">User Management</h1>
+            <h1 class="m-0">{{ $title }}</h1>
         </div>
         <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-                <li class="breadcrumb-item"><a href="/admin">Dashboard</a></li>
-                <li class="breadcrumb-item active">User management</li>
+                <li class="breadcrumb-item"><a href="{{route('admin.index')}}">Dashboard</a></li>
+                <li class="breadcrumb-item active">{{ $title }}</li>
             </ol>
         </div>
     </div>
@@ -84,15 +89,10 @@
 @stop
 
 @section('footer')
-    <div class="float-right d-none d-sm-inline">
-        Developed by Dr. Fernando B. Enad
-    </div>
-    <strong>Copyright &copy; 2023 <a href="/">{{ config('app.name', '') }}</a>.</strong> All rights reserved.
+    @include('layouts.footer')
 @stop
 
-
 @section('css')
-    <link rel="stylesheet" href="/css/admin_custom.css">
 @stop
 
 @section('plugins.Datatables', true)

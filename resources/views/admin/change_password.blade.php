@@ -74,15 +74,10 @@
 @stop
 
 @section('footer')
-    <div class="float-right d-none d-sm-inline">
-        Developed by Dr. Fernando B. Enad
-    </div>
-    <strong>Copyright &copy; 2023 <a href="/">{{ config('app.name', '') }}</a>.</strong> All rights reserved.
+    @include('layouts.footer')
 @stop
 
-
 @section('css')
-    <link rel="stylesheet" href="/css/admin_custom.css">
 @stop
 
 @section('plugins.Datatables', true)

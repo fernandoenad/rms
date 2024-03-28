@@ -1,11 +1,16 @@
 @extends('adminlte::page')
 
-@section('title', 'RMS v1.0 | Show Application')
+@php
+    $title = "Application Details";
+    $app_name = config('app.name', '') . ' [Admin]';
+@endphp 
+
+@section('title', config('app.name', '') . ' | ' . $title)
 
 @section('content_header')
     <div class="row mb-2">
         <div class="col-sm-6">
-            <h1 class="m-0">Show Application</h1>
+            <h1 class="m-0">{{ $title }}</h1>
         </div>
         <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
@@ -29,8 +34,8 @@
                                 src="{{url('/')}}/images/user.png"
                                 alt="User profile picture">
                         </div>
-                        <h3 class="profile-username text-center">{{$application->applicant_fullname}}</h3>
-                        <p class="text-muted text-center">{{$application->position_applied}}</p>
+                        <h3 class="profile-username text-center">{{$application->getFullname()}}</h3>
+                        <p class="text-muted text-center">{{$application->vacancy->position_title}}</p>
                         
                     </div>
                     <!-- /.card-body -->
@@ -47,10 +52,7 @@
                         <p class="text-muted">{{$application->application_code}}</p>
                         <hr>
                         <strong><i class="fas fa-at mr-1"></i> Email</strong>
-                        <p class="text-muted">{{$application->applicant_email}}</p>
-                        <hr>
-                        <strong><i class="fas fa-file mr-1"></i> Document</strong>
-                        <p class="text-muted"><a href="{{$application->pertinent_doc}}">View</a></p>
+                        <p class="text-muted">{{$application->email}}</p>
                         <hr>
                         <a href="{{route('admin.applications.edit', ['application' => $application])}}" class="btn btn-sm btn-warning" title="Modify">
                             <span class="fas primary fa-fw fa-edit"></span> Edit 
@@ -113,15 +115,10 @@
 @stop
 
 @section('footer')
-    <div class="float-right d-none d-sm-inline">
-        Developed by Dr. Fernando B. Enad
-    </div>
-    <strong>Copyright &copy; 2023 <a href="/">{{ config('app.name', '') }}</a>.</strong> All rights reserved.
+    @include('layouts.footer')
 @stop
 
-
 @section('css')
-    <link rel="stylesheet" href="/css/admin_custom.css">
 @stop
 
 @section('plugins.Datatables', true)

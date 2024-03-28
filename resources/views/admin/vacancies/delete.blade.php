@@ -1,7 +1,7 @@
 @extends('adminlte::page')
 
 @php
-    $title = "Delete Application";
+    $title = "Delete Vacancy";
     $app_name = config('app.name', '') . ' [Admin]';
 @endphp 
 
@@ -14,9 +14,8 @@
         </div>
         <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-                <li class="breadcrumb-item"><a href="{{route('admin.index')}}">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="{{route('admin.applications.index')}}">Applications</a></li>
-                <li class="breadcrumb-item"><a href="{{route('admin.applications.show', $application)}}">{{$application->application_code}}</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('admin.index') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.index') }}">Vacancies</a></li>
                 <li class="breadcrumb-item active">{{ $title }}</li>
             </ol>
         </div>
@@ -31,19 +30,18 @@
                 <div class="card-header">
                     <h3 class="card-title">Are you sure?</h3>
                 </div>
-                <form method="post" action="{{route('admin.applications.destroy', $application)}}">
+                <form method="post" action="{{ route('admin.vacancies.destroy', $vacancy) }}">
                     @csrf 
                     @method('delete')
                     <div class="card-body">
                         <div class="form-group">
-                            <p>You are about to delete application <strong>{{$application->application_code}}</strong>
-                                which is irreversible. 
-                                <br>Are you sure?</p>
+                            <p>You are about to delete <strong>{{ $vacancy->position_title }}</strong>
+                                which is irreversible. <br>Would you like to proceed? </p>
                         </div>
                     </div>
                     <div class="card-footer">
                         <button type="submit" class="btn btn-primary">Yes</button>
-                        <a href="{{url()->previous()}}" class="btn btn-default float-right">No</a>
+                        <a href="{{ url()->previous() }}" class="btn btn-default float-right">No</a>
                     </div>
                 </form> 
             </div>
@@ -66,7 +64,7 @@
     <script>
         $(function () {
             $("#applications").DataTable({
-            "responsive": true, "lengthChange": false, "autoWidth": false,
+            "responsive": true, "lengthChange": false, "autoWidth": false, "pageLength": 5,
             "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         });

@@ -1,7 +1,7 @@
 @extends('adminlte::page')
 
 @php
-    $title = "Applications";
+    $title = "Vacancies";
     $app_name = config('app.name', '') . ' [Admin]';
 @endphp 
 
@@ -14,7 +14,7 @@
         </div>
         <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-                <li class="breadcrumb-item"><a href="{{route('admin.index')}}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('admin.index') }}">Dashboard</a></li>
                 <li class="breadcrumb-item active">{{ $title }}</li>
             </ol>
         </div>
@@ -35,48 +35,44 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">List</h3>
-                        <a type="button" class="btn btn-sm btn-primary float-right" href="{{route('admin.applications.create')}}">
-                            <i class="fas fa-plus"></i> New application
+                        <a type="button" class="btn btn-sm btn-primary float-right" href="{{ route('admin.vacancies.create') }}">
+                            <i class="fas fa-plus"></i> New vacancy
                         </a>
                     </div>
                     <div class="card-body">
                         <table id="applications" class="table table-bordered table-striped">
                             <thead>
                                 <tr>
-                                    <th>Code</th>
-                                    <th>Email</th>
-                                    <th>Name</th>
-                                    <th>Applied position</th>
+                                    <th>ID</th>
+                                    <th>Cycle</th>
+                                    <th>Position title</th>
+                                    <th>Office level</th>
+                                    <th>Status</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @if(sizeof($applications) > 0)
-                                    @foreach($applications as $application)
+                                @if(sizeof($vacancies) > 0)
+                                    @foreach($vacancies as $vacancy)
                                         <tr>
+                                            <td>{{$vacancy->id}}</td>
+                                            <td>{{$vacancy->cycle}}</td>
+                                            <td>{{$vacancy->position_title}}</td>
+                                            <td>{{$vacancy->getOffice()}}</td>
+                                            <td>{{$vacancy->getStatus()}}</td>
                                             <td>
-                                                <a href="{{route('admin.applications.show', $application)}}" title="View">
-                                                    {{$application->application_code}}
-                                                </a>
-                                            </td>
-                                            <td>{{$application->email}}</td>
-                                            <td>{{$application->getFullname()}}</td>
-                                            <td>{{$application->vacancy->position_title}}</td>
-                                            <td>
-                                                <a href="{{route('admin.applications.edit', ['application' => $application])}}" class="btn btn-sm btn-warning" title="Modify">
+                                                <a href="{{ route('admin.vacancies.edit', $vacancy) }}" class="btn btn-sm btn-warning" title="Modify">
                                                     <span class="fas primary fa-fw fa-edit"></span>
                                                 </a>
-                                                
-                                                <a href="{{route('admin.applications.delete', ['application' => $application])}}" class="btn btn-sm btn-danger" title="Delete">
+                                                <a href="{{ route('admin.vacancies.delete', $vacancy) }}" class="btn btn-sm btn-danger" title="Delete">
                                                     <span class="fas fa-fw fa-trash"></span>
                                                 </a>
-                                                
                                             </td>
                                         </tr>
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="5">0 applications found.</td>
+                                        <td colspan="5">0 vacancies found.</td>
                                     </tr>
                                 @endif
                             </tbody>
@@ -86,7 +82,6 @@
             </div>
         </div>
     </div>
-    
 @stop
 
 @section('footer')

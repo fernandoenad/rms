@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Application;
 use App\Models\Inquiry;
+use App\Models\Vacancy;
 use Auth;
 
 class ApplicationController extends Controller
@@ -77,6 +78,7 @@ class ApplicationController extends Controller
 
     public function destroy(Application $application)
     {
+        $application->inquiries()->delete(); //deletes the inquries first
         $application->delete();
         
         return redirect(route('admin.applications.index'))->with('status', 'Application was successfully deleted.');
@@ -84,17 +86,16 @@ class ApplicationController extends Controller
 
     public function edit(Application $application)
     {
-        return view('admin.applications.edit',['application' => $application]);
+        $vacancies = Vacancy::all();
+        return view('admin.applications.edit',['application' => $application, 'vacancies' => $vacancies]);
     }
 
-    public function update(Application $application, Request $request){
+    public function update(Application $application, Request $request)
+    {
         //dd($request);
         $data = $request->validate([
-            'application_code' => 'required|unique:applications,application_code,'.$application->id,
-            'applicant_email' => 'required|email',
-            'applicant_fullname' => 'required',
-            'position_applied' => 'required',
-            'pertinent_doc' => 'required|url',
+            'email' => 'required|email',
+            'vacancy_id' => 'required',
         ]);
 
         $application->update($data);
@@ -102,7 +103,8 @@ class ApplicationController extends Controller
         return redirect(route('admin.applications.index'))->with('status', 'Application was successfully updated.');
     }
 
-    public function saveInquiry(Application $application, Request $request){
+    public function saveInquiry(Application $application, Request $request)
+    {
         // dd($application);
         $data = $request->validate([
             'message' => 'required'
