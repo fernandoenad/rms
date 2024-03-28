@@ -72,7 +72,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="5">0 vacancies found.</td>
+                                        <td colspan="6">0 vacancies found.</td>
                                     </tr>
                                 @endif
                             </tbody>
