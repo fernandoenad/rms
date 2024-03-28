@@ -30,7 +30,7 @@ return new class extends Migration
             $table->string('ethnic_group');
             $table->string('email');
             $table->string('phone');
-            $table->integer('station_id');
+            $table->integer('station_id')->nullable();
             $table->timestamps();
         });
     }
