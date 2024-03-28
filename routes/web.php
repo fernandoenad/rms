@@ -64,7 +64,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/vacancies/create', [AdminVacancy::class, 'create'])->name('admin.vacancies.create');
     Route::post('/admin/vacancies', [AdminVacancy::class, 'store'])->name('admin.vacancies.store');
     Route::get('/admin/vacancies/{vacancy}', [AdminVacancy::class, 'edit'])->name('admin.vacancies.edit');
-    Route::put('/admin/vacancies/', [AdminVacancy::class, 'update'])->name('admin.vacancies.update');
+    Route::put('/admin/vacancies/{vacancy}', [AdminVacancy::class, 'update'])->name('admin.vacancies.update');
     Route::get('/admin/vacancies/{vacancy}/delete', [AdminVacancy::class, 'delete'])->name('admin.vacancies.delete');
 
     Route::get('/admin/inquiries', [AdminInquiry::class, 'index'])->name('admin.inquiries.index');
