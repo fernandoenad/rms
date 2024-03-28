@@ -65,7 +65,7 @@
                                     value="{{ old('salary_grade') }}">
                                     <option value="">---select---</option>
                                     @for($sg = 1; $sg <= 33; $sg++)
-                                        <option value="{{$sg}}">Salary Grade {{$sg}}</option>
+                                        <option value="{{ $sg }}" {{ old('salary_grade') == $sg ? 'selected' : '' }}>Salary Grade {{$sg}}</option>
                                     @endfor
                                 </select>
                                 @error('salary_grade')
@@ -87,8 +87,8 @@
                                     name="office_level" class="@error('office_level') is-invalid @enderror"
                                     value="{{ old('office_level') }}">
                                     <option value="">---select---</option>
-                                    <option value="0">SDO</option>
-                                    <option value="1">Field</option>
+                                    <option value="0" {{ old('office_level') == 0 ? 'selected' : '' }}>SDO</option>
+                                    <option value="1" {{ old('office_level') == 1 ? 'selected' : '' }}>Field</option>
                                 </select>
                                 @error('office_level')
                                     <span class="text-danger"><small>{{ $message }}</small></span>
@@ -118,8 +118,8 @@
                                     name="status" class="@error('status') is-invalid @enderror"
                                     value="{{ old('status') }}">
                                     <option value="">---select---</option>
-                                    <option value="0">Draft</option>
-                                    <option value="1">Published</option>
+                                    <option value="0" {{ old('status') == 0 ? 'selected' : '' }}>Draft</option>
+                                    <option value="1" {{ old('status') == 1 ? 'selected' : '' }}>Published</option>
                                 </select>
                                 @error('status')
                                     <span class="text-danger"><small>{{ $message }}</small></span>
