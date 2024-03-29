@@ -35,7 +35,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">List</h3>
-                        <a type="button" class="btn btn-sm btn-primary float-right" href="{{route('admin.applications.create')}}">
+                        <a type="button" class="btn btn-sm btn-primary float-right disabled" href="{{route('admin.applications.create')}}">
                             <i class="fas fa-plus"></i> New application
                         </a>
                     </div>

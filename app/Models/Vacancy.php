@@ -20,6 +20,9 @@ class Vacancy extends Model
         'qualifications',
         'vacancy',
         'status',
+        'template_id',
+        'level1_status',
+        'level2_status',
     ];
 
     public function application(): HasMany
@@ -28,10 +31,10 @@ class Vacancy extends Model
     }
 
     public function getOffice(){
-        if($this->office_level == 1){
-            $office_level = "Field";
-        } else {
+        if($this->office_level == 0){
             $office_level = "SDO";
+        } else {
+            $office_level = "Field";
         }
 
         return $office_level;
@@ -42,6 +45,26 @@ class Vacancy extends Model
             $status_name = "Posted";
         } else {
             $status_name = "Draft";
+        }
+
+        return $status_name;
+    }
+
+    public function getLevel1Status(){
+        if($this->status == 1){
+            $status_name = "";
+        } else {
+            $status_name = "disabled";
+        }
+
+        return $status_name;
+    }
+
+    public function getLevel2Status(){
+        if($this->status == 1){
+            $status_name = "";
+        } else {
+            $status_name = "disabled";
         }
 
         return $status_name;

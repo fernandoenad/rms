@@ -89,6 +89,9 @@ class ApplicationController extends Controller
         $newApplication = Application::create($data);   
         $newApplication->update(['application_code' => $data['application_code'] . '-' . $newApplication->id]);
 
+        $data['station_id'] = $vacancy->office_level;
+        $newApplication->update(['station_id' => $data['station_id']]);
+
         $request->session()->put('guest_email', $request->email);
         
         return redirect(route('guest.applications.show', ['application' => $newApplication]))->with('status', 'Application was successful!');

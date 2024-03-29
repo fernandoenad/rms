@@ -38,7 +38,7 @@
                                 @csrf 
                                 @method('post')
                                 <div class="input-group">
-                                    <input type="email" name="email" class="form-control" placeholder="Email" class="@error('email') is-invalid @enderror" autofocus>
+                                    <input type="email" name="email" class="form-control" placeholder="Email" class="@error('email') is-invalid @enderror" value="{{ old('email')}}" autofocus>
                                     <div class="input-group-append">
                                         <div class="input-group-text">
                                             <span class="fas fa-envelope"></span>

@@ -24,7 +24,7 @@
     @endif
     <div class="container-fluid">
         <div class="row">
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <div class="small-box bg-danger">
                     <div class="inner">
                         <h3>{{ $inquiries->count()}}</h3>
@@ -36,7 +36,19 @@
                     <a href="{{route('admin.inquiries.index')}}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
                 </div>
             </div>
-            <div class="col-lg-4">
+            <div class="col-lg-3">
+                <div class="small-box bg-primary">
+                    <div class="inner">
+                        <h3>{{ $vacancies->count()}}</h3>
+                        <p>Vacancies</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-fw fa-list"></i>
+                    </div>
+                    <a href="{{route('admin.vacancies.index')}}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+                </div>
+            </div>
+            <div class="col-lg-3">
                 <div class="small-box bg-info">
                     <div class="inner">
                         <h3>{{ $applications->count()}}</h3>
@@ -48,8 +60,8 @@
                     <a href="{{route('admin.applications.index')}}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
                 </div>
             </div>
-            <div class="col-lg-4">
-                <div class="small-box bg-primary">
+            <div class="col-lg-3">
+                <div class="small-box bg-default">
                     <div class="inner">
                         <h3>{{ $users->count()}}</h3>
                         <p>Users</p>

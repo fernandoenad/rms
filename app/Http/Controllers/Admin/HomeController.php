@@ -8,6 +8,7 @@ use Auth;
 use App\Models\User;
 use App\Models\Application;
 use App\Models\Inquiry;
+use App\Models\Vacancy;
 use Illuminate\Support\Facades\Hash;
 
 
@@ -32,9 +33,10 @@ class HomeController extends Controller
     {
         $applications = Application::all();
         $inquiries = Inquiry::where('status', '=', 1)->get();
+        $vacancies = Vacancy::where('status', '=', 1)->get();
         $users = User::all();
         
-        return view('admin.index', ['applications' => $applications, 'inquiries' => $inquiries, 'users' => $users]);
+        return view('admin.index', ['applications' => $applications, 'inquiries' => $inquiries, 'vacancies' => $vacancies, 'users' => $users]);
     }
 
     public function change_password()

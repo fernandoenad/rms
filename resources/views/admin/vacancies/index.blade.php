@@ -64,7 +64,10 @@
                                                 <a href="{{ route('admin.vacancies.edit', $vacancy) }}" class="btn btn-sm btn-warning" title="Modify">
                                                     <span class="fas primary fa-fw fa-edit"></span>
                                                 </a>
-                                                <a href="{{ route('admin.vacancies.delete', $vacancy) }}" class="btn btn-sm btn-danger" title="Delete">
+                                                @php 
+                                                    $count_applications = App\Models\Application::where('vacancy_id', '=', $vacancy->id)->count();
+                                                @endphp
+                                                <a href="{{ route('admin.vacancies.delete', $vacancy) }}" class="btn btn-sm btn-danger {{ $count_applications > 0 ? 'disabled' : '' }}" title="Delete">
                                                     <span class="fas fa-fw fa-trash"></span>
                                                 </a>
                                             </td>

@@ -88,7 +88,7 @@
                                     value="{{ old('office_level') }}">
                                     <option value="">---select---</option>
                                     <option value="0" {{ old('office_level') == 0 ? 'selected' : '' }}>SDO</option>
-                                    <option value="1" {{ old('office_level') == 1 ? 'selected' : '' }}>Field</option>
+                                    <option value="-1" {{ old('office_level') == -1 ? 'selected' : '' }}>Field</option>
                                 </select>
                                 @error('office_level')
                                     <span class="text-danger"><small>{{ $message }}</small></span>
@@ -98,7 +98,7 @@
                                 <label for="#">Qualifications</label>
                                 <textarea type="text" class="form-control" placeholder="Enter qualifications" 
                                     name="qualifications" class="@error('qualifications') is-invalid @enderror"
-                                    value="{{ old('qualifications') }}"></textarea>
+                                    value="{{ old('qualifications') }}">{{ old('qualifications') }}</textarea>
                                 @error('qualifications')
                                     <span class="text-danger"><small>{{ $message }}</small></span>
                                 @enderror
@@ -125,7 +125,20 @@
                                     <span class="text-danger"><small>{{ $message }}</small></span>
                                 @enderror
                             </div>
-                            
+                            <div class="form-group">
+                                <label for="#">Template</label>
+                                <select type="text" class="form-control" placeholder="Enter status" 
+                                    name="template_id" class="@error('template_id') is-invalid @enderror"
+                                    value="{{ old('template_id') }}">
+                                    <option value="">---select---</option>
+                                    @foreach($templates as $template)
+                                        <option value="{{ $template->id }}" {{ $template->id == old('template_id') ? 'selected' : '' }}>{{ $template->type }}</option>
+                                    @endforeach
+                                </select>
+                                @error('template_id')
+                                    <span class="text-danger"><small>{{ $message }}</small></span>
+                                @enderror
+                            </div>                            
                         </div>
                         <div class="card-footer">
                             <button type="submit" class="btn btn-primary">Submit</button>
