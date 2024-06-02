@@ -143,7 +143,7 @@
                                                     <td>{{ $application->gender }}</td>
                                                 </tr>
                                                 <tr>
-                                                    <th>Gender</th>
+                                                    <th>Civil Status</th>
                                                     <td>{{ $application->civil_status }}</td>
                                                 </tr>
                                                 <tr>
