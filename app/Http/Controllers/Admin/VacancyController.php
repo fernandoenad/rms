@@ -89,4 +89,11 @@ class VacancyController extends Controller
         return redirect(route('admin.vacancies.index'))->with('status', 'Vacancy was successfully deleted.');
     }
 
+    public function active()
+    {
+        $vacancies = Vacancy::where('status', '=', 1)->get();
+
+        return view('admin.vacancies.active',['vacancies' => $vacancies]);
+    }
+
 }

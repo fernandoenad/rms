@@ -1,7 +1,7 @@
 @extends('adminlte::page')
 
 @php
-    $title = "Vacancies";
+    $title = "Active Vacancies";
     $app_name = config('app.name', '') . ' [Admin]';
 @endphp 
 
@@ -15,6 +15,7 @@
         <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="{{ route('admin.index') }}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.index') }}">Vacancies</a></li>
                 <li class="breadcrumb-item active">{{ $title }}</li>
             </ol>
         </div>
@@ -35,47 +36,31 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">List</h3>
-                        
-                        <a type="button" class="btn btn-sm btn-primary float-right " href="{{ route('admin.vacancies.create') }}">
+                        <a type="button" class="btn btn-sm btn-primary float-right" href="{{ route('admin.vacancies.create') }}">
                             <i class="fas fa-plus"></i> New vacancy
-                        </a>
-
-                        <a type="button" class="btn btn-sm btn-info float-right mr-1" href="{{ route('admin.vacancies.active') }}">
-                            <i class="fas fa-list"></i> Show active vacancies
                         </a>
                     </div>
                     <div class="card-body">
-                        <table id="applications" class="table table-bordered table-striped">
+                        <table  class="table table-sm table-bordered table-striped">
                             <thead>
                                 <tr>
                                     <th>ID</th>
                                     <th>Cycle</th>
                                     <th>Position title</th>
-                                    <th>Office level</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
+                                    <th>Untagged applications</th>
+                                    <th>Tagged applications</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @if(sizeof($vacancies) > 0)
                                     @foreach($vacancies as $vacancy)
+                                        
                                         <tr>
                                             <td>{{$vacancy->id}}</td>
                                             <td>{{$vacancy->cycle}}</td>
                                             <td>{{$vacancy->position_title}}</td>
-                                            <td>{{$vacancy->getOffice()}}</td>
-                                            <td>{{$vacancy->getStatus()}}</td>
-                                            <td>
-                                                <a href="{{ route('admin.vacancies.edit', $vacancy) }}" class="btn btn-sm btn-warning" title="Modify">
-                                                    <span class="fas primary fa-fw fa-edit"></span>
-                                                </a>
-                                                @php 
-                                                    $count_applications = App\Models\Application::where('vacancy_id', '=', $vacancy->id)->count();
-                                                @endphp
-                                                <a href="{{ route('admin.vacancies.delete', $vacancy) }}" class="btn btn-sm btn-danger {{ $count_applications > 0 ? 'disabled' : '' }}" title="Delete">
-                                                    <span class="fas fa-fw fa-trash"></span>
-                                                </a>
-                                            </td>
+                                            <td>{{ $vacancy->applications()->where('station_id', '=', -1)->get()->count() }}</td>
+                                            <td>{{ $vacancy->applications()->where('station_id', '!=', -1)->get()->count() }}</td>
                                         </tr>
                                     @endforeach
                                 @else

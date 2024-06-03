@@ -25,7 +25,7 @@ class Vacancy extends Model
         'level2_status',
     ];
 
-    public function application(): HasMany
+    public function applications(): HasMany
     {
         return $this->hasMany(Application::class);
     }

@@ -60,6 +60,8 @@ Route::group(['middleware' => ['active']], function () {
     Route::put('/admin/applications/{application}', [AdminApplication::class, 'update'])->name('admin.applications.update');
     Route::patch('/admin/applications/{application}', [AdminApplication::class, 'saveInquiry'])->name('admin.applications.saveInquiry');
 
+    Route::get('/admin/vacancies/active', [AdminVacancy::class, 'active'])->name('admin.vacancies.active');
+
     Route::get('/admin/vacancies', [AdminVacancy::class, 'index'])->name('admin.vacancies.index');
     Route::get('/admin/vacancies/create', [AdminVacancy::class, 'create'])->name('admin.vacancies.create');
     Route::post('/admin/vacancies', [AdminVacancy::class, 'store'])->name('admin.vacancies.store');
