@@ -129,6 +129,7 @@
                                             @foreach($towns as $town)
                                                 <option value="{{$town->name}}" {{ old('municipality') == $town->name ? "selected":"" }}>{{$town->name}}</option>
                                             @endforeach
+                                                <option value="Tagbilaran City" {{ old('municipality') == 'Tagbilaran City' ? "selected":"" }}>Tagbilaran City</option>
                                         </select>
                                         @error('municipality')
                                             <span class="text-danger"><small>{{ $message }}</small></span>
