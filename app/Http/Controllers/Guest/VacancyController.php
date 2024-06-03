@@ -27,6 +27,10 @@ class VacancyController extends Controller
 
     public function apply(Vacancy $vacancy)
     {
+        if($vacancy->status != 1){
+            abort(404);
+        }
+
         $towns = Town::all();
         $sexes = Dropdown::where('type', '=', 'sex')->get();
         $civilstatuses = Dropdown::where('type', '=', 'civilstatus')->get();

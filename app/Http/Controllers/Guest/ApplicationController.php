@@ -60,11 +60,11 @@ class ApplicationController extends Controller
     public function store(Request $request, Vacancy $vacancy)
     {
         $data = $request->validate([
-            'first_name' => 'required|min:3|max:255',
+            'first_name' => 'required|min:2|max:255',
             'middle_name' => 'required|min:1|max:255',
             'last_name' => 'required|min:2|max:255',
             'sitio' => 'required:min:1|max:255',
-            'barangay' => 'required|min:3|max:255',
+            'barangay' => 'required|min:2|max:255',
             'municipality' => 'required',
             'zip' => 'required|integer|between:6300,6400',
             'age' => 'required|integer|between:18,60',
