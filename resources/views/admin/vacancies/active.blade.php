@@ -49,9 +49,13 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @php $untagged = 0; $tagged = 0; @endphp
                                 @if(sizeof($vacancies) > 0)
                                     @foreach($vacancies as $vacancy)
-                                        
+                                        @php 
+                                            $untagged += $vacancy->applications()->where('station_id', '=', -1)->get()->count();
+                                            $tagged += $vacancy->applications()->where('station_id', '!=', -1)->get()->count();
+                                        @endphp
                                         <tr>
                                             <td>{{$vacancy->id}}</td>
                                             <td>{{$vacancy->cycle}}</td>
@@ -60,6 +64,19 @@
                                             <td>{{ $vacancy->applications()->where('station_id', '!=', -1)->get()->count() }}</td>
                                         </tr>
                                     @endforeach
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <th class="text-right">Subtotal</th>
+                                        <th>{{ $untagged }}</th>
+                                        <th>{{ $tagged }}</th>
+                                    </tr>
+                                    <tr>
+                                        <td></td>
+                                        <td></td>
+                                        <th class="text-right">Total</th>
+                                        <th colspan="2" class="text-center">{{ $untagged + $tagged }}</th>
+                                    </tr>
                                 @else
                                     <tr>
                                         <td colspan="6">0 vacancies found.</td>
