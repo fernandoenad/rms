@@ -361,7 +361,7 @@ return [
             'text' => 'Vacancies',
             'url'  => 'admin/vacancies',
             'icon' => 'fas fa-fw fa-list',
-            'active' => ['admin/vacancies', 'admin/vacancies/create', 'regex:@^admin/vacancies/[0-9]+$@', 'regex:@^admin/vacancies/\d+/delete+$@', 'regex:@^admin/vacancies/\d+/edit+$@']
+            'active' => ['admin/vacancies', 'admin/vacancies/active', 'admin/vacancies/create', 'regex:@^admin/vacancies/[0-9]+$@', 'regex:@^admin/vacancies/\d+/delete+$@', 'regex:@^admin/vacancies/\d+/edit+$@']
         ],
         [
             'text' => 'Applications',
