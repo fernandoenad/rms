@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\ApplicationController as AdminApplication;
 use App\Http\Controllers\Admin\UserController as AdminUser;
 use App\Http\Controllers\Admin\InquiryController as AdminInquiry;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancy;
+use App\Http\Controllers\Admin\VacancyReportController as AdminVacancyReport;
 
 /*
 |--------------------------------------------------------------------------
@@ -60,6 +61,11 @@ Route::group(['middleware' => ['active']], function () {
     Route::put('/admin/applications/{application}', [AdminApplication::class, 'update'])->name('admin.applications.update');
     Route::patch('/admin/applications/{application}', [AdminApplication::class, 'saveInquiry'])->name('admin.applications.saveInquiry');
 
+    Route::get('/admin/applications/{vacancy}/show', [AdminApplication::class, 'vacancy_show'])->name('admin.applications.vacancy.show');
+    Route::get('/admin/applications/{vacancy}/show/tagged', [AdminApplication::class, 'vacancy_show_tagged'])->name('admin.applications.vacancy.show.tagged');
+
+    Route::get('/admin/vacancies/reports', [AdminVacancyReport::class, 'index'])->name('admin.vacancies.reports.index');
+
     Route::get('/admin/vacancies/active', [AdminVacancy::class, 'active'])->name('admin.vacancies.active');
 
     Route::get('/admin/vacancies', [AdminVacancy::class, 'index'])->name('admin.vacancies.index');
@@ -68,6 +74,8 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/vacancies/{vacancy}', [AdminVacancy::class, 'edit'])->name('admin.vacancies.edit');
     Route::put('/admin/vacancies/{vacancy}', [AdminVacancy::class, 'update'])->name('admin.vacancies.update');
     Route::get('/admin/vacancies/{vacancy}/delete', [AdminVacancy::class, 'delete'])->name('admin.vacancies.delete');
+
+
 
     Route::get('/admin/inquiries', [AdminInquiry::class, 'index'])->name('admin.inquiries.index');
 });

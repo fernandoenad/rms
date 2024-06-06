@@ -358,16 +358,16 @@ return [
             'active' => ['admin']
         ],
         [
-            'text' => 'Vacancies',
+            'text' => 'Positions',
             'url'  => 'admin/vacancies',
             'icon' => 'fas fa-fw fa-list',
-            'active' => ['admin/vacancies', 'admin/vacancies/active', 'admin/vacancies/create', 'regex:@^admin/vacancies/[0-9]+$@', 'regex:@^admin/vacancies/\d+/delete+$@', 'regex:@^admin/vacancies/\d+/edit+$@']
+            'active' => ['admin/vacancies', 'admin/vacancies/active', 'admin/vacancies/create', 'regex:@^admin/vacancies/[0-9]+$@', 'regex:@^admin/vacancies/\d+/delete+$@', 'regex:@^admin/vacancies/\d+/edit+$@', 'admin/vacancies/reports']
         ],
         [
             'text' => 'Applications',
             'url'  => 'admin/applications',
             'icon' => 'fas fa-fw fa-folder',
-            'active' => ['admin/applications', 'admin/applications/create', 'regex:@^admin/applications/[0-9]+$@', 'regex:@^admin/applications/\d+/delete+$@', 'regex:@^admin/applications/\d+/edit+$@']
+            'active' => ['admin/applications', 'admin/applications/create', 'regex:@^admin/applications/[0-9]+$@', 'regex:@^admin/applications/\d+/delete+$@', 'regex:@^admin/applications/\d+/edit+$@', 'regex:@^admin/applications/\d+/show+$@', 'regex:@^admin/applications/\d+/show/tagged+$@']
         ],
         [
             'text' => 'Inquiries',

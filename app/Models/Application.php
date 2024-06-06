@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Application extends Model
 {
@@ -40,6 +41,11 @@ class Application extends Model
     public function inquiries(): HasMany
     {
         return $this->hasMany(Inquiry::class);
+    }
+
+    public function assessment(): HasOne
+    {
+        return $this->hasOne(Assessment::class);
     }
 
     public function getFullname()

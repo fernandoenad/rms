@@ -1,7 +1,7 @@
 @extends('adminlte::page')
 
 @php
-    $title = "Vacancies";
+    $title = "Positions";
     $app_name = config('app.name', '') . ' [Admin]';
 @endphp 
 
@@ -35,16 +35,18 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">List</h3>
-                        
-                        <a type="button" class="btn btn-sm btn-primary float-right " href="{{ route('admin.vacancies.create') }}">
-                            <i class="fas fa-plus"></i> New vacancy
-                        </a>
-
-                        <a type="button" class="btn btn-sm btn-info float-right mr-1" href="{{ route('admin.vacancies.active') }}">
-                            <i class="fas fa-list"></i> Show active vacancies
+                        <a type="button" class="btn btn-sm btn-primary float-right" href="{{ route('admin.vacancies.create') }}">
+                            <i class="fas fa-plus"></i> New position
                         </a>
                     </div>
                     <div class="card-body">
+                        <a class="" href="{{ route('admin.vacancies.reports.index') }}">
+                            <i class="fas fa-list"></i> Show report
+                        </a>
+                        <a class="float-right" href="{{ route('admin.vacancies.active') }}">
+                            <i class="fas fa-search"></i> Active positions only
+                        </a>
+                        <br><br>
                         <table id="applications" class="table table-bordered table-striped">
                             <thead>
                                 <tr>
@@ -62,7 +64,11 @@
                                         <tr>
                                             <td>{{$vacancy->id}}</td>
                                             <td>{{$vacancy->cycle}}</td>
-                                            <td>{{$vacancy->position_title}}</td>
+                                            <td>
+                                                <a href="{{ route('admin.applications.vacancy.show', $vacancy) }}">
+                                                {{$vacancy->position_title}}
+                                                </a>
+                                            </td>
                                             <td>{{$vacancy->getOffice()}}</td>
                                             <td>{{$vacancy->getStatus()}}</td>
                                             <td>
@@ -106,8 +112,13 @@
     <script>
         $(function () {
             $("#applications").DataTable({
-            "responsive": true, "lengthChange": false, "autoWidth": false, "pageLength": 5,
-            "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
+                "responsive": true,
+                "lengthChange": true,
+                "autoWidth": false,
+                "pageLength": 10,
+                "lengthMenu": [5, 10, 25, 50, 100, 1000, 2000, 3000, 4000, 5000], // You can customize these values
+                "ordering": false, // Disable initial sorting
+                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         });
     </script>

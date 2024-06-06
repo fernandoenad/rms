@@ -15,6 +15,8 @@
         <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="{{route('admin.index')}}">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{route('admin.vacancies.index')}}">Positions</a></li>
+                <li class="breadcrumb-item"><a href="{{route('admin.vacancies.active')}}">Active Positions</a></li>
                 <li class="breadcrumb-item active">{{ $title }}</li>
             </ol>
         </div>
@@ -34,19 +36,22 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">List</h3>
+                        <h3 class="card-title">List for {{ $vacancy->position_title }}</h3>
                         <a type="button" class="btn btn-sm btn-primary float-right disabled" href="{{route('admin.applications.create')}}">
                             <i class="fas fa-plus"></i> New application
                         </a>
                     </div>
                     <div class="card-body">
+                        <a class="float-right" href="{{ route('admin.applications.vacancy.show.tagged', $vacancy) }}">
+                            <i class="fas fa-search"></i> Tagged positions only
+                        </a>
+                        <br><br>
                         <table id="applications" class="table table-bordered table-striped">
                             <thead>
                                 <tr>
                                     <th width="15%">Code</th>
                                     <th>Email</th>
                                     <th width="20%">Name</th>
-                                    <th>Applied position</th>
                                     <th>Station/Unit</th>
                                     <th width="10%">Action</th>
                                 </tr>
@@ -62,13 +67,9 @@
                                             </td>
                                             <td>{{$application->email}}</td>
                                             <td>{{$application->getFullname()}}</td>
-                                            <td>
-                                                <a href="{{ route('admin.applications.vacancy.show', $application->vacancy_id) }}">
-                                                {{$application->vacancy->position_title}}
-                                                </a>
-                                            </td>
                                             @php  $station = App\Models\Station::find($application->station_id); @endphp
                                             <td>{{ isset($station) ? $station->name : ($application->station_id == 0 ? 'Division' : 'Untagged') }}</td>
+                                            @php  $assessment = $application->assessment; @endphp
                                             <td>
                                                 <a href="{{route('admin.applications.edit', ['application' => $application])}}" class="btn btn-sm btn-warning" title="Modify">
                                                     <span class="fas primary fa-fw fa-edit"></span>

@@ -85,11 +85,17 @@
 
 @section('js')
     <script> console.log('Hi!'); </script>
+    
     <script>
         $(function () {
             $("#applications").DataTable({
-            "responsive": true, "lengthChange": false, "autoWidth": false, "pageLength": 5,
-            "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
+                "responsive": true,
+                "lengthChange": true,
+                "autoWidth": false,
+                "pageLength": 5,
+                "lengthMenu": [5, 10, 25, 50, 100, 1000, 2000, 3000, 4000, 5000], // You can customize these values
+                "ordering": false, // Disable initial sorting
+                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         });
     </script>

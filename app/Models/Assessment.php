@@ -27,4 +27,18 @@ class Assessment extends Model
     {
         return $this->belongsTo(Template::class);
     }
+
+    public function get_status()
+    {
+        $label = null;
+
+        switch($this->status){
+            case 0: $label = 'New'; break;
+            case 1: $label = 'SRC Pending'; break;
+            case 2: $label = 'SRC Completed/DRC Pending'; break;
+            case 3: $label = 'DRC Completed'; break;
+        }
+
+        return $label;
+    }
 }

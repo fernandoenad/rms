@@ -18,7 +18,7 @@ class ApplicationController extends Controller
 
     public function index()
     {
-        $applications = Application::all();
+        $applications = Application::latest()->take(5000)->get();
         return view('admin.applications.index',['applications' => $applications]);
     }
 
@@ -120,5 +120,21 @@ class ApplicationController extends Controller
         Inquiry::where('application_id', '=', $application->id)->update(['status' => 0]);
         
         return redirect(route('admin.applications.show', ['application' => $application]))->with('status', 'Inquiry message was successfully sent.');
+    }
+
+    public function vacancy_show(Vacancy $vacancy)
+    {
+        $applications = Application::where('vacancy_id', '=', $vacancy->id)->get();
+
+        return view('admin.applications.list.index', ['vacancy' => $vacancy, 'applications' => $applications]);
+    }
+
+
+    public function vacancy_show_tagged(Vacancy $vacancy)
+    {
+        $applications = Application::where('vacancy_id', '=', $vacancy->id)
+            ->where('station_id', '!=', -1)->get();
+
+        return view('admin.applications.list.tagged', ['vacancy' => $vacancy, 'applications' => $applications]);
     }
 }

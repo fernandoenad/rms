@@ -1,7 +1,7 @@
 @extends('adminlte::page')
 
 @php
-    $title = "Active Vacancies";
+    $title = "Active Positions";
     $app_name = config('app.name', '') . ' [Admin]';
 @endphp 
 
@@ -15,7 +15,7 @@
         <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="{{ route('admin.index') }}">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.index') }}">Vacancies</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.index') }}">Positions</a></li>
                 <li class="breadcrumb-item active">{{ $title }}</li>
             </ol>
         </div>
@@ -44,12 +44,16 @@
                                     <th>ID</th>
                                     <th>Cycle</th>
                                     <th>Position title</th>
-                                    <th>Untagged applications</th>
-                                    <th>Tagged applications</th>
+                                    <th class="text-right">Untagged applications</th>
+                                    <th class="text-right">Tagged applications</th>
+                                    <th class="text-right">Pending (SRC)</th>
+                                    <th class="text-right">Completed (SRC)</th>
+                                    <th class="text-right">Pending (DRC)</th>
+                                    <th class="text-right">Completed (DRC)</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @php $untagged = 0; $tagged = 0; @endphp
+                                @php $untagged = 0; $tagged = 0; $src_pending = 0; $src_completed = 0; $drc_pending = 0; $drc_completed = 0; @endphp
                                 @if(sizeof($vacancies) > 0)
                                     @foreach($vacancies as $vacancy)
                                         @php 
@@ -59,23 +63,46 @@
                                         <tr>
                                             <td>{{$vacancy->id}}</td>
                                             <td>{{$vacancy->cycle}}</td>
-                                            <td>{{$vacancy->position_title}}</td>
-                                            <td>{{ $vacancy->applications()->where('station_id', '=', -1)->get()->count() }}</td>
-                                            <td>{{ $vacancy->applications()->where('station_id', '!=', -1)->get()->count() }}</td>
+                                            <td>
+                                                <a href="{{ route('admin.applications.vacancy.show', $vacancy) }}">
+                                                    {{$vacancy->position_title}}
+                                                </a>
+                                            </td>
+                                            <td class="text-right">{{ number_format($vacancy->applications()->where('station_id', '=', -1)->get()->count(),0) }}</td>
+                                            <td class="text-right">{{ number_format($vacancy->applications()->where('station_id', '!=', -1)->get()->count(),0) }}</td>
+                                            @php 
+                                                $assessments = $vacancy->applications()->join('assessments', 'assessments.application_id', '=', 'applications.id')->get(); 
+                                                //dd($assessment->count());
+                                                $src_pending += $assessments->where('status','=',1)->count();
+                                                $src_completed += $assessments->where('status','=',2)->count();
+                                                $drc_pending += $assessments->where('status','=',2)->count();
+                                                $drc_completed+= $assessments->where('status','=',3)->count();
+
+                                            @endphp
+                                            <td class="text-right">{{$assessments->where('status','=',1)->count()}}</td>
+                                            <td class="text-right">{{$assessments->where('status','=',2)->count()}}</td>
+                                            <td class="text-right">{{$assessments->where('status','=',2)->count()}}</td>
+                                            <td class="text-right">{{$assessments->where('status','=',3)->count()}}</td>
                                         </tr>
                                     @endforeach
                                     <tr>
                                         <td></td>
                                         <td></td>
                                         <th class="text-right">Subtotal</th>
-                                        <th>{{ $untagged }}</th>
-                                        <th>{{ $tagged }}</th>
+                                        <th class="text-right">{{ number_format($untagged,0) }}</th>
+                                        <th class="text-right">{{ number_format($tagged,0) }}</th>
+                                        <th class="text-right">{{ number_format($src_pending,0) }}</th>
+                                        <th class="text-right">{{ number_format($src_completed,0) }}</th>
+                                        <th class="text-right">{{ number_format($drc_pending,0) }}</th>
+                                        <th class="text-right">{{ number_format($drc_completed,0) }}</th>
                                     </tr>
                                     <tr>
                                         <td></td>
                                         <td></td>
                                         <th class="text-right">Total</th>
-                                        <th colspan="2" class="text-center">{{ $untagged + $tagged }}</th>
+                                        <th colspan="2" class="text-center">{{ number_format($untagged + $tagged, 0)}}</th>
+                                        <th colspan="2" class="text-center">{{ number_format($src_pending + $src_completed, 0)}}</th>
+                                        <th colspan="2" class="text-center">{{ number_format($drc_pending + $drc_completed, 0)}}</th>
                                     </tr>
                                 @else
                                     <tr>
