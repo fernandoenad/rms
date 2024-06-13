@@ -18,7 +18,7 @@ class ApplicationController extends Controller
 
     public function index()
     {
-        $applications = Application::latest()->take(5000)->get();
+        $applications = Application::latest()->take(10000)->get();
         return view('admin.applications.index',['applications' => $applications]);
     }
 
@@ -143,7 +143,7 @@ class ApplicationController extends Controller
     {
         $assessment = $application->assessment;
         $assessment->delete(); 
-        
+
         $data['application_id'] = $application->id;
         $data['author'] =  auth()->user()->name;
         $data['message'] = 'Status has been sucessfuly reverted.';

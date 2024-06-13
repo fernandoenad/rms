@@ -53,21 +53,12 @@
                             <tbody>
                                 <tr>
                                     <td>Summary</td>
-                                    @php 
-                                        $applications = App\Models\Application::join('vacancies', 'vacancies.id', 'vacancy_id')
-                                            ->where('vacancies.status', '=', 1)->get();
-                                    @endphp
-                                    <td class="text-right">{{ number_format($applications->where('station_id', '=', -1)->count(),0) }}</td>
-                                    <td class="text-right">{{ number_format($applications->where('station_id', '>', 0)->count(),0) }}</td>
-                                    @php 
-                                        $assessments = App\Models\Application::join('vacancies', 'vacancies.id', 'vacancy_id')
-                                            ->join('assessments', 'application_id', 'applications.id')
-                                            ->where('vacancies.status', '=', 1);
-                                    @endphp
-                                    <td class="text-right">{{ number_format($assessments->where('assessments.status', '=', 1)->get()->count(), 0) }}</td>
-                                    <td class="text-right">{{ number_format($assessments->where('assessments.status', '=', 2)->get()->count(), 0) }}</td>
-                                    <td class="text-right">{{ number_format($assessments->where('assessments.status', '=', 2)->get()->count(), 0) }}</td>
-                                    <td class="text-right">{{ number_format($assessments->where('assessments.status', '=', 3)->get()->count(), 0) }}</td>
+                                    <td class="text-right">{{number_format( $applications->where('station_id', '=', -1)->count(), 0) }}</td>
+                                    <td class="text-right">{{number_format( $applications->where('station_id', '!=', -1)->count(), 0) }}</td>
+                                    <td class="text-right">{{number_format($src_p, 0) }}</td>
+                                    <td class="text-right">{{number_format($src_c, 0) }}</td>
+                                    <td class="text-right">{{number_format($src_c, 0) }}</td>
+                                    <td class="text-right">{{number_format($drc_c, 0) }}</td>
                                 </tr>
                                 @forelse($offices as $office)
                                     @php 
