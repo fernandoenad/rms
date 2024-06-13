@@ -63,16 +63,36 @@
                                 @forelse($offices as $office)
                                     @php 
                                         $stations = App\Models\Station::where('office_id', '=', $office->id)->pluck('id');
-                                                                            
+                                        $src_t = App\Models\Application::whereIn('station_id', $stations)->count();
+                                        $src_p = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
+                                            ->whereIn('applications.station_id', $stations)
+                                            ->where('assessments.status', '=', 1)
+                                            ->distinct('applications.id') // Ensure distinct applications are counted
+                                            ->count('applications.id');
+                                        $src_c = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
+                                            ->whereIn('applications.station_id', $stations)
+                                            ->where('assessments.status', '=', 2)
+                                            ->distinct('applications.id') // Ensure distinct applications are counted
+                                            ->count('applications.id');
+                                        $drc_p = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
+                                            ->whereIn('applications.station_id', $stations)
+                                            ->where('assessments.status', '=', 2)
+                                            ->distinct('applications.id') // Ensure distinct applications are counted
+                                            ->count('applications.id');
+                                        $drc_c = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
+                                            ->whereIn('applications.station_id', $stations)
+                                            ->where('assessments.status', '=', 3)
+                                            ->distinct('applications.id') // Ensure distinct applications are counted
+                                            ->count('applications.id');
                                     @endphp
                                     <tr>
                                         <td>{{$office->name}}</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
+                                        <td class="text-right">-</td>
+                                        <td class="text-right">{{number_format($src_t, 0) }}</td>
+                                        <td class="text-right">{{number_format($src_p, 0) }}</td>
+                                        <td class="text-right">{{number_format($src_c, 0) }}</td>
+                                        <td class="text-right">{{number_format($drc_p, 0) }}</td>
+                                        <td class="text-right">{{number_format($drc_c, 0) }}</td>
                                     </tr>
                                 @empty
                                 @endforelse
