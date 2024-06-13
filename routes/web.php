@@ -58,6 +58,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/applications/{application}', [AdminApplication::class, 'show'])->name('admin.applications.show');
     Route::get('/admin/applications/{application}/delete', [AdminApplication::class, 'delete'])->name('admin.applications.delete');
     Route::get('/admin/applications/{application}/edit', [AdminApplication::class, 'edit'])->name('admin.applications.edit');
+    Route::get('/admin/applications/{application}/revert', [AdminApplication::class, 'revert'])->name('admin.applications.revert');
     Route::put('/admin/applications/{application}', [AdminApplication::class, 'update'])->name('admin.applications.update');
     Route::patch('/admin/applications/{application}', [AdminApplication::class, 'saveInquiry'])->name('admin.applications.saveInquiry');
 

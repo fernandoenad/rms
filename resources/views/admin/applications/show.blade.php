@@ -61,8 +61,13 @@
                         <a href="{{route('admin.applications.edit', ['application' => $application])}}" class="btn btn-sm btn-warning" title="Modify">
                             <span class="fas primary fa-fw fa-edit"></span> Edit 
                         </a>
-                        <a href="{{route('admin.applications.delete', ['application' => $application])}}" class="btn btn-sm btn-danger float-right {{ $application->station_id != -1 ? 'disabled' : '' }}" title="Delete">
+                        <a href="{{route('admin.applications.delete', ['application' => $application])}}" class="btn btn-sm btn-danger float-right {{ $application->station_id != -1 ? 'disabled' : '' }}" 
+                            onclick="return confirm('This will delete the application. Are you sure?')" title="Delete">
                             <span class="fas fa-fw fa-trash"></span> Delete
+                        </a>
+                        <a href="{{route('admin.applications.revert', $application)}}" class="btn btn-sm btn-info {{ isset($application->assessment) && $application->assessment->count() > 0 ? '' : 'disabled' }}" 
+                            onclick="return confirm('This will revert status to new deleting the existing scores in the process. Are you sure?')" title="Revert to new">
+                            <span class="fas fa-fw fa-reply"></span> Revert
                         </a>
                         
                     </div>

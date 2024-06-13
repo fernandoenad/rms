@@ -137,4 +137,20 @@ class ApplicationController extends Controller
 
         return view('admin.applications.list.tagged', ['vacancy' => $vacancy, 'applications' => $applications]);
     }
+
+
+    public function revert(Application $application)
+    {
+        $assessment = $application->assessment;
+        $assessment->delete(); 
+        
+        $data['application_id'] = $application->id;
+        $data['author'] =  auth()->user()->name;
+        $data['message'] = 'Status has been sucessfuly reverted.';
+        $data['status'] = 0;
+
+        $inquiry = Inquiry::create($data);
+
+        return redirect(route('admin.applications.show', $application))->with('status', 'The application status has been reverted.');
+    }
 }
