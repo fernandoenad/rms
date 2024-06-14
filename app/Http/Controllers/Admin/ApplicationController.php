@@ -18,7 +18,17 @@ class ApplicationController extends Controller
 
     public function index()
     {
-        $applications = Application::latest()->take(10000)->get();
+        $applications = Application::latest()->take(100)->get();
+
+        return view('admin.applications.index',['applications' => $applications]);
+    }
+
+    public function search(Request $request)
+    {
+        $search_str = $request->input('search_str');
+
+        $applications = Application::where('application_code', $search_str)->get();
+
         return view('admin.applications.index',['applications' => $applications]);
     }
 

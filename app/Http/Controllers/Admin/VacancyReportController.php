@@ -16,7 +16,7 @@ class VacancyReportController extends Controller
 
     public function index()
     {
-        $offices = Office::all();
+        $offices = Office::orderBy('name', 'ASC')->get();
 
         $applications = Application::join('vacancies', 'vacancies.id', '=', 'applications.vacancy_id')
             ->select('applications.*')

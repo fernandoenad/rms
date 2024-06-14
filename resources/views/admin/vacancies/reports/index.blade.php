@@ -38,7 +38,7 @@
                         <h3 class="card-title">List</h3>
                     </div>
                     <div class="card-body">
-                        <table  class="table table-sm table-bordered table-striped">
+                        <table id="list" class="table table-sm table-bordered table-striped">
                             <thead>
                                 <tr>
                                     <th>District</th>
@@ -110,17 +110,41 @@
 @stop
 
 @section('css')
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+<!-- Buttons CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.1.1/css/buttons.dataTables.min.css">
 @stop
 
 @section('plugins.Datatables', true)
 
 @section('js')
     <script> console.log('Hi!'); </script>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+    <!-- Buttons JS -->
+    <script src="https://cdn.datatables.net/buttons/2.1.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.1.1/js/buttons.flash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.1.1/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.1.1/js/buttons.print.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.1.1/js/buttons.colVis.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
+
     <script>
         $(function () {
-            $("#applications").DataTable({
-            "responsive": true, "lengthChange": false, "autoWidth": false, "pageLength": 5,
-            "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
+            $("#list").DataTable({
+                "responsive": true,
+                "lengthChange": true,
+                "autoWidth": false,
+                "pageLength": 100,
+                "lengthMenu": [5, 10, 25, 50, 100], // You can customize these values
+                "ordering": false, // Disable initial sorting
+                "dom": 'Blfrtip', // Ensure the buttons are displayed
+                "buttons": ["excel", "pdf", "print", "colvis"]
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         });
     </script>

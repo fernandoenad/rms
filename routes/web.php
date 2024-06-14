@@ -52,6 +52,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::put('/admin/change_password', [AdminHome::class, 'change_password_ok'])->name('admin.change_password_ok');
 
     Route::get('/admin/applications', [AdminApplication::class, 'index'])->name('admin.applications.index');
+    Route::put('/admin/applications', [AdminApplication::class, 'search'])->name('admin.applications.search');
     Route::get('/admin/applications/create', [AdminApplication::class, 'create'])->name('admin.applications.create');
     Route::post('/admin/applications/', [AdminApplication::class, 'store'])->name('admin.applications.store');
     Route::post('/admin/applications/import', [AdminApplication::class, 'import'])->name('admin.applications.import');

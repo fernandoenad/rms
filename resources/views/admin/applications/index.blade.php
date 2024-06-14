@@ -35,12 +35,24 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">List</h3>
-                        <a type="button" class="btn btn-sm btn-primary float-right disabled" href="{{route('admin.applications.create')}}">
+                        <a type="button" class="btn btn-sm btn-primary float-right" href="{{route('admin.applications.create')}}">
                             <i class="fas fa-plus"></i> New application
                         </a>
                     </div>
                     <div class="card-body">
-                        <table id="applications" class="table table-bordered table-striped">
+                        <form class="form-inline float-right" method="post" action="{{route('admin.applications.search')}}">
+                            @csrf
+                            @method('put')
+                            <div class="input-group input-group-md">
+                                <input id="search_str" name="search_str" class="form-control form-control-navbar @error('search_str') is-invalid @enderror" value="{{ old('search_str') ?? request()->get('search_str') }}" type="text" placeholder="Search application..." aria-label="Search">
+                                <div class="input-group-append">
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        <table id="list" class="table table-bordered table-striped">
                             <thead>
                                 <tr>
                                     <th width="15%">Code</th>
@@ -82,7 +94,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="5">0 applications found.</td>
+                                        <td colspan="6">0 applications found.</td>
                                     </tr>
                                 @endif
                             </tbody>
@@ -126,13 +138,14 @@
 
     <script>
         $(function () {
-            $("#applications").DataTable({
+            $("#list").DataTable({
                 "responsive": true,
                 "lengthChange": true,
                 "autoWidth": false,
                 "pageLength": 10,
-                "lengthMenu": [5, 10, 25, 50, 100, 1000, 2000, 3000, 4000, 5000], // You can customize these values
+                "lengthMenu": [10, 25, 50, 100, 1000, 2000, 3000, 4000, 5000], // You can customize these values
                 "ordering": false, // Disable initial sorting
+                "searching": false, // Disable the search feature
                 "dom": 'Blfrtip', // Ensure the buttons are displayed
                 "buttons": ["excel", "pdf", "print", "colvis"]
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');

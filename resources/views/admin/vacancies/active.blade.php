@@ -106,7 +106,7 @@
                                     </tr>
                                 @else
                                     <tr>
-                                        <td colspan="6">0 vacancies found.</td>
+                                        <td colspan="9">0 vacancies found.</td>
                                     </tr>
                                 @endif
                             </tbody>
