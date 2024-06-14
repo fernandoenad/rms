@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController as GuestHome;
 use App\Http\Controllers\Guest\ApplicationController as GuestApplication;
 use App\Http\Controllers\Guest\VacancyController as GuestVacancy;
+use App\Http\Controllers\Guest\ApplicationReportController as GuestApplicationReport;
 use App\Http\Controllers\Admin\HomeController as AdminHome;
 use App\Http\Controllers\Admin\ApplicationController as AdminApplication;
 use App\Http\Controllers\Admin\UserController as AdminUser;
@@ -31,6 +32,8 @@ Route::get('/vacancies/{vacancy}', [GuestVacancy::class, 'show'])->name('guest.v
 Route::get('/vacancies/{vacancy}/apply', [GuestVacancy::class, 'apply'])->name('guest.vacancies.apply');
 
 Route::get('/applications', [GuestApplication::class, 'index'])->name('guest.applications.index');
+
+Route::get('/reports', [GuestApplicationReport::class, 'index'])->name('guest.v.index');
 
 // already applied
 Route::post('/applications/{vacancy}/apply', [GuestApplication::class, 'store'])->name('guest.applications.store');
