@@ -54,7 +54,7 @@
                                 <tr>
                                     <td>Summary</td>
                                     <td class="text-right">{{number_format( $applications->where('station_id', '=', -1)->count(), 0) }}</td>
-                                    <td class="text-right">{{number_format( $applications->where('station_id', '!=', -1)->count(), 0) }}</td>
+                                    <td class="text-right">{{number_format( $applications->where('station_id', '>', 0)->count(), 0) }}</td>
                                     <td class="text-right">{{number_format($src_p, 0) }}</td>
                                     <td class="text-right">{{number_format($src_c, 0) }}</td>
                                     <td class="text-right">{{number_format($src_c, 0) }}</td>
