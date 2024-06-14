@@ -1,7 +1,7 @@
 @extends('layouts.guest')
 
 @php
-    $title = "Active Positions";
+    $title = "School Level";
     $app_name = config('app.name', '') . ' [Admin]';
 @endphp 
 
@@ -17,7 +17,7 @@
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('guest.index')}}">Home</a></li>
-                        <li class="breadcrumb-item"><a href="{{route('guest.reports.index')}}">Reports</a></li>
+                        <li class="breadcrumb-item"><a href="{{route('guest.reports.index')}}">Active Positions</a></li>
                         <li class="breadcrumb-item active">{{$title}}</li>
                     </ol>
                 </div>
@@ -50,7 +50,7 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>{{$office->name}}</td>
+                                    <th>{{$office->name}} District</th>
                                     <td class="text-right">{{number_format($src_t, 0) }}</td>
                                     <td class="text-right">{{number_format($src_p, 0) }}</td>
                                     <td class="text-right">{{number_format($src_c, 0) }}</td>
