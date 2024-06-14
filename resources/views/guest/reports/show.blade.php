@@ -17,6 +17,7 @@
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
                         <li class="breadcrumb-item"><a href="{{route('guest.index')}}">Home</a></li>
+                        <li class="breadcrumb-item"><a href="{{route('guest.reports.index')}}">Reports</a></li>
                         <li class="breadcrumb-item active">{{$title}}</li>
                     </ol>
                 </div>
