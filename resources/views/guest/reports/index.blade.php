@@ -42,8 +42,10 @@
                                     <th class="text-right">Tagged applications</th>
                                     <th class="text-right">Pending (SRC)</th>
                                     <th class="text-right">Completed (SRC)</th>
+                                    <th class="text-right">Preliminary Performance</th>
                                     <th class="text-right">Pending (DRC)</th>
                                     <th class="text-right">Completed (DRC)</th>
+                                    <th class="text-right">Comparative Assessment Performance</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -53,8 +55,11 @@
                                     <td class="text-right">{{number_format( $applications->where('station_id', '>', 0)->count(), 0) }}</td>
                                     <td class="text-right">{{number_format($src_p, 0) }}</td>
                                     <td class="text-right">{{number_format($src_c, 0) }}</td>
+                                    <td class="text-right">{{number_format($src_c / $applications->where('station_id', '>', 0)->count() * 100, 2) }}%</td>
                                     <td class="text-right">{{number_format($src_c, 0) }}</td>
                                     <td class="text-right">{{number_format($drc_c, 0) }}</td>
+                                    <td class="text-right">{{number_format($drc_c / $applications->where('station_id', '>', 0)->count() * 100, 2) }}%</td>
+
                                 </tr>
                                 @forelse($offices as $office)
                                     @php 
@@ -87,8 +92,22 @@
                                         <td class="text-right">{{number_format($src_t, 0) }}</td>
                                         <td class="text-right">{{number_format($src_p, 0) }}</td>
                                         <td class="text-right">{{number_format($src_c, 0) }}</td>
+                                        <td class="text-right">
+                                            @if ($src_t != 0)
+                                                {{ number_format($src_c / $src_t * 100, 2) }}%
+                                            @else
+                                                0%
+                                            @endif
+                                        </td>
                                         <td class="text-right">{{number_format($drc_p, 0) }}</td>
                                         <td class="text-right">{{number_format($drc_c, 0) }}</td>
+                                        <td class="text-right">
+                                            @if ($src_t != 0)
+                                                {{number_format($drc_c / $src_t * 100, 2) }}%
+                                            @else
+                                                0%
+                                            @endif
+                                        </td>
                                     </tr>
                                 @empty
                                 @endforelse
