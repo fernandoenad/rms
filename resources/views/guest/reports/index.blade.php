@@ -96,7 +96,7 @@
                                             @if ($src_t != 0)
                                                 {{ number_format($src_c / $src_t * 100, 2) }}%
                                             @else
-                                                0.00%
+                                                N/A
                                             @endif
                                         </td>
                                         <td class="text-right">{{number_format($drc_p, 0) }}</td>
@@ -105,7 +105,7 @@
                                             @if ($src_t != 0)
                                                 {{number_format($drc_c / $src_t * 100, 2) }}%
                                             @else
-                                                0.00%
+                                                N/A
                                             @endif
                                         </td>
                                     </tr>
