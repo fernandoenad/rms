@@ -181,37 +181,50 @@
                                     <div class="card-body table-responsive p-0">
                                         <table class="table table-hover text-nowrap table-borderless">
                                             <tbody>
-                                                <tr>
-                                                    <th width="20%">Education</th>
-                                                    <td>0</td>
-                                                </tr>
-                                                <tr>
-                                                    <th>Training</th>
-                                                    <td>0</td>                                                  
-                                                </tr>
-                                                <tr>
-                                                    <th>Experience</th>
-                                                    <td>0</td>                                                  
-                                                </tr>
-                                                <tr>
-                                                    <th>COI (Teaching Demo)</th>
-                                                    <td>0</td>                                                  
-                                                </tr>
-                                                <tr>
-                                                    <th>NCOI (TRF)</th>
-                                                    <td>0</td>                                                  
-                                                </tr>
-                                                <tr>
-                                                    <td>
-                                                        Initial Assessment<br>
-                                                        Comparative Assessment
-                                                    </td>
-                                                    <td>
-                                                        yyyy-mm-dd<br>
-                                                        yyyy-mm-dd
-                                                    </td>                                                  
-                                                </tr>
+                                                @if(isset($application->assessment))
+                                                    @php 
+                                                        $assessment_scores = json_decode($application->assessment->assessment);
+                                                        $template = App\Models\Template::find($application->vacancy->template_id);
+                                                        $assessment_template = json_decode($template->template, true);
+                                                    @endphp 
 
+                                                    @foreach($assessment_scores as $key => $value)
+                                                        <tr>
+                                                            <th>{{ $key }}</th>
+                                                            <td>
+                                                                {{ $application->assessment->status == 3 ? $value : '-' }}
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+
+                                                    <tr class="bg-info">
+                                                        <th >Final RQA Score</th>
+                                                        <td>{{ $application->assessment->status == 3 ? $application->assessment->score : '-' }}</td>
+                                                    </tr>
+                                                
+                                                    <tr>
+                                                        <td>
+                                                            Status<br>
+                                                            Initial Assessment<br>
+                                                            Comparative Assessment
+                                                        </td>
+                                                        <td>
+                                                            {{$application->assessment->get_status()}}<br>
+                                                            {{$application->assessment->created_at->format('M d, Y h:ia')}}<br>
+                                                            {{$application->assessment->status == 3 ? $application->assessment->updated_at->format('M d, Y h:ia') : 'TBA'}}
+                                                        </td>                                                  
+                                                    </tr>
+                                                @else 
+                                                    <tr>
+                                                        <td>
+                                                            Status<br>
+                                                        </td>
+                                                        <td>                                                            
+                                                            <span class="badge bg-warning">Please contact school to have it marked as COMPLETED</span>
+                                                        </td>                                                  
+                                                    </tr>
+                                                @endif
+                                            
                                      
                                             </tbody>
                                         </table>
