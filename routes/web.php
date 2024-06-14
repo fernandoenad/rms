@@ -33,7 +33,8 @@ Route::get('/vacancies/{vacancy}/apply', [GuestVacancy::class, 'apply'])->name('
 
 Route::get('/applications', [GuestApplication::class, 'index'])->name('guest.applications.index');
 
-Route::get('/reports', [GuestApplicationReport::class, 'index'])->name('guest.v.index');
+Route::get('/reports', [GuestApplicationReport::class, 'index'])->name('guest.reports.index');
+Route::get('/reports/{office}', [GuestApplicationReport::class, 'show'])->name('guest.reports.show');
 
 // already applied
 Route::post('/applications/{vacancy}/apply', [GuestApplication::class, 'store'])->name('guest.applications.store');
