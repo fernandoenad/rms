@@ -54,10 +54,10 @@
                                     <td class="text-right">{{number_format($src_t, 0) }}</td>
                                     <td class="text-right">{{number_format($src_p, 0) }}</td>
                                     <td class="text-right">{{number_format($src_c, 0) }}</td>
-                                    <td class="text-right">{{number_format($src_c / $src_t * 100, 2) }}%</td>
+                                    <th class="text-right">{{number_format($src_c / $src_t * 100, 2) }}%</th>
                                     <td class="text-right">{{number_format($src_c, 0) }}</td>
                                     <td class="text-right">{{number_format($drc_c, 0) }}</td>
-                                    <td class="text-right">{{number_format($drc_c / $src_t * 100, 2) }}%</td>
+                                    <th class="text-right">{{number_format($drc_c / $src_t * 100, 2) }}%</th>
 
                                 </tr>
                                 @forelse($stations as $station)
@@ -89,22 +89,22 @@
                                         <td class="text-right">{{number_format($src_t, 0) }}</td>
                                         <td class="text-right">{{number_format($src_p, 0) }}</td>
                                         <td class="text-right">{{number_format($src_c, 0) }}</td>
-                                        <td class="text-right">
+                                        <th class="text-right">
                                             @if ($src_t != 0)
                                                 {{ number_format($src_c / $src_t * 100, 2) }}%
                                             @else
                                                 N/A
                                             @endif
-                                        </td>
+                                        </th>
                                         <td class="text-right">{{number_format($drc_p, 0) }}</td>
                                         <td class="text-right">{{number_format($drc_c, 0) }}</td>
-                                        <td class="text-right">
+                                        <th class="text-right">
                                             @if ($src_t != 0)
                                                 {{number_format($drc_c / $src_t * 100, 2) }}%
                                             @else
                                                 N/A
                                             @endif
-                                        </td>
+                                        </th>
                                     </tr>
                                 @empty
                                 @endforelse

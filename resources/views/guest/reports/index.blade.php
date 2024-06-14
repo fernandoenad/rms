@@ -37,7 +37,7 @@
                         <table id="list" class="table table-sm table-bordered table-striped">
                             <thead>
                                 <tr>
-                                    <th>District</th>
+                                    <th width="30%">District</th>
                                     <th class="text-right">Untagged applications</th>
                                     <th class="text-right">Tagged applications</th>
                                     <th class="text-right">Pending (SRC)</th>
@@ -50,15 +50,15 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td>Summary</td>
+                                    <th>Summary</th>
                                     <td class="text-right">{{number_format( $applications->where('station_id', '=', -1)->count(), 0) }}</td>
                                     <td class="text-right">{{number_format( $applications->where('station_id', '>', 0)->count(), 0) }}</td>
                                     <td class="text-right">{{number_format($src_p, 0) }}</td>
                                     <td class="text-right">{{number_format($src_c, 0) }}</td>
-                                    <td class="text-right">{{number_format($src_c / $applications->where('station_id', '>', 0)->count() * 100, 2) }}%</td>
+                                    <th class="text-right">{{number_format($src_c / $applications->where('station_id', '>', 0)->count() * 100, 2) }}%</th>
                                     <td class="text-right">{{number_format($src_c, 0) }}</td>
                                     <td class="text-right">{{number_format($drc_c, 0) }}</td>
-                                    <td class="text-right">{{number_format($drc_c / $applications->where('station_id', '>', 0)->count() * 100, 2) }}%</td>
+                                    <th class="text-right">{{number_format($drc_c / $applications->where('station_id', '>', 0)->count() * 100, 2) }}%</th>
 
                                 </tr>
                                 @forelse($offices as $office)
@@ -92,22 +92,22 @@
                                         <td class="text-right">{{number_format($src_t, 0) }}</td>
                                         <td class="text-right">{{number_format($src_p, 0) }}</td>
                                         <td class="text-right">{{number_format($src_c, 0) }}</td>
-                                        <td class="text-right">
+                                        <th class="text-right">
                                             @if ($src_t != 0)
                                                 {{ number_format($src_c / $src_t * 100, 2) }}%
                                             @else
                                                 N/A
                                             @endif
-                                        </td>
+                                        </th>
                                         <td class="text-right">{{number_format($drc_p, 0) }}</td>
                                         <td class="text-right">{{number_format($drc_c, 0) }}</td>
-                                        <td class="text-right">
+                                        <th class="text-right">
                                             @if ($src_t != 0)
                                                 {{number_format($drc_c / $src_t * 100, 2) }}%
                                             @else
                                                 N/A
                                             @endif
-                                        </td>
+                                        </th>
                                     </tr>
                                 @empty
                                 @endforelse
