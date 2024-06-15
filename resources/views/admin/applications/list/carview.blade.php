@@ -40,7 +40,7 @@
                 <td width="20%">Date of Final Deliberation: <strong>N/A</strong></td>
             </tr>
             <tr>
-                <td align="left">District: <strong>DepEd Bohol</strong></td>
+                <td align="left">Office: <strong>DepEd Bohol</strong></td>
                 <td></td>
                 <td></td>
             </tr>
