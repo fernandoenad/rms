@@ -10,4 +10,6 @@ class Station extends Model
     use HasFactory;
 
     protected $connection = 'mysql_2';
+
+
 }

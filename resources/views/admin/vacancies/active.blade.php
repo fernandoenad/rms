@@ -38,7 +38,7 @@
                         <h3 class="card-title">List</h3>
                     </div>
                     <div class="card-body">
-                        <table  class="table table-sm table-bordered table-striped">
+                        <table id="list" class="table table-sm table-bordered table-striped">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -85,6 +85,7 @@
                                             <td class="text-right">{{$assessments->where('status','=',3)->count()}}</td>
                                         </tr>
                                     @endforeach
+                                    <!--
                                     <tr>
                                         <td></td>
                                         <td></td>
@@ -104,6 +105,7 @@
                                         <th colspan="2" class="text-center">{{ number_format($src_pending + $src_completed, 0)}}</th>
                                         <th colspan="2" class="text-center">{{ number_format($drc_pending + $drc_completed, 0)}}</th>
                                     </tr>
+                                    -->
                                 @else
                                     <tr>
                                         <td colspan="9">0 vacancies found.</td>
@@ -131,8 +133,8 @@
     <script> console.log('Hi!'); </script>
     <script>
         $(function () {
-            $("#applications").DataTable({
-            "responsive": true, "lengthChange": false, "autoWidth": false, "pageLength": 5,
+            $("#list").DataTable({
+            "responsive": true, "lengthChange": false, "autoWidth": false, "pageLength": 100, "ordering" : false,
             "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         });

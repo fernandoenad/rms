@@ -41,8 +41,7 @@
                         <table id="list" class="table table-sm table-bordered table-striped">
                             <thead>
                                 <tr>
-                                    <th>District</th>
-                                    <th class="text-right">Untagged applications</th>
+                                    <th width="30%">Stations</th>
                                     <th class="text-right">Tagged applications</th>
                                     <th class="text-right">Pending (SRC)</th>
                                     <th class="text-right">Completed (SRC)</th>
@@ -52,69 +51,59 @@
                             </thead>
                             <tbody>
                                 <tr>
-                                    <th>Summary</td>
-                                    <th class="text-right">{{number_format( $applications->where('station_id', '=', -1)->count(), 0) }}</th>
-                                    <th class="text-right">{{number_format( $applications->where('station_id', '>', 0)->count(), 0) }}</th>
+                                    <th>{{$office->name}} District</th>
+                                    <th class="text-right">{{number_format($src_t, 0) }}</th>
                                     <th class="text-right">{{number_format($src_p, 0) }}</th>
                                     <th class="text-right">{{number_format($src_c, 0) }}
-                                        @if($applications->where('station_id', '>', 0)->count() == 0) 
-                                            (N/A)
-                                        @else 
-                                            (<strong>{{number_format($src_c/$applications->where('station_id', '>', 0)->count() * 100, 2) }}%</strong>)
-                                        @endif
+                                        ({{number_format($src_c / $src_t * 100, 2) }}%)
                                     </th>
                                     <th class="text-right">{{number_format($src_c, 0) }}</th>
                                     <th class="text-right">{{number_format($drc_c, 0) }}
-                                        @if($applications->where('station_id', '>', 0)->count() == 0) 
-                                            (N/A)
-                                        @else 
-                                            (<strong>{{number_format($drc_c/$applications->where('station_id', '>', 0)->count() * 100, 2) }}%</strong>)
-                                        @endif
+                                        ({{number_format($drc_c / $src_t * 100, 2) }}%)
                                     </th>
+
                                 </tr>
-                                @forelse($offices as $office)
+                                @forelse($stations as $station)
                                     @php 
-                                        $stations = App\Models\Station::where('office_id', '=', $office->id)->pluck('id');
-                                        $src_t = App\Models\Application::whereIn('station_id', $stations)->count();
+                                        $src_t = App\Models\Application::where('station_id', $station->id)->count();
                                         $src_p = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
-                                            ->whereIn('applications.station_id', $stations)
+                                            ->where('station_id', $station->id)
                                             ->where('assessments.status', '=', 1)
                                             ->distinct('applications.id') // Ensure distinct applications are counted
                                             ->count('applications.id');
                                         $src_c = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
-                                            ->whereIn('applications.station_id', $stations)
+                                            ->where('station_id', $station->id)
                                             ->where('assessments.status', '=', 2)
                                             ->distinct('applications.id') // Ensure distinct applications are counted
                                             ->count('applications.id');
                                         $drc_p = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
-                                            ->whereIn('applications.station_id', $stations)
+                                            ->where('station_id', $station->id)
                                             ->where('assessments.status', '=', 2)
                                             ->distinct('applications.id') // Ensure distinct applications are counted
                                             ->count('applications.id');
                                         $drc_c = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
-                                            ->whereIn('applications.station_id', $stations)
+                                            ->where('station_id', $station->id)
                                             ->where('assessments.status', '=', 3)
                                             ->distinct('applications.id') // Ensure distinct applications are counted
                                             ->count('applications.id');
                                     @endphp
                                     <tr>
-                                        <td><a href="{{route('admin.vacancies.reports.show', $office)}}">{{$office->name}}</a></td>
-                                        <td class="text-right">-</td>
+                                        <td>{{$station->name}}</td>
                                         <td class="text-right">{{number_format($src_t, 0) }}</td>
                                         <td class="text-right">{{number_format($src_p, 0) }}</td>
-                                        <td class="text-right">{{number_format($src_c, 0) }}  
-                                            @if($src_t == 0) 
-                                                (N/A)
-                                            @else 
-                                                (<strong>{{number_format($src_c/$src_t * 100, 2) }}%</strong>)
+                                        <td class="text-right">{{number_format($src_c, 0) }}
+                                            @if ($src_t != 0)
+                                                <strong>({{ number_format($src_c / $src_t * 100, 2) }}%)</strong>
+                                            @else
+                                                N/A
                                             @endif
                                         </td>
                                         <td class="text-right">{{number_format($drc_p, 0) }}</td>
-                                        <td class="text-right">{{number_format($drc_c, 0) }}  
-                                            @if($src_t == 0) 
-                                                (N/A)
-                                            @else 
-                                                (<strong>{{number_format($drc_c/$src_t * 100, 2) }}%</strong>)
+                                        <td class="text-right">{{number_format($drc_c, 0) }}
+                                            @if ($src_t != 0)
+                                                <strong>({{number_format($drc_c / $src_t * 100, 2) }}%)</strong>
+                                            @else
+                                                N/A
                                             @endif
                                         </td>
                                     </tr>

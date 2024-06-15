@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use App\Models\Application;
 use App\Models\Inquiry;
 use App\Models\Vacancy;
+use App\Models\Station;
+use App\Models\Assessment;
+use Illuminate\Support\Facades\DB;
 use Auth;
 
 class ApplicationController extends Controller
@@ -97,7 +100,9 @@ class ApplicationController extends Controller
     public function edit(Application $application)
     {
         $vacancies = Vacancy::all();
-        return view('admin.applications.edit',['application' => $application, 'vacancies' => $vacancies]);
+        $stations = Station::all();
+
+        return view('admin.applications.edit',['application' => $application, 'vacancies' => $vacancies, 'stations' => $stations]);
     }
 
     public function update(Application $application, Request $request)
@@ -106,6 +111,7 @@ class ApplicationController extends Controller
         $data = $request->validate([
             'email' => 'required|email',
             'vacancy_id' => 'required',
+            'station_id' => 'required'
         ]);
 
         $application->update($data);
@@ -162,5 +168,17 @@ class ApplicationController extends Controller
         $inquiry = Inquiry::create($data);
 
         return redirect(route('admin.applications.show', $application))->with('status', 'The application status has been reverted.');
+    }
+
+    public function vacancy_show_carview(Vacancy $vacancy)
+    {
+            $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
+            ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
+            ->where('applications.vacancy_id', '=', $vacancy->id)
+            ->where('assessments.status', '>=', 2)
+            ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
+            ->get();
+
+        return view('admin.applications.list.carview', ['vacancy' => $vacancy, 'assessments' => $assessments]);
     }
 }

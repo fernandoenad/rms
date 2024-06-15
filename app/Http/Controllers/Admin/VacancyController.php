@@ -91,7 +91,7 @@ class VacancyController extends Controller
 
     public function active()
     {
-        $vacancies = Vacancy::where('status', '=', 1)->get();
+        $vacancies = Vacancy::orderBy('created_at', 'DESC')->get();
 
         return view('admin.vacancies.active',['vacancies' => $vacancies]);
     }
