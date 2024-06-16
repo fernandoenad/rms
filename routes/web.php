@@ -72,6 +72,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/applications/{vacancy}/show/carview', [AdminApplication::class, 'vacancy_show_carview'])->name('admin.applications.vacancy.show.carview');
 
     Route::get('/admin/vacancies/reports', [AdminVacancyReport::class, 'index'])->name('admin.vacancies.reports.index');
+    Route::get('/admin/vacancies/reports/nonassessed', [AdminVacancyReport::class, 'nonassessed'])->name('admin.vacancies.reports.nonassessed');
     Route::get('/admin/vacancies/reports/{office}', [AdminVacancyReport::class, 'show'])->name('admin.vacancies.reports.show');
 
     Route::get('/admin/vacancies/active', [AdminVacancy::class, 'active'])->name('admin.vacancies.active');
@@ -82,8 +83,6 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/vacancies/{vacancy}', [AdminVacancy::class, 'edit'])->name('admin.vacancies.edit');
     Route::put('/admin/vacancies/{vacancy}', [AdminVacancy::class, 'update'])->name('admin.vacancies.update');
     Route::get('/admin/vacancies/{vacancy}/delete', [AdminVacancy::class, 'delete'])->name('admin.vacancies.delete');
-
-
 
     Route::get('/admin/inquiries', [AdminInquiry::class, 'index'])->name('admin.inquiries.index');
 });

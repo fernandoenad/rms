@@ -80,4 +80,16 @@ class VacancyReportController extends Controller
 
         return view('admin.vacancies.reports.show', ['office' => $office, 'applications' => $applications, 'stations' => $stations, 'src_t' => $src_t, 'src_p' => $src_p, 'src_c' => $src_c, 'drc_c' => $drc_c]);
     }
+
+
+    public function nonassessed()
+    {
+        $applications = Application::leftJoin('assessments', 'applications.id', '=', 'assessments.application_id')
+            ->whereNull('assessments.id')
+            ->where('station_id', '>', 0)
+            ->distinct()
+            ->pluck('applications.station_id');
+        
+        return view('admin.vacancies.reports.nonassessed', ['applications' => $applications]);
+    }
 }
