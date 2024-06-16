@@ -1,7 +1,7 @@
 @extends('adminlte::page')
 
 @php
-    $title = "Active Positions";
+    $title = "Non-Assessed Report";
     $app_name = config('app.name', '') . ' [Admin]';
 @endphp 
 
@@ -16,6 +16,7 @@
             <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="{{ route('admin.index') }}">Dashboard</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.index') }}">Positions</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.reports.index') }}">Active Positions</a></li>
                 <li class="breadcrumb-item active">{{ $title }}</li>
             </ol>
         </div>
@@ -44,7 +45,7 @@
                                     <th width="30%">Stations</th>
                                     <th>District</th>
                                     <th class="text-right">Tagged applications</th>
-                                    <th class="text-right">Completed (SRC)</th>
+                                    <th class="text-right">Completed</th>
                                     <th class="text-right">Performance</th>
                                 </tr>
                             </thead>

@@ -36,11 +36,8 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">List</h3>
-                        <a class="float-right" href="{{ route('admin.vacancies.active') }}">
-                            &nbsp;Pending (DRC) report
-                        </a> 
                         <a class="float-right" href="{{ route('admin.vacancies.reports.nonassessed') }}">
-                            Non-assessed (SRC) report |
+                            Non-assessed (SRC) report
                         </a>
                     </div>
                     <div class="card-body">
