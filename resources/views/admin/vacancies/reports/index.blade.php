@@ -169,6 +169,8 @@
                 "autoWidth": false,
                 "pageLength": 100,
                 "lengthMenu": [5, 10, 25, 50, 100], // You can customize these values
+                "ordering": true, // Enable column sorting
+                "order": [], // Prevent initial ordering; you can customize the default sorting if needed
                 "dom": 'Blfrtip', // Ensure the buttons are displayed
                 "buttons": ["excel", "pdf", "print", "colvis"]
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
