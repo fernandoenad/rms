@@ -1,7 +1,7 @@
 @extends('adminlte::page')
 
 @php
-    $title = "Non-Assessed Report";
+    $title = "List";
     $app_name = config('app.name', '') . ' [Admin]';
 @endphp 
 
@@ -17,6 +17,7 @@
                 <li class="breadcrumb-item"><a href="{{ route('admin.index') }}">Dashboard</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.index') }}">Positions</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.reports.index') }}">Active Positions</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.reports.index') }}">Non-Assessed Report</a></li>
                 <li class="breadcrumb-item active">{{ $title }}</li>
             </ol>
         </div>
@@ -46,28 +47,22 @@
                             <thead>
                                 <tr>
                                     <th width="30%">Stations</th>
-                                    <th>District</th>
-                                    <th class="text-right">Tagged applications</th>
-                                    <th class="text-right">Completed</th>
-                                    <th class="text-right">Performance</th>
+                                    <th>Applicant</th>
+                                    <th>Position</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($applications as $application)
                                     @php 
-                                        $station =  App\Models\Station::find($application);
+                                        $station =  App\Models\Station::find($application->station_id);
                                         $office =  App\Models\Office::find($station->office_id); 
-                                        $src_t = App\Models\Application::where('station_id', '=', $application)->count();
-                                        $src_c = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
-                                            ->where('assessments.status', '=', 2)
-                                            ->where('station_id', '=', $application)->count();
                                     @endphp
                                     <tr>
-                                        <td>{{$station->code ?? '' }}- {{$station->name ?? '' }}</td>
-                                        <td>{{$office->name ?? '-' }}</td>
-                                        <td class="text-right">{{number_format($src_t,0)}}</td>
-                                        <td class="text-right">{{number_format($src_c,0)}}</td>
-                                        <td class="text-right">{{number_format($src_c/$src_t * 100 ,2)}}%</td>
+                                        <td>{{$station->code ?? '' }}- {{$station->name ?? '' }} ({{$office->name ?? '-' }})</td>
+                                        <td>{{$application->getFullname()}}</td>
+                                        <td>{{$application->vacancy->position_title}}</td>
+                                        <td><a href="{{route('admin.vacancies.reports.assess', $application)}}" class="btn btn-xs btn-primary">Assess</a></td>
                                     </tr>
                                 @empty
 

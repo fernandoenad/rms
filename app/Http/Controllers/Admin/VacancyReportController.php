@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Office;
 use App\Models\Application;
+use App\Models\Template;
+use App\Models\Assessment;
 use App\Models\Station;
 
 class VacancyReportController extends Controller
@@ -91,5 +93,35 @@ class VacancyReportController extends Controller
             ->pluck('applications.station_id');
         
         return view('admin.vacancies.reports.nonassessed', ['applications' => $applications]);
+    }
+
+    public function list()
+    {
+        $applications = Application::leftJoin('assessments', 'applications.id', '=', 'assessments.application_id')
+            ->whereNull('assessments.id')
+            ->where('station_id', '>', 0)
+            ->select('applications.*')
+            ->get();
+        
+        return view('admin.vacancies.reports.list', ['applications' => $applications]);
+    }
+
+    public function assess(Application $application)
+    {
+        $template = Template::find($application->vacancy->template_id);
+        $criteria = json_decode($template->template, true);
+        $asessment_details = $criteria;
+
+        foreach ($asessment_details as $key => $value) {
+            $asessment_details[$key] = is_numeric($asessment_details[$key]) ? 0 : '-';
+        }
+
+        $newAssessment = Assessment::create(['application_id' => $application->id,
+            'template_id' => $application->vacancy->template_id,
+            'assessment' => json_encode($asessment_details),
+            'status' => 2,
+        ]);
+
+        return redirect(route('admin.vacancies.reports.list'))->with('status', 'Application has been assessed.');
     }
 }
