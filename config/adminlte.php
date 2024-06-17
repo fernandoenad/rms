@@ -361,7 +361,7 @@ return [
             'text' => 'Positions',
             'url'  => 'admin/vacancies',
             'icon' => 'fas fa-fw fa-list',
-            'active' => ['admin/vacancies', 'admin/vacancies/active', 'admin/vacancies/create', 'regex:@^admin/vacancies/[0-9]+$@', 'regex:@^admin/vacancies/\d+/delete+$@', 'regex:@^admin/vacancies/\d+/edit+$@', 'admin/vacancies/reports', 'admin/vacancies/reports/list', 'admin/vacancies/reports/list/nonassessed', 'regex:@^admin/vacancies/reports/\d+$@']
+            'active' => ['admin/vacancies', 'admin/vacancies/active', 'admin/vacancies/create', 'regex:@^admin/vacancies/[0-9]+$@', 'regex:@^admin/vacancies/\d+/delete+$@', 'regex:@^admin/vacancies/\d+/edit+$@', 'admin/vacancies/reports', 'admin/vacancies/reports/list', 'admin/vacancies/reports/nonassessed', 'regex:@^admin/vacancies/reports/\d+$@']
         ],
         [
             'text' => 'Applications',
