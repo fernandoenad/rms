@@ -60,7 +60,7 @@
                                     @endphp
                                     <tr>
                                         <td>{{$station->code ?? '' }}- {{$station->name ?? '' }} ({{$office->name ?? '-' }})</td>
-                                        <td>{{$application->getFullname()}}</td>
+                                        <td>{{$application->getFullname()}}<br>Code: {{$application->application_code}}</td>
                                         <td>{{$application->vacancy->position_title}}</td>
                                         <td><a href="{{route('admin.vacancies.reports.assess', $application)}}" class="btn btn-xs btn-primary">Assess</a></td>
                                     </tr>
