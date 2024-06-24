@@ -70,7 +70,7 @@
                                             ->count('applications.id');
                                         $src_c = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
                                             ->where('station_id', $station->id)
-                                            ->where('assessments.status', '=', 2)
+                                            ->where('assessments.status', '>=', 2)
                                             ->distinct('applications.id') // Ensure distinct applications are counted
                                             ->count('applications.id');
                                         $drc_p = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
@@ -80,7 +80,7 @@
                                             ->count('applications.id');
                                         $drc_c = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
                                             ->where('station_id', $station->id)
-                                            ->where('assessments.status', '=', 3)
+                                            ->where('assessments.status', '>=', 3)
                                             ->distinct('applications.id') // Ensure distinct applications are counted
                                             ->count('applications.id');
                                     @endphp
