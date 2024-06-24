@@ -66,7 +66,7 @@
                                             (<strong>{{number_format($src_c/$applications->where('station_id', '>', 0)->count() * 100, 2) }}%</strong>)
                                         @endif
                                     </th>
-                                    <th class="text-right">{{number_format($src_c, 0) }}</th>
+                                    <th class="text-right">{{number_format($drc_p, 0) }}</th>
                                     <th class="text-right">{{number_format($drc_c, 0) }}
                                         @if($applications->where('station_id', '>', 0)->count() == 0) 
                                             (N/A)
@@ -86,7 +86,7 @@
                                             ->count('applications.id');
                                         $src_c = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
                                             ->whereIn('applications.station_id', $stations)
-                                            ->where('assessments.status', '=', 2)
+                                            ->where('assessments.status', '>=', 2)
                                             ->distinct('applications.id') // Ensure distinct applications are counted
                                             ->count('applications.id');
                                         $drc_p = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
@@ -96,7 +96,7 @@
                                             ->count('applications.id');
                                         $drc_c = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
                                             ->whereIn('applications.station_id', $stations)
-                                            ->where('assessments.status', '=', 3)
+                                            ->where('assessments.status', '>=', 3)
                                             ->distinct('applications.id') // Ensure distinct applications are counted
                                             ->count('applications.id');
                                     @endphp
