@@ -26,17 +26,23 @@ class ApplicationReportController extends Controller
         
         $src_c = Application::join('vacancies', 'vacancies.id', '=', 'applications.vacancy_id')
             ->join('assessments', 'assessments.application_id', '=', 'applications.id')
+            ->where('assessments.status', '>=', 2)
+            ->distinct('applications.id')
+            ->get()->count();
+        
+        $drc_p = Application::join('vacancies', 'vacancies.id', '=', 'applications.vacancy_id')
+            ->join('assessments', 'assessments.application_id', '=', 'applications.id')
             ->where('assessments.status', '=', 2)
             ->distinct('applications.id')
             ->get()->count();
         
         $drc_c = Application::join('vacancies', 'vacancies.id', '=', 'applications.vacancy_id')
             ->join('assessments', 'assessments.application_id', '=', 'applications.id')
-            ->where('assessments.status', '=', 3)
+            ->where('assessments.status', '>=', 3)
             ->distinct('applications.id')
             ->get()->count();
 
-        return view('guest.reports.index', ['offices' => $offices, 'applications' => $applications, 'src_p' => $src_p, 'src_c' => $src_c, 'drc_c' => $drc_c]);
+        return view('guest.reports.index', ['offices' => $offices, 'applications' => $applications, 'src_p' => $src_p, 'src_c' => $src_c, 'drc_p' => $drc_p, 'drc_c' => $drc_c]);
     }
 
     public function show(Office $office)

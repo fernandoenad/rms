@@ -51,12 +51,16 @@
                             <tbody>
                                 <tr>
                                     <th>Summary</th>
-                                    <td class="text-right">{{number_format( $applications->where('station_id', '=', -1)->count(), 0) }}</td>
-                                    <td class="text-right">{{number_format( $applications->where('station_id', '>', 0)->count(), 0) }}</td>
+                                    @php 
+                                        $untagged = $applications->where('station_id', '=', -1)->count();
+                                        $tagged = $applications->where('station_id', '>', 0)->count()
+                                    @endphp
+                                    <td class="text-right">{{number_format($untagged, 0) }}</td>
+                                    <td class="text-right">{{number_format($tagged, 0) }}</td>
                                     <td class="text-right">{{number_format($src_p, 0) }}</td>
                                     <td class="text-right">{{number_format($src_c, 0) }}</td>
-                                    <th class="text-right">{{number_format($src_c / $applications->where('station_id', '>', 0)->count() * 100, 2) }}%</th>
-                                    <td class="text-right">{{number_format($src_c, 0) }}</td>
+                                    <th class="text-right">{{number_format($src_c / $tagged * 100, 2) }}%</th>
+                                    <td class="text-right">{{number_format($drc_p, 0) }}</td>
                                     <td class="text-right">{{number_format($drc_c, 0) }}</td>
                                     <th class="text-right">{{number_format($drc_c / $applications->where('station_id', '>', 0)->count() * 100, 2) }}%</th>
 

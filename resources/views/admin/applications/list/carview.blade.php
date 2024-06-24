@@ -53,23 +53,24 @@
             <thead>
                 <tr class="table-danger" align="center">
                     <td scope="col" colspan="2" rowspan="2"><strong>Name of Application<strong></td>
-                    <td scope="col" rowspan="2" width="10%"><strong>Application Code<strong></td>
+                    <td scope="col" rowspan="2" width="8%"><strong>Application Code<strong></td>
                     <td scope="col" colspan="7" width="8%"><strong>COMPARATIVE ASSESSMENT RESULTS<strong></td>
                     <td scope="col" rowspan="2" width="8%"><strong>Remarks<strong></td>
+                    <td scope="col" rowspan="2" width="14%"><strong>School Applied for (District)<strong></td>
                     <td scope="col" colspan="2" width="5%"><strong><small>For Background Investigation (Y/N)</small><strong></td>
-                    <td scope="col" rowspan="2" width="8%">
+                    <td scope="col" rowspan="2" width="7%">
                         <strong><small><small>For Appointment</strong><br>To filed-out by the Appointing Officer/ Authority; Please sign opposite the name of the applicant)</small></small></td>
-                    <td scope="col" rowspan="2" width="8%">
+                    <td scope="col" rowspan="2" width="7%">
                         <strong><small>Status of Appointment</strong><br>(Based on availability of PBET/ LET/LEPT)</small></td>
                 </tr>
                 <tr class="table-danger" align="center">
-                    <th scope="col" width="5%">Education</th>
-                    <th scope="col" width="5%">Training</th>
-                    <th scope="col" width="5%">Experience</th>
-                    <th scope="col" width="5%">Rating</th>
-                    <th scope="col" width="5%">COI</th>
-                    <th scope="col" width="5%">NCOI</th>
-                    <th scope="col" width="5%">Total</th>
+                    <th scope="col" width="4%">Education</th>
+                    <th scope="col" width="4%">Training</th>
+                    <th scope="col" width="4%">Experience</th>
+                    <th scope="col" width="4%">Rating</th>
+                    <th scope="col" width="3%">COI</th>
+                    <th scope="col" width="3%">NCOI</th>
+                    <th scope="col" width="4%">Total</th>
                     <th scope="col" width="3%">Yes</th>
                     <th scope="col" width="3%">No</th>
                 </tr>
@@ -91,7 +92,10 @@
                                 @php $total_points += is_numeric($value) ? $value : 0; @endphp
                                 <td align="right">{{ is_numeric($value) ? $value : $total_points }}</td>
                         @endforeach
-                        <td align="left">{{ $assessment->status == 2 ? 'Initial results only. / ' . end($assessment_details) :  end($assessment_details) }}</td>
+                        <td align="left">{{ $assessment->status == 2 ? 'Initial only. / ' . end($assessment_details) :  end($assessment_details) }}</td>
+                        @php $school = App\Models\Station::find($application->station_id); @endphp
+                        @php $district = App\Models\Office::find($school->office_id); @endphp
+                        <td><small>{{ $school->code }}-{{ substr($school->name, 0, 20) }}</small></td>
                         <td></td>
                         <td></td>
                         <td></td>

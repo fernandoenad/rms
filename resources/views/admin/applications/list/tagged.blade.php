@@ -46,6 +46,9 @@
                         <a type="button" class="btn btn-sm btn-info float-right" target="_blank" href="{{route('admin.applications.vacancy.show.carview', $vacancy)}}">
                             <i class="fas fa-print"></i> CAR-RQA
                         </a>
+                        <a type="button" class="btn btn-sm btn-info float-right mr-1" target="_blank" href="{{route('admin.applications.vacancy.show.carview2', $vacancy)}}">
+                            <i class="fas fa-print"></i> CAR-RQA (Per District)
+                        </a>
                         <br><br>
                         
                         <table id="applications" class="table table-bordered table-striped">

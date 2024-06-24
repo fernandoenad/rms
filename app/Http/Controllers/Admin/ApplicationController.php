@@ -8,6 +8,7 @@ use App\Models\Application;
 use App\Models\Inquiry;
 use App\Models\Vacancy;
 use App\Models\Station;
+use App\Models\Office;
 use App\Models\Assessment;
 use Illuminate\Support\Facades\DB;
 use Auth;
@@ -180,5 +181,12 @@ class ApplicationController extends Controller
             ->get();
 
         return view('admin.applications.list.carview', ['vacancy' => $vacancy, 'assessments' => $assessments]);
+    }
+
+    public function vacancy_show_carview2(Vacancy $vacancy)
+    {
+        $offices = Office::all();
+
+        return view('admin.applications.list.carview2', ['vacancy' => $vacancy, 'offices' => $offices]);
     }
 }
