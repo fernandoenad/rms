@@ -53,8 +53,9 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @php $untagged = 0; $tagged = 0; $src_pending = 0; $src_completed = 0; $drc_pending = 0; $drc_completed = 0; @endphp
+                                
                                 @if(sizeof($vacancies) > 0)
+                                    @php $untagged = 0; $tagged = 0; $src_pending = 0; $src_completed = 0; $drc_pending = 0; $drc_completed = 0; @endphp
                                     @foreach($vacancies as $vacancy)
                                         @php 
                                             $untagged += $vacancy->applications()->where('station_id', '=', -1)->get()->count();
@@ -68,21 +69,39 @@
                                                     {{$vacancy->position_title}}
                                                 </a>
                                             </td>
-                                            <td class="text-right">{{ number_format($vacancy->applications()->where('station_id', '=', -1)->get()->count(),0) }}</td>
-                                            <td class="text-right">{{ number_format($vacancy->applications()->where('station_id', '!=', -1)->get()->count(),0) }}</td>
+                                            @php 
+                                                $untagged = $vacancy->applications()->where('station_id', '=', -1)->get()->count();
+                                                $tagged = $vacancy->applications()->where('station_id', '!=', -1)->get()->count();
+                                            @endphp 
+                                            <td class="text-right">{{ number_format($untagged,0) }}</td>
+                                            <td class="text-right">{{ number_format($tagged,0) }}</td>
                                             @php 
                                                 $assessments = $vacancy->applications()->join('assessments', 'assessments.application_id', '=', 'applications.id')->get(); 
-                                                //dd($assessment->count());
-                                                $src_pending += $assessments->where('status','=',1)->count();
-                                                $src_completed += $assessments->where('status','=',2)->count();
-                                                $drc_pending += $assessments->where('status','=',2)->count();
-                                                $drc_completed+= $assessments->where('status','=',3)->count();
+                                                        
+                                                if($assessments->count() > 0){
+                                                    $src_pending = $assessments->where('status','=',1)->count();
+                                                    $src_completed = $assessments->where('status','>=',2)->count();
+                                                    $drc_pending = $assessments->where('status','=',2)->count();
+                                                    $drc_completed =  $assessments->where('status','>=',3)->count();
+                                                } else {
+                                                    $src_pending = 0;
+                                                    $src_completed = 0;
+                                                    $drc_pending = 0;
+                                                    $drc_completed = 0;
+                                                }
 
                                             @endphp
-                                            <td class="text-right">{{$assessments->where('status','=',1)->count()}}</td>
-                                            <td class="text-right">{{$assessments->where('status','=',2)->count()}}</td>
-                                            <td class="text-right">{{$assessments->where('status','=',2)->count()}}</td>
-                                            <td class="text-right">{{$assessments->where('status','=',3)->count()}}</td>
+                                            @if($tagged > 0)
+                                                <td class="text-right">{{number_format($src_pending,0)}}</td>
+                                                <td class="text-right">{{number_format($src_completed,0)}} <strong>({{number_format($src_completed/$tagged*100,2)}}%)</strong></td>
+                                                <td class="text-right">{{number_format($drc_pending,0)}}</td>
+                                                <td class="text-right">{{number_format($drc_completed,0)}} <strong>({{number_format($drc_completed/$tagged*100,2)}}%)</strong></td>
+                                            @else 
+                                                <td class="text-right">{{number_format($src_pending,0)}}</td>
+                                                <td class="text-right">{{number_format($src_completed,0)}} (N/A)</td>
+                                                <td class="text-right">{{number_format($drc_pending,0)}}</td>
+                                                <td class="text-right">{{number_format($drc_completed,0)}} (N/A)</td>
+                                            @endif
                                         </tr>
                                     @endforeach
                                     <!--
