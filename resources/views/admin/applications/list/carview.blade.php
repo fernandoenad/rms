@@ -59,7 +59,7 @@
                     <td scope="col" rowspan="2" width="8%"><strong>Application Code<strong></td>
                     <td scope="col" colspan="7" width="8%"><strong>COMPARATIVE ASSESSMENT RESULTS<strong></td>
                     <td scope="col" rowspan="2" width="8%"><strong>Remarks<strong></td>
-                    <td scope="col" rowspan="2" width="14%"><strong>School Applied for (District)<strong></td>
+                    <td scope="col" rowspan="2" width="14%"><strong>School Applied for<strong></td>
                     <td scope="col" colspan="2" width="5%"><strong><small>For Background Investigation (Y/N)</small><strong></td>
                     <td scope="col" rowspan="2" width="7%">
                         <strong><small><small>For Appointment</strong><br>To filed-out by the Appointing Officer/ Authority; Please sign opposite the name of the applicant)</small></small></td>

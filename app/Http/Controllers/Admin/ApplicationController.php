@@ -31,7 +31,10 @@ class ApplicationController extends Controller
     {
         $search_str = $request->input('search_str');
 
-        $applications = Application::where('application_code', $search_str)->get();
+        $applications = Application::where('application_code', $search_str)
+            ->orWhere('first_name', 'LIKE', '%' . $search_str . '%')
+            ->orWhere('last_name', 'LIKE', '%' . $search_str . '%')
+            ->get();
 
         return view('admin.applications.index',['applications' => $applications]);
     }
