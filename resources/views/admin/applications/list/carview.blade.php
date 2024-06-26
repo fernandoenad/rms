@@ -30,6 +30,9 @@
 </head>
 <body>
     <div class="container-fluid mt-0">
+        <table width="100%" border="0">
+            <tr><td align="center"><image src="{{url('/')}}/images/header.png" height="100"></td</tr>
+        </table>
         <h4 class="text-center mb-3" align="center">COMPARATIVE ASSESSMENT RESULT - REGISTRY OF QUALIFIED APPLICANTS (CAR-RQA)</h4>
 
         <small>
@@ -37,7 +40,7 @@
             <tr>
                 <td width="40%" align="left">Position: <strong>{{ $vacancy->position_title }}</strong></td>
                 <td width="40%"></td>
-                <td width="20%">Date of Final Deliberation: <strong>N/A</strong></td>
+                <td width="20%">Date of Final Deliberation: <strong>________________</strong></td>
             </tr>
             <tr>
                 <td align="left">Office: <strong>DepEd Bohol</strong></td>
@@ -64,13 +67,13 @@
                         <strong><small>Status of Appointment</strong><br>(Based on availability of PBET/ LET/LEPT)</small></td>
                 </tr>
                 <tr class="table-danger" align="center">
-                    <th scope="col" width="4%">Education</th>
-                    <th scope="col" width="4%">Training</th>
-                    <th scope="col" width="4%">Experience</th>
-                    <th scope="col" width="4%">Rating</th>
-                    <th scope="col" width="3%">COI</th>
-                    <th scope="col" width="3%">NCOI</th>
-                    <th scope="col" width="4%">Total</th>
+                    <th scope="col" width="4%">Education <small>(10 pts)</small></th>
+                    <th scope="col" width="4%">Training <small>(10 pts)</small></th>
+                    <th scope="col" width="4%">Experience <small>(10 pts)</small></th>
+                    <th scope="col" width="4%">Rating <small>(10 pts)</small></th>
+                    <th scope="col" width="4%">COI<br><small>(35 pts)</small></th>
+                    <th scope="col" width="4%">NCOI<br><small>(25 pts)</small></th>
+                    <th scope="col" width="4%">Total <small>(100 pts)</small></th>
                     <th scope="col" width="3%">Yes</th>
                     <th scope="col" width="3%">No</th>
                 </tr>
@@ -90,7 +93,7 @@
                         <td>{{ $application->application_code }}</td>
                         @foreach($assessment_details as $key => $value)
                                 @php $total_points += is_numeric($value) ? $value : 0; @endphp
-                                <td align="right">{{ is_numeric($value) ? $value : $total_points }}</td>
+                                <td align="right">{{ is_numeric($value) ? number_format($value,2) : number_format($total_points,2) }}</td>
                         @endforeach
                         <td align="left">{{ $assessment->status == 2 ? 'Initial only. / ' . end($assessment_details) :  end($assessment_details) }}</td>
                         @php $school = App\Models\Station::find($application->station_id); @endphp
