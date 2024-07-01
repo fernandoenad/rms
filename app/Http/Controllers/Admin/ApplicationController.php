@@ -179,7 +179,8 @@ class ApplicationController extends Controller
             $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
             ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
             ->where('applications.vacancy_id', '=', $vacancy->id)
-            ->where('assessments.status', '>=', 2)
+            ->where('assessments.status', '=', 3)
+            ->where('assessments.score', '>=', 50)
             ->orderBy('assessments.score', 'DESC')
             ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
             ->get();

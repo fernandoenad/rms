@@ -40,7 +40,7 @@
             <tr>
                 <td width="40%" align="left">Position: <strong>{{ $vacancy->position_title }}</strong></td>
                 <td width="40%"></td>
-                <td width="20%">Date of Final Deliberation: <strong>________________</strong></td>
+                <td width="20%">Date of Final Deliberation: <strong>___________</strong></td>
             </tr>
             <tr>
                 <td align="left">Office: <strong>DepEd Bohol</strong></td>

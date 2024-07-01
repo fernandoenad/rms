@@ -51,7 +51,7 @@
                 <tr>
                     <td width="40%" align="left">Position: <strong>{{ $vacancy->position_title }}</strong></td>
                     <td width="40%"></td>
-                    <td width="20%">Date of Final Deliberation: <strong>________________</strong></td>
+                    <td width="20%">Date of Final Deliberation: <strong>___________</strong></td>
                 </tr>
                 <tr>
                     <td align="left">Office: <strong>{{$office->name}} District (DepEd Bohol)</strong></td>
@@ -68,6 +68,8 @@
                 $assessments = App\Models\Assessment::join('applications', 'applications.id', '=', 'assessments.application_id')
                     ->whereIn('applications.station_id', $station_ids)
                     ->where('applications.vacancy_id', '=', $vacancy->id)
+                    ->where('assessments.status', '=', 3)
+                    ->where('assessments.score', '>=', 50)
                     ->orderBy('assessments.score', 'DESC')
                     ->get();
             @endphp
