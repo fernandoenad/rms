@@ -194,4 +194,17 @@ class ApplicationController extends Controller
 
         return view('admin.applications.list.carview2', ['vacancy' => $vacancy, 'offices' => $offices]);
     }
+
+    public function vacancy_show_carview3(Vacancy $vacancy)
+    {
+            $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
+            ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
+            ->where('applications.vacancy_id', '=', $vacancy->id)
+            ->where('assessments.status', '=', 3)
+            ->orderBy('assessments.score', 'DESC')
+            ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
+            ->get();
+
+        return view('admin.applications.list.carview3', ['vacancy' => $vacancy, 'assessments' => $assessments]);
+    }
 }
