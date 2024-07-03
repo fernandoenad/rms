@@ -68,7 +68,7 @@
                                                             <i class="fas fa-eye"></i> View
                                                         </a>
                                                     @else 
-                                                        N/A 
+                                                        Pending 
                                                     @endif
                                                 </td>
                                             </tr>
