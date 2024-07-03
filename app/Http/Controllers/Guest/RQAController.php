@@ -19,12 +19,7 @@ class RQAController extends Controller
 
     public function show(Vacancy $vacancy)
     {
-        if(strpos($vacancy->position_title, 'Elementary') !== false || strpos($vacancy->position_title, 'Kindergarten') !== false) {
-            $offices = Office::all();
-
-            return view('admin.applications.list.carview2', ['vacancy' => $vacancy, 'offices' => $offices]);
-
-        } else if(strpos($vacancy->position_title, 'Elementary SPIMS') !== false || strpos($vacancy->position_title, 'Secondary SPIMS') !== false) {
+        if(strpos($vacancy->position_title, 'Elementary SPIMS') !== false  || strpos($vacancy->position_title, 'Secondary SPIMS') !== false) {
             $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
                 ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
                 ->where('applications.vacancy_id', '=', $vacancy->id)
@@ -34,6 +29,12 @@ class RQAController extends Controller
                 ->get();
 
             return view('admin.applications.list.carview3', ['vacancy' => $vacancy, 'assessments' => $assessments]);
+        
+
+        } else if(strpos($vacancy->position_title, 'Elementary') !== false || strpos($vacancy->position_title, 'Kindergarten') !== false) {
+            $offices = Office::all();
+
+            return view('admin.applications.list.carview2', ['vacancy' => $vacancy, 'offices' => $offices]);
 
         } else {
             $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
