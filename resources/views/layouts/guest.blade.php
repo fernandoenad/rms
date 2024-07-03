@@ -34,7 +34,7 @@
                             <a class="nav-link {{ Route::currentRouteName() == 'guest.applications.index' ? 'active' : ''}}" href="{{ route('guest.index') }}">Home</a>
                         </li> 
                         <li class="nav-item">
-                            <a class="nav-link {{ Route::currentRouteName() == 'guest.vacancies.index' ? 'active' : ''}}" href="{{ route('guest.vacancies.index') }}">Vacancies</a>
+                            <a class="nav-link {{ Route::currentRouteName() == 'guest.vacancies.index' || Route::currentRouteName() == 'guest.vacancies.apply'  ? 'active' : ''}}" href="{{ route('guest.vacancies.index') }}">Vacancies</a>
                         </li> 
                         <li class="nav-item">
                             <a class="nav-link {{ Route::currentRouteName() == 'guest.reports.index' ? 'active' : ''}}" href="{{ route('guest.reports.index') }}">Reports</a>
