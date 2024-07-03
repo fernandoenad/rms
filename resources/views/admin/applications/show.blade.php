@@ -211,7 +211,7 @@
                                                         <td>
                                                             {{$application->assessment->get_status()}}<br>
                                                             {{$application->assessment->created_at->format('M d, Y h:ia')}}<br>
-                                                            {{$application->assessment->status == 3 ? $application->assessment->updated_at->format('M d, Y h:ia') : 'TBA'}}
+                                                            {{$application->assessment->status >= 3 ? $application->assessment->updated_at->format('M d, Y h:ia') : 'TBA'}}
                                                         </td>                                                  
                                                     </tr>
                                                 @else 

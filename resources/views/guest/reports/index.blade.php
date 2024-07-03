@@ -1,7 +1,7 @@
 @extends('layouts.guest')
 
 @php
-    $title = "Active Positions";
+    $title = "Completion Report";
     $app_name = config('app.name', '') . ' [Admin]';
 @endphp 
 

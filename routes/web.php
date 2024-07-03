@@ -5,6 +5,7 @@ use App\Http\Controllers\HomeController as GuestHome;
 use App\Http\Controllers\Guest\ApplicationController as GuestApplication;
 use App\Http\Controllers\Guest\VacancyController as GuestVacancy;
 use App\Http\Controllers\Guest\ApplicationReportController as GuestApplicationReport;
+use App\Http\Controllers\Guest\RQAController as GuestRQA;
 use App\Http\Controllers\Admin\HomeController as AdminHome;
 use App\Http\Controllers\Admin\ApplicationController as AdminApplication;
 use App\Http\Controllers\Admin\UserController as AdminUser;
@@ -35,6 +36,9 @@ Route::get('/applications', [GuestApplication::class, 'index'])->name('guest.app
 
 Route::get('/reports', [GuestApplicationReport::class, 'index'])->name('guest.reports.index');
 Route::get('/reports/{office}', [GuestApplicationReport::class, 'show'])->name('guest.reports.show');
+
+Route::get('/rqas', [GuestRQA::class, 'index'])->name('guest.rqas.index');
+Route::get('/rqas/{vacancy}', [GuestRQA::class, 'show'])->name('guest.rqas.show');
 
 // already applied
 Route::post('/applications/{vacancy}/apply', [GuestApplication::class, 'store'])->name('guest.applications.store');

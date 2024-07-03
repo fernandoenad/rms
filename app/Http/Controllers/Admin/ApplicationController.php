@@ -176,7 +176,7 @@ class ApplicationController extends Controller
 
     public function vacancy_show_carview(Vacancy $vacancy)
     {
-            $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
+        $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
             ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
             ->where('applications.vacancy_id', '=', $vacancy->id)
             ->where('assessments.status', '=', 3)

@@ -37,6 +37,7 @@ class Assessment extends Model
             case 1: $label = 'SRC Pending'; break;
             case 2: $label = 'SRC Completed/DRC Pending'; break;
             case 3: $label = 'DRC Completed'; break;
+            case 4: $label = 'Disqualified'; break;
         }
 
         return $label;

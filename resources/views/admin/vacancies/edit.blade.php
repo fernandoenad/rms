@@ -147,6 +147,7 @@
                                     <option value="">---select---</option>
                                     <option value="0" {{ $vacancy->level1_status == 0 ? 'selected' : '' }}>Close</option>
                                     <option value="1" {{ $vacancy->level1_status == 1 ? 'selected' : '' }}>Open</option>
+                                    <option value="2" {{ $vacancy->level1_status == 2 ? 'selected' : '' }}>Completed</option>
                                 </select>
                                 @error('level1_status')
                                     <span class="text-danger"><small>{{ $message }}</small></span>
@@ -160,6 +161,7 @@
                                     <option value="">---select---</option>
                                     <option value="0" {{ $vacancy->level2_status == 0 ? 'selected' : '' }}>Close</option>
                                     <option value="1" {{ $vacancy->level2_status == 1 ? 'selected' : '' }}>Open</option>
+                                    <option value="2" {{ $vacancy->level2_status == 2 ? 'selected' : '' }}>Completed</option>
                                 </select>
                                 @error('level2_status')
                                     <span class="text-danger"><small>{{ $message }}</small></span>
