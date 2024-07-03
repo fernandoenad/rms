@@ -56,14 +56,14 @@
                                                 </td>
                                                 <td>{{$vacancy->getOffice()}}</td>
                                                 <td>
-                                                    @if($vacancy->level2_status == 2)
-                                                        Completed 
+                                                    @if($vacancy->level2_status == 3)
+                                                        Posted 
                                                     @else 
                                                         Pending 
                                                     @endif
                                                 </td>
                                                 <td>
-                                                    @if($vacancy->level2_status == 2)
+                                                    @if($vacancy->level2_status == 3)
                                                         <a class="btn btn-xs btn-success" href="{{route('guest.rqas.show', $vacancy)}}" target="_blank">
                                                             <i class="fas fa-eye"></i> View
                                                         </a>
