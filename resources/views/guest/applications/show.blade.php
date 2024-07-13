@@ -64,7 +64,10 @@
                                     alt="User profile picture">
                             </div>
                             <h3 class="profile-username text-center">{{$application->getFullname()}}</h3>
-                            <p class="text-muted text-center">{{$application->vacancy->position_title}}</p>
+                            <p class="text-muted text-center">{{$application->vacancy->position_title}}<br>
+                            @php  $station = App\Models\Station::find($application->station_id); @endphp
+                            {{ isset($station) ? $station->name : ($application->station_id == 0 ? 'Division' : 'Untagged') }}
+                            </p>
                         </div>
                         <!-- /.card-body -->
                     </div>
@@ -263,7 +266,17 @@
                                 </div>
                                 <div class="chart tab-pane p-0" id="my-queries">
                                     <div class="direct-chat-messages" style="min-height: 350px">
-                                        <div class="direct-chat-msg left}}">
+                                        <div class="direct-chat-msg left">
+                                            <div class="direct-chat-infos clearfix">
+                                                <span class="direct-chat-name float-left">{{ config('app.name', '') }} System</span>
+                                                <span class="direct-chat-timestamp float-left"></span>
+                                            </div>
+                                            <img class="direct-chat-img" src="{{url('/')}}/images/user.png" alt="user image">
+                                            <div class="direct-chat-text">
+                                                Application was created on {{ $application->created_at->format('M d, Y @ h:ia') }}.
+                                            </div>
+                                        </div>
+                                        <div class="direct-chat-msg left">
                                             <div class="direct-chat-infos clearfix">
                                                 <span class="direct-chat-name float-left">{{ config('app.name', '') }} System</span>
                                                 <span class="direct-chat-timestamp float-left"></span>

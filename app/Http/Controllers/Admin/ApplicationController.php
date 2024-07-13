@@ -10,6 +10,7 @@ use App\Models\Vacancy;
 use App\Models\Station;
 use App\Models\Office;
 use App\Models\Assessment;
+use App\Models\Template;
 use Illuminate\Support\Facades\DB;
 use Auth;
 
@@ -109,6 +110,14 @@ class ApplicationController extends Controller
         return view('admin.applications.edit',['application' => $application, 'vacancies' => $vacancies, 'stations' => $stations]);
     }
 
+    public function edit_scores(Application $application)
+    {
+        $template = Template::find($application->vacancy->template_id);
+        $assessment = $application->assessment->first();
+
+        return view('admin.applications.edit_scores',['application' => $application, 'assessment' => $assessment, 'template' => $template]);
+    }
+
     public function update(Application $application, Request $request)
     {
         //dd($request);
@@ -121,6 +130,39 @@ class ApplicationController extends Controller
         $application->update($data);
 
         return redirect(route('admin.applications.index'))->with('status', 'Application was successfully updated.');
+    }
+
+    public function update_scores(Application $application, Request $request)
+    {
+        $template = Template::find($application->vacancy->template_id);
+        $criteria = json_decode($template->template, true);
+        $template_details = $criteria;
+        $keys = array_keys($template_details);
+
+        $formData = $request->all();
+
+        $totalPoints = 0;
+
+        foreach($request->except('_token') as $key => $value) {
+            if (is_numeric($value)) {
+                $totalPoints += (float)$value;
+            }
+        }
+
+        $filteredFormData = array_intersect_key($formData, array_flip($keys));
+
+        $assessment = Assessment::where('application_id', '=', $application->id)->first();
+
+        $assessment->update(['assessment' => json_encode($filteredFormData), 'score' => $totalPoints]); 
+
+        $data['application_id'] = $application->id;
+        $data['author'] =  auth()->user()->name;
+        $data['message'] = 'The assessment scores were updated in the top-most level. You can view your updated scores via the Scores tab.';
+        $data['status'] = 0;
+
+        $inquiry = Inquiry::create($data);
+
+        return redirect(route('admin.applications.edit_scores', [$application]))->with('status', 'Assessment was successfully updated.');
     }
 
     public function saveInquiry(Application $application, Request $request)
@@ -184,20 +226,28 @@ class ApplicationController extends Controller
             ->orderBy('assessments.score', 'DESC')
             ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
             ->get();
-
-        return view('admin.applications.list.carview', ['vacancy' => $vacancy, 'assessments' => $assessments]);
+        
+        if(str_contains($vacancy->template->type,'Non-Teaching')){
+            return view('admin.applications.list.carviewnt', ['vacancy' => $vacancy, 'assessments' => $assessments]);
+        } else {
+            return view('admin.applications.list.carview', ['vacancy' => $vacancy, 'assessments' => $assessments]);
+        }
     }
 
     public function vacancy_show_carview2(Vacancy $vacancy)
     {
         $offices = Office::all();
 
-        return view('admin.applications.list.carview2', ['vacancy' => $vacancy, 'offices' => $offices]);
+        if(str_contains($vacancy->template->type,'Non-Teaching')){
+            return view('admin.applications.list.carview2nt', ['vacancy' => $vacancy, 'offices' => $offices]);
+        } else {
+            return view('admin.applications.list.carview2', ['vacancy' => $vacancy, 'offices' => $offices]);
+        }
     }
 
     public function vacancy_show_carview3(Vacancy $vacancy)
     {
-            $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
+        $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
             ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
             ->where('applications.vacancy_id', '=', $vacancy->id)
             ->where('assessments.status', '=', 3)
@@ -205,6 +255,10 @@ class ApplicationController extends Controller
             ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
             ->get();
 
-        return view('admin.applications.list.carview3', ['vacancy' => $vacancy, 'assessments' => $assessments]);
+        if(str_contains($vacancy->template->type,'Non-Teaching')){
+            return view('admin.applications.list.carview3nt', ['vacancy' => $vacancy, 'assessments' => $assessments]);
+        } else {
+            return view('admin.applications.list.carview3', ['vacancy' => $vacancy, 'assessments' => $assessments]);
+        }
     }
 }

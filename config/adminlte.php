@@ -367,7 +367,7 @@ return [
             'text' => 'Applications',
             'url'  => 'admin/applications',
             'icon' => 'fas fa-fw fa-folder',
-            'active' => ['admin/applications', 'admin/applications/create', 'regex:@^admin/applications/[0-9]+$@', 'regex:@^admin/applications/\d+/delete+$@', 'regex:@^admin/applications/\d+/edit+$@', 'regex:@^admin/applications/\d+/show+$@', 'regex:@^admin/applications/\d+/show/tagged+$@']
+            'active' => ['admin/applications', 'admin/applications/create', 'regex:@^admin/applications/\d+/edit_scores+$@', 'regex:@^admin/applications/[0-9]+$@', 'regex:@^admin/applications/\d+/delete+$@', 'regex:@^admin/applications/\d+/edit+$@', 'regex:@^admin/applications/\d+/show+$@', 'regex:@^admin/applications/\d+/show/tagged+$@']
         ],
         [
             'text' => 'Inquiries',

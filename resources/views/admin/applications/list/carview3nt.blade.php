@@ -55,9 +55,9 @@
         <table border="1">
             <thead>
                 <tr class="table-danger" align="center">
-                    <td scope="col" colspan="2" rowspan="2"><strong>Name of Application<strong></td>
+                    <td scope="col" colspan="2" rowspan="2" width="20%"><strong>Name of Application<strong></td>
                     <td scope="col" rowspan="2" width="8%"><strong>Application Code<strong></td>
-                    <td scope="col" colspan="7" width="8%"><strong>COMPARATIVE ASSESSMENT RESULTS<strong></td>
+                    <td scope="col" colspan="11" width="8%"><strong>COMPARATIVE ASSESSMENT RESULTS<strong></td>
                     <td scope="col" rowspan="2" width="8%"><strong>Remarks<strong></td>
                     <td scope="col" rowspan="2" width="14%"><strong>School Applied for<strong></td>
                     <td scope="col" colspan="2" width="5%"><strong><small>For Background Investigation (Y/N)</small><strong></td>
@@ -67,12 +67,11 @@
                         <strong><small>Status of Appointment</strong><br>(Based on availability of PBET/ LET/LEPT)</small></td>
                 </tr>
                 <tr class="table-danger" align="center">
-                    <th scope="col" width="4%">Education <small>(10 pts)</small></th>
-                    <th scope="col" width="4%">Training <small>(10 pts)</small></th>
-                    <th scope="col" width="4%">Experience <small>(10 pts)</small></th>
-                    <th scope="col" width="4%">Rating <small>(10 pts)</small></th>
-                    <th scope="col" width="4%">COI<br><small>(35 pts)</small></th>
-                    <th scope="col" width="4%">NCOI<br><small>(25 pts)</small></th>
+                    @php $template = json_decode($vacancy->template->template, true); array_pop($template); @endphp 
+                    @foreach($template as $key => $value)
+                        <th scope="col" width="4%"><small><small>{{str_replace('_', ' ', $key)}} <br>({{$value}} pts)</small></small></th>
+
+                    @endforeach
                     <th scope="col" width="4%">Total <small>(100 pts)</small></th>
                     <th scope="col" width="3%">Yes</th>
                     <th scope="col" width="3%">No</th>
@@ -146,7 +145,6 @@
                 <td>&nbsp;</td>
                 <td><img src="{{url('images/signatures/ompad.png')}}" height="50"><br><strong>EDUARDO A. OMPAD EdD, CESE</strong><br>OIC-Office of the Asst. Schools Division Superintendent<br>HRMPSB Chairman</td>
                 <td>&nbsp;</td>
-
             </tr>
         </table>
     </small>

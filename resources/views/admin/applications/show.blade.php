@@ -58,16 +58,20 @@
                         <strong><i class="fas fa-at mr-1"></i> Email</strong>
                         <p class="text-muted">{{$application->email}}</p>
                         <hr>
-                        <a href="{{route('admin.applications.edit', ['application' => $application])}}" class="btn btn-sm btn-warning" title="Modify">
-                            <span class="fas primary fa-fw fa-edit"></span> Edit 
+                        <a href="{{route('admin.applications.edit', ['application' => $application])}}" class="btn btn-sm btn-warning" title="Modify application">
+                            <span class="fas primary fa-fw fa-edit"></span>  
+                        </a>
+                        
+                        <a href="{{route('admin.applications.edit_scores', ['application' => $application])}}" class="btn btn-sm btn-primary" title="Modify assessment">
+                            <span class="fas primary fa-fw fa-list"></span>  
                         </a>
                         <a href="{{route('admin.applications.delete', ['application' => $application])}}" class="btn btn-sm btn-danger float-right {{ $application->station_id != -1 ? 'disabled' : '' }}" 
                             onclick="return confirm('This will delete the application. Are you sure?')" title="Delete">
-                            <span class="fas fa-fw fa-trash"></span> Delete
+                            <span class="fas fa-fw fa-trash"></span> 
                         </a>
-                        <a href="{{route('admin.applications.revert', $application)}}" class="btn btn-sm btn-info {{ isset($application->assessment) && $application->assessment->count() > 0 ? '' : 'disabled' }}" 
+                        <a href="{{route('admin.applications.revert', $application)}}" class="btn btn-sm btn-info {{ isset($application->assessment) && $application->assessment->count() > 0 ? '' : 'disabled' }}  {{$application->vacancy->level2_status == 3 ? 'disabled' :'' }}" 
                             onclick="return confirm('This will revert status to new deleting the existing scores in the process. Are you sure?')" title="Revert to new">
-                            <span class="fas fa-fw fa-reply"></span> Revert
+                            <span class="fas fa-fw fa-reply"></span> 
                         </a>
                         
                     </div>
@@ -99,6 +103,16 @@
                                 <div class="chart tab-pane active" id="queries">
                                     <div class="card-body">
                                         <div class="direct-chat-messages" style="min-height: 480px">
+                                            <div class="direct-chat-msg right">
+                                                <div class="direct-chat-infos clearfix">
+                                                    <span class="direct-chat-name float-right">{{ config('app.name', '') }} System</span>
+                                                    <span class="direct-chat-timestamp float-right"></span>
+                                                </div>
+                                                <img class="direct-chat-img" src="{{url('/')}}/images/user.png" alt="user image">
+                                                <div class="direct-chat-text">
+                                                    Application was created on {{ $application->created_at->format('M d, Y @ h:ia') }}.
+                                                </div>
+                                            </div>
                                         @if(sizeof($applicationInquiries) > 0)
                                             @foreach($applicationInquiries as $applicationInquiry)
                                                 <!-- Post -->

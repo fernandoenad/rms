@@ -1,7 +1,7 @@
 @extends('adminlte::page')
 
 @php
-    $title = "Edit Application";
+    $title = "Modify Application";
     $app_name = config('app.name', '') . ' [Admin]';
 @endphp 
 
@@ -29,21 +29,12 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Modify for record ID# <strong>{{$application->id}}</strong></h3>
+                        <h3 class="card-title">Modify Application Code: <strong>{{$application->application_code}}</strong></h3>
                     </div>
                     <form method="post" action="{{route('admin.applications.update', ['application' => $application])}}">
                         @csrf
                         @method('put')
                         <div class="card-body">
-                            <div class="form-group">
-                                <label for="#">Application code</label>
-                                <input type="text" class="form-control" placeholder="Enter application code" 
-                                    name="application_code" class="@error('application_code') is-invalid @enderror"
-                                    value="{{ $application->application_code }}" readonly>
-                                @error('application_code')
-                                    <span class="text-danger"><small>{{ $message }}</small></span>
-                                @enderror
-                            </div>
                             <div class="form-group">
                                 <label for="#">Applicant's email</label>
                                 <input type="email" class="form-control" placeholder="Enter applicant's email" 
