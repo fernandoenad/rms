@@ -52,6 +52,10 @@
                         <a type="button" class="btn btn-sm btn-info float-right mr-1" target="_blank" href="{{route('admin.applications.vacancy.show.carview3', $vacancy)}}">
                             <i class="fas fa-print"></i> CAR-RQA (SPIMS)
                         </a>
+
+                        <a type="button" class="btn btn-sm btn-info float-right mr-1" target="_blank" href="{{route('admin.applications.vacancy.show.carview4', $vacancy)}}">
+                            <i class="fas fa-print"></i> CAR
+                        </a>
                         <br><br>
                         
                         <table id="applications" class="table table-bordered table-striped">
