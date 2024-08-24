@@ -79,6 +79,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/applications/{vacancy}/show/carview2', [AdminApplication::class, 'vacancy_show_carview2'])->name('admin.applications.vacancy.show.carview2');
     Route::get('/admin/applications/{vacancy}/show/carview3', [AdminApplication::class, 'vacancy_show_carview3'])->name('admin.applications.vacancy.show.carview3');
     Route::get('/admin/applications/{vacancy}/show/carview4', [AdminApplication::class, 'vacancy_show_carview4'])->name('admin.applications.vacancy.show.carview4');
+    Route::get('/admin/applications/{vacancy}/show/carview5', [AdminApplication::class, 'vacancy_show_carview5'])->name('admin.applications.vacancy.show.carview5');
 
     Route::get('/admin/vacancies/reports', [AdminVacancyReport::class, 'index'])->name('admin.vacancies.reports.index');
     Route::get('/admin/vacancies/reports/nonassessed', [AdminVacancyReport::class, 'nonassessed'])->name('admin.vacancies.reports.nonassessed');

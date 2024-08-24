@@ -43,19 +43,34 @@
                         </a>
                     </div>
                     <div class="card-body">
-                        <a type="button" class="btn btn-sm btn-info float-right" target="_blank" href="{{route('admin.applications.vacancy.show.carview', $vacancy)}}">
-                            <i class="fas fa-print"></i> CAR-RQA
-                        </a>
-                        <a type="button" class="btn btn-sm btn-info float-right mr-1" target="_blank" href="{{route('admin.applications.vacancy.show.carview2', $vacancy)}}">
-                            <i class="fas fa-print"></i> CAR-RQA (Per District)
-                        </a>
-                        <a type="button" class="btn btn-sm btn-info float-right mr-1" target="_blank" href="{{route('admin.applications.vacancy.show.carview3', $vacancy)}}">
-                            <i class="fas fa-print"></i> CAR-RQA (SPIMS)
-                        </a>
-
-                        <a type="button" class="btn btn-sm btn-info float-right mr-1" target="_blank" href="{{route('admin.applications.vacancy.show.carview4', $vacancy)}}">
-                            <i class="fas fa-print"></i> CAR
-                        </a>
+                        <div class="btn-group float-right">
+                            <button type="button" class="btn btn-info btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <i class="fas fa-print"></i> Reports
+                            </button>
+                            <div class="dropdown-menu">
+                                <div class="dropdown-divider"></div>
+                                <h6 class="dropdown-header">Teaching</h6>
+                                <a class="dropdown-item" target="_blank" href="{{route('admin.applications.vacancy.show.carview', $vacancy)}}">
+                                    CAR-RQA (DO Level)
+                                </a>
+                                <a class="dropdown-item" target="_blank" href="{{route('admin.applications.vacancy.show.carview2', $vacancy)}}">
+                                    CAR-RQA (Per District)
+                                </a>
+                                <a class="dropdown-item" target="_blank" href="{{route('admin.applications.vacancy.show.carview3', $vacancy)}}">
+                                    CAR-RQA (SPIMS)
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <h6 class="dropdown-header">Non-Teaching</h6>
+                                <a class="dropdown-item" target="_blank" href="{{route('admin.applications.vacancy.show.carview4', $vacancy)}}">
+                                    CAR
+                                </a>
+                                <a class="dropdown-item" target="_blank" href="{{route('admin.applications.vacancy.show.carview5', $vacancy)}}">
+                                    CAR-RQA
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <h6 class="dropdown-header">Teaching-Related</h6>
+                            </div>
+                        </div>
                         <br><br>
                         
                         <table id="applications" class="table table-bordered table-striped">
