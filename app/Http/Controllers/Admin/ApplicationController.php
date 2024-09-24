@@ -153,7 +153,7 @@ class ApplicationController extends Controller
 
         $assessment = Assessment::where('application_id', '=', $application->id)->first();
 
-        $assessment->update(['assessment' => json_encode($filteredFormData), 'score' => $totalPoints]); 
+        $assessment->update(['assessment' => json_encode($filteredFormData), 'score' => $totalPoints, 'status' => 3]); 
 
         $data['application_id'] = $application->id;
         $data['author'] =  auth()->user()->name;
@@ -267,18 +267,14 @@ class ApplicationController extends Controller
         $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
             ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
             ->where('applications.vacancy_id', '=', $vacancy->id)
-            ->where('assessments.status', '=', 3)
+            ->where('assessments.status', '>=', 2)
             ->orderBy('applications.last_name', 'ASC')
             ->orderBy('applications.first_name', 'ASC')
             ->orderBy('applications.middle_name', 'ASC')
             ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
             ->get();
 
-        if(str_contains($vacancy->template->type,'SG')){
-            return view('admin.applications.list.carview4nt', ['vacancy' => $vacancy, 'assessments' => $assessments]);
-        } else {
-            return view('admin.applications.list.carview4', ['vacancy' => $vacancy, 'assessments' => $assessments]);
-        }
+        return view('admin.applications.list.carview4nt', ['vacancy' => $vacancy, 'assessments' => $assessments]);
     }
 
     public function vacancy_show_carview5(Vacancy $vacancy)
@@ -292,10 +288,6 @@ class ApplicationController extends Controller
             ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
             ->get();
 
-        if(str_contains($vacancy->template->type,'SG')){
-            return view('admin.applications.list.carview5nt', ['vacancy' => $vacancy, 'assessments' => $assessments]);
-        } else {
-            return view('admin.applications.list.carview4', ['vacancy' => $vacancy, 'assessments' => $assessments]);
-        }
+        return view('admin.applications.list.carview5nt', ['vacancy' => $vacancy, 'assessments' => $assessments]);
     }
 }

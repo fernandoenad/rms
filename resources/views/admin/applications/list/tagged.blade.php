@@ -60,15 +60,13 @@
                                     CAR-RQA (SPIMS)
                                 </a>
                                 <div class="dropdown-divider"></div>
-                                <h6 class="dropdown-header">Non-Teaching</h6>
+                                <h6 class="dropdown-header">Non/Related</h6>
                                 <a class="dropdown-item" target="_blank" href="{{route('admin.applications.vacancy.show.carview4', $vacancy)}}">
                                     CAR
                                 </a>
                                 <a class="dropdown-item" target="_blank" href="{{route('admin.applications.vacancy.show.carview5', $vacancy)}}">
                                     CAR-RQA
                                 </a>
-                                <div class="dropdown-divider"></div>
-                                <h6 class="dropdown-header">Teaching-Related</h6>
                             </div>
                         </div>
                         <br><br>
