@@ -238,7 +238,7 @@ class ApplicationController extends Controller
     {
         $offices = Office::all();
 
-        if(str_contains($vacancy->template->type,'Non-Teaching')){
+        if(str_contains($vacancy->template->type,'SG')){
             return view('admin.applications.list.carview2nt', ['vacancy' => $vacancy, 'offices' => $offices]);
         } else {
             return view('admin.applications.list.carview2', ['vacancy' => $vacancy, 'offices' => $offices]);
@@ -255,7 +255,7 @@ class ApplicationController extends Controller
             ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
             ->get();
 
-        if(str_contains($vacancy->template->type,'Non-Teaching')){
+        if(str_contains($vacancy->template->type,'SG')){
             return view('admin.applications.list.carview3nt', ['vacancy' => $vacancy, 'assessments' => $assessments]);
         } else {
             return view('admin.applications.list.carview3', ['vacancy' => $vacancy, 'assessments' => $assessments]);
@@ -274,7 +274,7 @@ class ApplicationController extends Controller
             ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
             ->get();
 
-        if(str_contains($vacancy->template->type,'Non-Teaching')){
+        if(str_contains($vacancy->template->type,'SG')){
             return view('admin.applications.list.carview4nt', ['vacancy' => $vacancy, 'assessments' => $assessments]);
         } else {
             return view('admin.applications.list.carview4', ['vacancy' => $vacancy, 'assessments' => $assessments]);
@@ -292,7 +292,7 @@ class ApplicationController extends Controller
             ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
             ->get();
 
-        if(str_contains($vacancy->template->type,'Non-Teaching')){
+        if(str_contains($vacancy->template->type,'SG')){
             return view('admin.applications.list.carview5nt', ['vacancy' => $vacancy, 'assessments' => $assessments]);
         } else {
             return view('admin.applications.list.carview4', ['vacancy' => $vacancy, 'assessments' => $assessments]);
