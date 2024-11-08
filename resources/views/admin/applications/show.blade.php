@@ -61,10 +61,15 @@
                         <a href="{{route('admin.applications.edit', ['application' => $application])}}" class="btn btn-sm btn-warning" title="Modify application">
                             <span class="fas primary fa-fw fa-edit"></span>  
                         </a>
-                        
-                        <a href="{{route('admin.applications.edit_scores', ['application' => $application])}}" class="btn btn-sm btn-primary" title="Modify assessment">
+                        @if($application->assessment !== null)
+                            <a href="{{route('admin.applications.edit_scores', ['application' => $application])}}" class="btn btn-sm btn-primary" title="Modify assessment">
+                                <span class="fas primary fa-fw fa-list"></span>  
+                            </a>
+                        @else 
+                        <a href="#" class="btn btn-sm btn-primary" title="Modify assessment" onClick="return confirm('Action not permitted! This application was not taken-in yet. Take in the application first via the School/Office portal.')">
                             <span class="fas primary fa-fw fa-list"></span>  
                         </a>
+                        @endif
                         <a href="{{route('admin.applications.delete', ['application' => $application])}}" class="btn btn-sm btn-danger float-right {{ $application->station_id != -1 ? 'disabled' : '' }}" 
                             onclick="return confirm('This will delete the application. Are you sure?')" title="Delete">
                             <span class="fas fa-fw fa-trash"></span> 
