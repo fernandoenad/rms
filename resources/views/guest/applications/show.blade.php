@@ -232,32 +232,34 @@
                                                 <tr>
                                                     <th width="20%">Teaching</th>
                                                     <td>
-                                                        <em>Fresh applicants:</em>
+                                                        Follow the guidelines outlined in the memo regarding this vacancy. 
+                                                                You may access the full memorandum containing full details and Annex A via 
+                                                                <a href="https://www.depedbohol.org/wp-content/uploads/2025/01/DM-No.-052-s.-2025.pdf">
+                                                                    Division Memorandum 052, s. 2025</a>.
+                                                                     
+                                                        <br>
+                                                        <br>
+                                                        <img src="https://scontent.fcgy2-1.fna.fbcdn.net/v/t39.30808-6/475250344_10236238007080676_3592789386380754359_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=100&ccb=1-7&_nc_sid=127cfc&_nc_ohc=5yfue4tW2mcQ7kNvgEyNE6F&_nc_zt=23&_nc_ht=scontent.fcgy2-1.fna&_nc_gid=ACe3PLqda6qKpHWSAOyS_-l&oh=00_AYCVDOzHYRtirva0u7sINGaW1W1ufa4di7kUOhFlw31MSw&oe=67A3107F"
+                                                            width="450">
+                                                        <br>
+                                                        <br>
+                                                        <em>Take Note:</em>
                                                         <ol> 
-                                                            <li>Follow the guidelines outlined in the memo regarding this vacancy. </li>
-                                                            <li>Organize two folders: one containing the original documents and another containing the photocopied documents.</li>
-                                                            <li>Print the profile page and affix it to the front of both folders.</li>
-                                                            <li>Visit the school where you intend to apply for an initial assessment.</li>
-                                                            <li>Make sure to bring along with you the folder containing the original documents before leaving the school.</li>
+                                                            <li>Step 1: Online submission of intents. There is no such thing as submission of
+                                                                pertident documents such as letter of intents or credentials as these are done in 
+                                                                Step 2.  [Jan 28-31, 2025] - Done</li>
+                                                            <li>Step 2: Submission of Pertinent Documents (e.g., Letter of intents and
+                                                                other documents listed in the Checklist of Requirements (Annex C or Annex A))
+                                                                to your preferred school. [Feb 5-14, 2025]</li>
                                                         </ol>
 
-                                                        <em>Old applicants:</em>
-                                                        <ol> 
-                                                            <li>Follow the guidelines outlined in the memo regarding this vacancy. </li>
-                                                            <li>Print the page displaying your name from last year's ranking list.</li>
-                                                            <li>Organize two folders: one containing the original documents and another containing the photocopied documents.</li>
-                                                            <li>Print the profile page and affix it to the front of both folders.</li>
-                                                            <li>Visit the school where you intend to apply for an initial assessment.</li>
-                                                            <li>Remember to bring the folder with the original documents with you when leaving the school premises.</li>
-                                                        </ol>
+
                                                     </td>
                                                 </tr>
                                                 <tr>
                                                     <th>Non-Teaching/ <br>Teaching-Related/ <br>School Administrators</th>
                                                     <td>
-                                                        <ol> 
-                                                            <li>Follow the guidelines outlined in the memo regarding this vacancy. </li>
-                                                        </ol>
+                                                        Follow the guidelines outlined in the memo regarding this vacancy. 
                                                     </td>
                                                 </tr>
                                             </tbody>
@@ -308,10 +310,24 @@
                                         @method('post')
                                         <div class="input-group input-group-sm mb-0">
                                             <textarea class="form-control form-control-sm" name="message" required 
-                                                {{$diffInDays > 100 ? "readonly" : ""}}
-                                                placeholder="Query message">{{$diffInDays > 100 ? "Sending queries are no longer allowed past 10 days of posting." : ""}}</textarea>
+                                                @if($diffInDays > 100)
+                                                    readonly
+                                                @elseif($application->vacancy->template_id == 1)
+                                                    readonly 
+                                                @endif
+
+                                                placeholder="Query message">@if($diffInDays > 100) Sending queries are no longer allowed past 10 days of posting.
+                                                @elseif($application->vacancy->template_id == 1) Please direct your queries to your preferred school. You may also review the "Next Steps" tab for details.
+                                                @endif
+                                                </textarea>
                                             <div class="input-group-append">
-                                                <button type="submit"  class="btn btn-danger" {{$diffInDays > 100 ? "disabled" : ""}}>Send</button>
+                                                <button type="submit"  class="btn btn-danger"
+                                                    @if($diffInDays > 100)
+                                                        disabled
+                                                    @elseif($application->vacancy->template_id == 1)
+                                                        disabled 
+                                                    @endif
+                                                >Send</button>
                                             </div>
                                         </div>
                                     </form>
