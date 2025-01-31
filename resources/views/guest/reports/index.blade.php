@@ -59,12 +59,25 @@
                                     <td class="text-right">{{number_format($tagged, 0) }}</td>
                                     <td class="text-right">{{number_format($src_p, 0) }}</td>
                                     <td class="text-right">{{number_format($src_c, 0) }}</td>
-                                    <th class="text-right">{{number_format($src_c / $tagged * 100, 2) }}%</th>
+                                    <th class="text-right">
+                                        @if($tagged == 0)
+                                            (N/A)
+                                        @else
+                                            {{number_format($src_c / $tagged * 100, 2) }}%
+                                        @endif
+                                    </th>
                                     <td class="text-right">{{number_format($drc_p, 0) }}</td>
                                     <td class="text-right">{{number_format($drc_c, 0) }}</td>
-                                    <th class="text-right">{{number_format($drc_c / $applications->where('station_id', '>', 0)->count() * 100, 2) }}%</th>
+                                    <th class="text-right">
+                                        @if($tagged == 0)
+                                            (N/A)
+                                        @else
+                                            {{number_format($drc_c / $tagged * 100, 2) }}%
+                                        @endif
+                                    </th>
 
                                 </tr>
+                                
                                 @forelse($offices as $office)
                                     @php 
                                         $stations = App\Models\Station::where('office_id', '=', $office->id)->pluck('id');
