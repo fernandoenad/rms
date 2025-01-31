@@ -54,33 +54,54 @@
                                     <td class="text-right">{{number_format($src_t, 0) }}</td>
                                     <td class="text-right">{{number_format($src_p, 0) }}</td>
                                     <td class="text-right">{{number_format($src_c, 0) }}</td>
-                                    <th class="text-right">{{number_format($src_c / $src_t * 100, 2) }}%</th>
+                                    <th class="text-right">
+                                        @if ($src_t != 0)
+                                            {{ number_format($src_c / $src_t * 100, 2) }}%
+                                        @else
+                                            N/A
+                                        @endif
+                                    </th>                                    
                                     <td class="text-right">{{number_format($src_c, 0) }}</td>
                                     <td class="text-right">{{number_format($drc_c, 0) }}</td>
-                                    <th class="text-right">{{number_format($drc_c / $src_t * 100, 2) }}%</th>
-
+                                    <th class="text-right">
+                                        @if ($src_t != 0)
+                                            {{ number_format($drc_c / $src_t * 100, 2) }}%
+                                        @else
+                                            N/A
+                                        @endif
+                                    </th>
                                 </tr>
                                 @forelse($stations as $station)
                                     @php 
-                                        $src_t = App\Models\Application::where('station_id', $station->id)->count();
-                                        $src_p = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
+                                        $src_t = App\Models\Application::join('vacancies', 'vacancies.id', '=', 'applications.vacancy_id')
+                                            ->where('vacancies.cycle', $cycle)
+                                            ->where('station_id', $station->id)->count();
+                                        $src_p = App\Models\Application::join('vacancies', 'vacancies.id', '=', 'applications.vacancy_id')
+                                            ->join('assessments', 'assessments.application_id', '=', 'applications.id')
                                             ->where('station_id', $station->id)
                                             ->where('assessments.status', '=', 1)
+                                            ->where('vacancies.cycle', $cycle)
                                             ->distinct('applications.id') // Ensure distinct applications are counted
                                             ->count('applications.id');
-                                        $src_c = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
+                                        $src_c = App\Models\Application::join('vacancies', 'vacancies.id', '=', 'applications.vacancy_id')
+                                            ->join('assessments', 'assessments.application_id', '=', 'applications.id')
                                             ->where('station_id', $station->id)
                                             ->where('assessments.status', '>=', 2)
+                                            ->where('vacancies.cycle', $cycle)
                                             ->distinct('applications.id') // Ensure distinct applications are counted
                                             ->count('applications.id');
-                                        $drc_p = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
+                                        $drc_p = App\Models\Application::join('vacancies', 'vacancies.id', '=', 'applications.vacancy_id')
+                                            ->join('assessments', 'assessments.application_id', '=', 'applications.id')
                                             ->where('station_id', $station->id)
                                             ->where('assessments.status', '=', 2)
+                                            ->where('vacancies.cycle', $cycle)
                                             ->distinct('applications.id') // Ensure distinct applications are counted
                                             ->count('applications.id');
-                                        $drc_c = App\Models\Application::join('assessments', 'assessments.application_id', '=', 'applications.id')
+                                        $drc_c = App\Models\Application::join('vacancies', 'vacancies.id', '=', 'applications.vacancy_id')
+                                            ->join('assessments', 'assessments.application_id', '=', 'applications.id')
                                             ->where('station_id', $station->id)
                                             ->where('assessments.status', '>=', 3)
+                                            ->where('vacancies.cycle', $cycle)
                                             ->distinct('applications.id') // Ensure distinct applications are counted
                                             ->count('applications.id');
                                     @endphp
