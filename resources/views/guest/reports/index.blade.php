@@ -61,7 +61,7 @@
                                     <td class="text-right">{{number_format($src_c, 0) }}</td>
                                     <th class="text-right">
                                         @if($tagged == 0)
-                                            (N/A)
+                                            N/A
                                         @else
                                             {{number_format($src_c / $tagged * 100, 2) }}%
                                         @endif
@@ -70,7 +70,7 @@
                                     <td class="text-right">{{number_format($drc_c, 0) }}</td>
                                     <th class="text-right">
                                         @if($tagged == 0)
-                                            (N/A)
+                                            N/A
                                         @else
                                             {{number_format($drc_c / $tagged * 100, 2) }}%
                                         @endif
