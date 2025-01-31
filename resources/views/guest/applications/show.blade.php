@@ -245,10 +245,10 @@
                                                         <br>
                                                         <em>Take Note:</em>
                                                         <ol> 
-                                                            <li>Step 1: Online submission of intents. There is no such thing as submission of
-                                                                pertident documents such as letter of intents or credentials as these are done in 
-                                                                Step 2.  [Jan 28-31, 2025] - Done</li>
-                                                            <li>Step 2: Submission of Pertinent Documents (e.g., Letter of intents and
+                                                            <li><strong>This is already DONE!</strong> Step 1: Online submission of intents. There is no such thing as submission of
+                                                                pertinent documents such as letter of intents or credentials, as these are done in 
+                                                                Step 2.  [Jan 28-31, 2025]</li>
+                                                            <li><strong>Your NEXT step!</strong> Step 2: Submission of Pertinent Documents (e.g., Letter of intents and
                                                                 other documents listed in the Checklist of Requirements (Annex C or Annex A))
                                                                 to your preferred school. [Feb 5-14, 2025]</li>
                                                         </ol>
