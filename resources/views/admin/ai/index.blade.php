@@ -35,7 +35,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">List</h3>
-                        <a href="{{route('admin.ai.train')}}" class="btn btn-success btn-sm float-right"><i class="fas fa-fw fa-robot"></i> Train AI</a>
+                        <a href="{{route('admin.ai.train')}}" class="btn btn-success btn-sm float-right"><i class="fas fa-fw fa-robot"></i> Configure AI</a>
                     </div>
                     <div class="card-body">
                         <table id="applications" class="table table-bordered table-striped">

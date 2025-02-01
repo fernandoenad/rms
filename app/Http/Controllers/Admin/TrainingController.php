@@ -66,9 +66,29 @@ class TrainingController extends Controller
         return redirect(route('admin.ai.index'))->with('status', 'Record has been deleted successfully!');
     }
 
+    public function update_model(Request $request)
+    {
+        $data = $request->validate([
+            'ai_model' => 'required',
+            'ai_model_id' => 'required', 
+        ]);
+
+        $setting = Setting::where('item', 'ai_model')->first();
+
+        $setting->update([
+            'ai_model' => $data['ai_model'],
+            'ai_model_id' => $data['ai_model_id'],
+        ]);
+
+        return redirect(route('admin.ai.train'))->with('status', 'AI model has been updated successfully!');
+    }
+
     public function train()
     {
-        return view('admin.ai.train');
+        $ai_model = Setting::where('item', 'ai_model')->first()->value;
+        $ai_model_id = Setting::where('item', 'ai_model_id')->first()->value;
+  
+        return view('admin.ai.train', ['ai_model' => $ai_model, 'ai_model_id' => $ai_model_id]);
     }
 
     public function start()
@@ -115,7 +135,7 @@ class TrainingController extends Controller
 
             // Step 5: Update AI Model in Settings
             Setting::updateOrCreate(
-                ['item' => 'ai_model'],
+                ['item' => 'ai_model_id'],
                 ['value' => $fineTunedModel]
             );
 
@@ -146,7 +166,7 @@ class TrainingController extends Controller
         $response = Http::withToken($this->openaiApiKey)
             ->post('https://api.openai.com/v1/fine_tuning/jobs', [
                 'training_file' => $fileId,
-                'model' => 'gpt-4o-2024-08-06'
+                'model' => Setting::where('item', 'ai_model')->first()->value
             ]);
 
         return $response->successful() ? $response->json()['id'] : null;

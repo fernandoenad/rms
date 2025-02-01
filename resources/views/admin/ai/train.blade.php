@@ -57,6 +57,47 @@
             </div>
         </div>
     </div>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Configuration</h3>
+                    </div>
+                    <div class="card-body">
+                    <form method="post" action="{{route('admin.ai.train.update_model')}}">
+                        @csrf
+                        @method('post')
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label for="#">AI Model</label>
+                                <textarea type="text" class="form-control" placeholder="Enter user message" 
+                                    name="ai_model" class="@error('ai_model') is-invalid @enderror"
+                                    value="">{{ $ai_model }}</textarea>
+                                @error('ai_model')
+                                    <span class="text-danger"><small>{{ $message }}</small></span>
+                                @enderror
+                            </div>
+                            <div class="form-group">
+                                <label for="#">AI Model (Fine-Tuned) ID </label>
+                                <textarea type="text" class="form-control" placeholder="Enter AI response" 
+                                    name="ai_model_id" class="@error('ai_model_id') is-invalid @enderror"
+                                    value="">{{ $ai_model_id }}</textarea>
+                                @error('ai_model_id')
+                                    <span class="text-danger"><small>{{ $message }}</small></span>
+                                @enderror
+                            </div>
+                        </div></div>
+                        <div class="card-footer">
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                            <a href="{{url()->previous()}}" class="btn btn-default float-right">Cancel</a>
+                        </div>
+                    </form> 
+                </div>
+            </div>
+        </div>
+    </div>
 @stop
 
 @section('footer')

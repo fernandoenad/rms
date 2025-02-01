@@ -13,7 +13,7 @@ use App\Http\Controllers\Admin\InquiryController as AdminInquiry;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancy;
 use App\Http\Controllers\Admin\VacancyReportController as AdminVacancyReport;
 use App\Http\Controllers\Admin\TrainingController as AdminTraining;
-use App\Http\Controllers\OpenAIController;
+use App\Http\Controllers\Guest\OpenAIController;
 
 /*
 |--------------------------------------------------------------------------
@@ -118,6 +118,7 @@ Route::group(['middleware' => ['admin']], function () {
 
     Route::get('/admin/ai/', [AdminTraining::class, 'index'])->name('admin.ai.index');
     Route::get('/admin/ai/train', [AdminTraining::class, 'train'])->name('admin.ai.train');
+    Route::post('/admin/ai/train/update_model', [AdminTraining::class, 'update_model'])->name('admin.ai.train.update_model');
     Route::get('/admin/ai/train/start', [AdminTraining::class, 'start'])->name('admin.ai.train.start');
     Route::get('/admin/ai/create', [AdminTraining::class, 'create'])->name('admin.ai.create');
     Route::post('/admin/ai/create', [AdminTraining::class, 'store'])->name('admin.ai.store');
