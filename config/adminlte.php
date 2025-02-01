@@ -383,6 +383,12 @@ return [
             'active' => ['admin/users', 'admin/users/create', 'regex:@^admin/users/[0-9]+$@', 'regex:@^admin/users/\d+/delete+$@', 'regex:@^admin/users/\d+/edit+$@']
 
         ],
+        [
+            'text' => 'AI Tool',
+            'url'  => 'admin/ai',
+            'icon' => 'fas fa-fw fa-robot',
+            'active' => ['admin/ai', 'admin/ai/train']
+        ],
         /** 
         ['header' => 'account_settings'],
         [

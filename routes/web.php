@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\UserController as AdminUser;
 use App\Http\Controllers\Admin\InquiryController as AdminInquiry;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancy;
 use App\Http\Controllers\Admin\VacancyReportController as AdminVacancyReport;
+use App\Http\Controllers\Admin\TrainingController as AdminTraining;
 use App\Http\Controllers\OpenAIController;
 
 /*
@@ -115,8 +116,14 @@ Route::group(['middleware' => ['admin']], function () {
     Route::get('/admin/users/{user}/edit', [AdminUser::class, 'edit'])->name('admin.users.edit');
     Route::put('/admin/users/{user}', [AdminUser::class, 'update'])->name('admin.users.update');
 
-    Route::get('/admin/ai-training/', [AdminAITraining::class, 'index'])->name('admin.ai-traning.index');
-
+    Route::get('/admin/ai/', [AdminTraining::class, 'index'])->name('admin.ai.index');
+    Route::get('/admin/ai/train', [AdminTraining::class, 'train'])->name('admin.ai.train');
+    Route::get('/admin/ai/train/start', [AdminTraining::class, 'start'])->name('admin.ai.train.start');
+    Route::get('/admin/ai/create', [AdminTraining::class, 'create'])->name('admin.ai.create');
+    Route::post('/admin/ai/create', [AdminTraining::class, 'store'])->name('admin.ai.store');
+    Route::get('/admin/ai/{training}/modify', [AdminTraining::class, 'modify'])->name('admin.ai.modify');
+    Route::post('/admin/ai/{training}/modify', [AdminTraining::class, 'update'])->name('admin.ai.update');
+    Route::get('/admin/ai/{training}/delete', [AdminTraining::class, 'delete'])->name('admin.ai.delete');
 });
 
 
