@@ -60,7 +60,7 @@ class OpenAIController extends Controller
             'status' => 0,
         ]);
 
-        Inquiry::where('application_id', '=', $application->id)->update(['status' => 0]);
+        $ApplicantInquiry->update(['status' => 1]);
 
         return redirect(route('guest.applications.show', ['application' => $application]))->with('status_inquiry', 'Inquiry message was successfully sent.');
     }
