@@ -6,24 +6,10 @@ use Illuminate\Http\Request;
 use OpenAI;
 use App\Models\Inquiry;
 use App\Models\Application;
+use App\Models\Setting;
 
 class OpenAIController extends Controller
 {
-    public function chat(Request $request)
-    {
-        $client = OpenAI::client(env('OPENAI_API_KEY'));
-
-        $response = $client->chat()->create([
-            'model' => 'gpt-4',
-            'messages' => [
-                ['role' => 'system', 'content' => 'You are a helpful assistant.'],
-                ['role' => 'user', 'content' => $request->input('message')],
-            ],
-        ]);
-
-        return response()->json($response['choices'][0]['message']);
-    }
-
     public function inquire2(Application $application, Request $request)
     {
         // Validate input
@@ -36,9 +22,9 @@ class OpenAIController extends Controller
 
         // Send request to OpenAI
         $response = $client->chat()->create([
-            'model' => 'ft:gpt-3.5-turbo-0125:cbrj-wired-internet-services::AvwKMpvq',
+            'model' => Setting::where('item', 'ai_model')->first()->value,
             'messages' => [
-                ['role' => 'system', 'content' => 'You are an AI assistant providing information on teacher application processes in the Department of Education - Division of Bohol.'],
+                ['role' => 'system', 'content' => 'You are an AI assistant providing the application processes in the Department of Education - Division of Bohol.'],
                 ['role' => 'user', 'content' => $request->input('message')],
             ],
         ]);
@@ -46,21 +32,21 @@ class OpenAIController extends Controller
         // Get AI response
         $aiResponse = $response['choices'][0]['message']['content'];
 
-        $ApplicantInquiry = Inquiry::create([
+        $applicantInquiry = Inquiry::create([
             'application_id' => $application->id,
             'author' => $application->getFullname(),
             'message' => $request->input('message'),
             'status' => 1,
         ]);
 
-        $AIResponse = Inquiry::create([
+        $aiResponse = Inquiry::create([
             'application_id' => $application->id,
             'author' => "RMS AI",
             'message' => $aiResponse,
             'status' => 0,
         ]);
 
-        $ApplicantInquiry->update(['status' => 1]);
+        $applicantInquiry->update(['status' => 1]);
 
         return redirect(route('guest.applications.show', ['application' => $application]))->with('status_inquiry', 'Inquiry message was successfully sent.');
     }
