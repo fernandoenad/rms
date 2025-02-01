@@ -313,7 +313,7 @@
                                         <div class="input-group input-group-sm mb-0">
                                             <textarea class="form-control form-control-sm" name="message" id="message" required 
                                                 placeholder="Query message"></textarea>
-                                            <div class="input-group-append">
+                                            <div class="input-group-append"> 
                                                 <button type="submit"  class="btn btn-danger">Send</button>
                                             </div>
                                         </div>
