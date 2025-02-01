@@ -95,7 +95,7 @@ class TrainingController extends Controller
                 sendMessage("Error: Failed to upload training data.");
                 return;
             }
-            /*
+            
             // Step 3: Fine-Tune Model
             sendMessage("Step 3: Starting fine-tuning...");
             $fineTuneId = $this->fineTuneModel($fileId);
@@ -120,7 +120,7 @@ class TrainingController extends Controller
             );
 
             sendMessage("Success: AI Model successfully trained! Model ID: {$fineTunedModel}");
-            */
+            
         }, 200, [
             'Content-Type' => 'text/event-stream',
             'Cache-Control' => 'no-cache',
