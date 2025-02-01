@@ -51,7 +51,7 @@ class TrainingController extends Controller
     {
         $data = $request->validate([
             'user_message' => 'required|unique:trainings,user_message,'.$training->id,
-            'ai_response' => 'required',
+            'ai_response' => 'required', 
         ]);
 
         $training->update($data);
