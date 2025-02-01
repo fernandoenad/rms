@@ -270,7 +270,7 @@
                                     <div class="direct-chat-messages" style="min-height: 350px">
                                         <div class="direct-chat-msg left">
                                             <div class="direct-chat-infos clearfix">
-                                                <span class="direct-chat-name float-left">{{ config('app.name', '') }} System</span>
+                                                <span class="direct-chat-name float-left">{{ config('app.name', '') }} AI</span>
                                                 <span class="direct-chat-timestamp float-left"></span>
                                             </div>
                                             <img class="direct-chat-img" src="{{url('/')}}/images/user.png" alt="user image">
@@ -304,30 +304,17 @@
                                                 <!-- /.post -->
                                             @endforeach
                                         @endif
+                                        
                                     </div>
-                                    <form class="form-horizontal" method="post" action="{{route('guest.applications.inquire', $application)}}">
+                                    <!--<form class="form-horizontal" method="post" action="{{route('guest.applications.inquire', $application)}}"> -->
+                                        <form class="form-horizontal" method="post" action="{{ route('guest.applications.inquire2', $application) }}">
                                         @csrf 
                                         @method('post')
                                         <div class="input-group input-group-sm mb-0">
-                                            <textarea class="form-control form-control-sm" name="message" required 
-                                                @if($diffInDays > 100)
-                                                    readonly
-                                                @elseif($application->vacancy->template_id == 1)
-                                                    readonly 
-                                                @endif
-
-                                                placeholder="Query message">@if($diffInDays > 100) Sending queries are no longer allowed past 10 days of posting.
-                                                @elseif($application->vacancy->template_id == 1) Please direct your queries to your preferred school. You may also review the "Next Steps" tab for details.
-                                                @endif
-                                                </textarea>
+                                            <textarea class="form-control form-control-sm" name="message" id="message" required 
+                                                placeholder="Query message"></textarea>
                                             <div class="input-group-append">
-                                                <button type="submit"  class="btn btn-danger"
-                                                    @if($diffInDays > 100)
-                                                        disabled
-                                                    @elseif($application->vacancy->template_id == 1)
-                                                        disabled 
-                                                    @endif
-                                                >Send</button>
+                                                <button type="submit"  class="btn btn-danger">Send</button>
                                             </div>
                                         </div>
                                     </form>

@@ -375,6 +375,12 @@ return [
             'icon' => 'fas fa-fw fa-paper-plane',
             'active' => ['admin/inquiries']
         ],
+        [
+            'text' => 'AI Training',
+            'url'  => 'admin/ai-training',
+            'icon' => 'fas fa-fw fa-robot',
+            'active' => ['admin/ai-training']
+        ],
         ['header' => 'Tools'],
         [
             'text' => 'User Management',

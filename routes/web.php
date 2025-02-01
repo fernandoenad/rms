@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\UserController as AdminUser;
 use App\Http\Controllers\Admin\InquiryController as AdminInquiry;
 use App\Http\Controllers\Admin\VacancyController as AdminVacancy;
 use App\Http\Controllers\Admin\VacancyReportController as AdminVacancyReport;
+use App\Http\Controllers\OpenAIController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,6 +48,7 @@ Route::post('/applications', [GuestApplication::class, 'lookup'])->name('guest.a
 Route::get('/applications/my', [GuestApplication::class, 'my'])->name('guest.applications.my');
 Route::get('/applications/{application}', [GuestApplication::class, 'show'])->name('guest.applications.show');
 Route::post('/applications/{application}/inquire', [GuestApplication::class, 'inquire'])->name('guest.applications.inquire');
+Route::post('/applications/{application}/inquire2', [OpenAIController::class, 'inquire2'])->name('guest.applications.inquire2');
 
 
 // auth routes
@@ -112,6 +114,9 @@ Route::group(['middleware' => ['admin']], function () {
     Route::delete('/admin/users/{user}', [AdminUser::class, 'destroy'])->name('admin.users.destroy');
     Route::get('/admin/users/{user}/edit', [AdminUser::class, 'edit'])->name('admin.users.edit');
     Route::put('/admin/users/{user}', [AdminUser::class, 'update'])->name('admin.users.update');
+
+    Route::get('/admin/ai-training/', [AdminAITraining::class, 'index'])->name('admin.ai-traning.index');
+
 });
 
 
