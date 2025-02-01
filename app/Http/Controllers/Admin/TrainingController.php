@@ -73,11 +73,14 @@ class TrainingController extends Controller
             'ai_model_id' => 'required', 
         ]);
 
-        $setting = Setting::where('item', 'ai_model')->first();
+        $ai_model = Setting::where('item', 'ai_model')->first();
+        $ai_model_id = Setting::where('item', 'ai_model_id')->first();
 
-        $setting->update([
-            'ai_model' => $data['ai_model'],
-            'ai_model_id' => $data['ai_model_id'],
+        $ai_model->update([
+            'value' => $data['ai_model'],
+        ]);
+        $ai_model_id->update([
+            'value' => $data['ai_model_id'],
         ]);
 
         return redirect(route('admin.ai.train'))->with('status', 'AI model has been updated successfully!');
