@@ -16,6 +16,7 @@ class TrainingController extends Controller
     public function __construct()
     {
         $this->openaiApiKey = env('OPENAI_API_KEY'); // Store API Key in .env
+        $this->middleware('auth');
     }
 
     public function index()
