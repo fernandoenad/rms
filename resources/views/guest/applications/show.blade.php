@@ -310,10 +310,10 @@
                                         @csrf 
                                         @method('post')
                                         <div class="input-group input-group-sm mb-0">
-                                            <textarea class="form-control form-control-sm" name="message" id="message" required 
-                                                placeholder="Query message"></textarea>
+                                            <textarea class="form-control form-control-sm" disabled name="message" id="message" required 
+                                                placeholder="Query message">For questions, please refer to the orientation video accessible at https://tinyurl.com/4kjcy389</textarea>
                                             <div class="input-group-append">
-                                                <button type="submit"  class="btn btn-danger">Send</button>
+                                                <button type="submit"  class="btn btn-danger disabled">Send</button>
                                             </div>
                                         </div>
                                     </form>
