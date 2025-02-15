@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\Town;
+use App\Models\Dropdown;
 use App\Models\Vacancy;
 use App\Models\Template;
 
@@ -94,6 +96,15 @@ class VacancyController extends Controller
         $vacancies = Vacancy::orderBy('created_at', 'DESC')->get();
 
         return view('admin.vacancies.active',['vacancies' => $vacancies]);
+    }
+
+    public function apply(Vacancy $vacancy)
+    {
+        $towns = Town::all();
+        $sexes = Dropdown::where('type', '=', 'sex')->get();
+        $civilstatuses = Dropdown::where('type', '=', 'civilstatus')->get();
+
+        return view('guest.vacancies.apply', ['vacancy' => $vacancy, 'towns' => $towns, 'sexes' => $sexes, 'civilstatuses' => $civilstatuses]);
     }
 
 }

@@ -72,6 +72,11 @@
                                             <td>{{$vacancy->getOffice()}}</td>
                                             <td>{{$vacancy->getStatus()}}</td>
                                             <td>
+                                                <a href="{{ route('admin.vacancies.apply', $vacancy) }}" class="btn btn-sm btn-primary" 
+                                                    target="_blank" title="Submit application"
+                                                    onclick="return confirm('IMPORTANT: Only click OK if approved by the HRMPSB Chair!')">
+                                                    <span class="fas primary fa-fw fa-inbox"></span>
+                                                </a>
                                                 <a href="{{ route('admin.vacancies.edit', $vacancy) }}" class="btn btn-sm btn-warning" title="Modify">
                                                     <span class="fas primary fa-fw fa-edit"></span>
                                                 </a>
