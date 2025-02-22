@@ -129,6 +129,10 @@ class ApplicationController extends Controller
             'station_id' => 'required'
         ]);
 
+        if($data['station_id'] == -1){
+            $data['station_id'] == $application->vacancy->office_level;
+        }
+
         $application->update($data);
 
         return redirect(route('admin.applications.index'))->with('status', 'Application was successfully updated.');
@@ -167,7 +171,7 @@ class ApplicationController extends Controller
         // email 
         $data['name'] =  $application->first_name;
         $data['subject'] =  $application->application_code;
-
+        $data['application'] = $application->application_code;
         Mail::to($application->email)->queue(new UpdateMail($data));
 
         return redirect(route('admin.applications.edit_scores', [$application]))->with('status', 'Assessment was successfully updated.');
@@ -192,7 +196,7 @@ class ApplicationController extends Controller
         // email 
         $data['name'] =  $application->first_name;
         $data['subject'] =  $application->application_code;
-
+        $data['application'] = $application->application_code;
         Mail::to($application->email)->queue(new UpdateMail($data));
         
         return redirect(route('admin.applications.show', ['application' => $application]))->with('status', 'Message was successfully saved and emailed.');

@@ -66,7 +66,7 @@
                                 <select type="text" class="form-control" placeholder="Enter position applied for" 
                                     name="station_id" class="@error('station_id') is-invalid @enderror"
                                     value="{{ $application->station_id }}">
-                                    <option value="-1" {{ $application->station_id == -1 ? 'selected' :'' }}>Not yet tagged</option>
+                                    <option value="0" {{ $application->station_id == -1 || $application->station_id == 0 ? 'selected' :'' }}>Not yet tagged</option>
                                     @foreach($stations as $station)
                                         <option value="{{$station->id}}" {{ $station->id == $application->station_id ? 'selected' :'' }}>{{ $station->code}}- {{ $station->name}}</option>
                                     @endforeach
