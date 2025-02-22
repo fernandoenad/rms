@@ -270,9 +270,11 @@
                                                 <span class="direct-chat-timestamp float-left"></span>
                                             </div>
                                             <img class="direct-chat-img" src="{{url('/')}}/images/user.png" alt="user image">
+                                            <!--
                                             <div class="direct-chat-text">
-                                                Send your query here but make sure that it is substantial...
+                                                Send your query here but make sure that it is substantial... 
                                             </div>
+                                            -->
                                         </div>
                                         @if(sizeof($applicationInquiries) > 0)
                                             @foreach($applicationInquiries as $applicationInquiry)
