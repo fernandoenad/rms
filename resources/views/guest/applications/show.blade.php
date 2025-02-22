@@ -230,36 +230,22 @@
                                         <table class="table table-hover table-borderless">
                                             <tbody>
                                                 <tr>
-                                                    <th width="20%">Teaching</th>
                                                     <td>
-                                                        Follow the guidelines outlined in the memo regarding this vacancy. 
-                                                                You may access the full memorandum containing full details and Annex A via 
-                                                                <a href="https://www.depedbohol.org/wp-content/uploads/2025/01/DM-No.-052-s.-2025.pdf">
-                                                                    Division Memorandum 052, s. 2025</a>.
-                                                                     
-                                                        <br>
-                                                        <br>
-                                                        <img src="https://scontent.fcgy2-1.fna.fbcdn.net/v/t39.30808-6/475250344_10236238007080676_3592789386380754359_n.jpg?stp=cp6_dst-jpg_tt6&_nc_cat=100&ccb=1-7&_nc_sid=127cfc&_nc_ohc=5yfue4tW2mcQ7kNvgEyNE6F&_nc_zt=23&_nc_ht=scontent.fcgy2-1.fna&_nc_gid=ACe3PLqda6qKpHWSAOyS_-l&oh=00_AYCVDOzHYRtirva0u7sINGaW1W1ufa4di7kUOhFlw31MSw&oe=67A3107F"
-                                                            width="450">
+                                                        Follow the guidelines outlined in the memo regarding this vacancy at the DepEd Bohol website at 
+                                                            <a href="https://www.depedbohol.org">
+                                                            https://www.depedbohol.org</a>.
                                                         <br>
                                                         <br>
                                                         <em>Take Note:</em>
                                                         <ol> 
-                                                            <li><strong>This is already DONE!</strong> Step 1: Online submission of intents. There is no such thing as submission of
-                                                                pertinent documents such as letter of intents or credentials, as these are done in 
-                                                                Step 2.  [Jan 28-31, 2025]</li>
-                                                            <li><strong>Your NEXT step!</strong> Step 2: Submission of Pertinent Documents (e.g., Letter of intents and
-                                                                other documents listed in the Checklist of Requirements (Annex C or Annex A))
-                                                                to your preferred school. [Feb 5-14, 2025]</li>
+                                                            <li><strong>This is already DONE!</strong> Step 1: Online submission of intents.</li>
+                                                            <li><strong>Your NEXT step!</strong> Step 2: Submission of Pertinent Documents 
+                                                                (e.g., Letter of intents and other documents listed in the Checklist of 
+                                                                Requirements: Annex A/C)to your preferred school (for teaching position) / 
+                                                                school administration, and teaching-related positions.</li>
                                                         </ol>
 
 
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <th>Non-Teaching/ <br>Teaching-Related/ <br>School Administrators</th>
-                                                    <td>
-                                                        Follow the guidelines outlined in the memo regarding this vacancy. 
                                                     </td>
                                                 </tr>
                                             </tbody>
