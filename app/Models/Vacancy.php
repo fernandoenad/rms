@@ -56,20 +56,30 @@ class Vacancy extends Model
     }
 
     public function getLevel1Status(){
-        if($this->status == 1){
-            $status_name = "";
+        if($this->level1_status == 0){
+            $status_name = "Close";
+        } else if($this->level1_status == 1){
+            $status_name = "Open";
+        } else if($this->level1_status == 2){
+            $status_name = "Completed";
         } else {
-            $status_name = "disabled";
+            $status_name = "";
         }
 
         return $status_name;
     }
 
     public function getLevel2Status(){
-        if($this->status == 1){
-            $status_name = "";
+        if($this->level2_status == 0){
+            $status_name = "Close";
+        } else if($this->level2_status == 1){
+            $status_name = "Open";
+        } else if($this->level2_status == 2){
+            $status_name = "Completed";
+        } else if($this->level2_status == 3){
+            $status_name = "Completed";
         } else {
-            $status_name = "disabled";
+            $status_name = "";
         }
 
         return $status_name;

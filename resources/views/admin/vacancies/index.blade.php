@@ -53,9 +53,11 @@
                                     <th>ID</th>
                                     <th>Cycle</th>
                                     <th>Position title</th>
-                                    <th>Office level</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
+                                    <th>Level</th>
+                                    <th>Post</th>
+                                    <th>SSC</th>
+                                    <th>DSC</th>
+                                    <th width="15%">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -71,6 +73,8 @@
                                             </td>
                                             <td>{{$vacancy->getOffice()}}</td>
                                             <td>{{$vacancy->getStatus()}}</td>
+                                            <td>{{$vacancy->getLevel1Status()}}</td>
+                                            <td>{{$vacancy->getLevel2Status()}}</td>
                                             <td>
                                                 <a href="{{ route('admin.vacancies.apply', $vacancy) }}" class="btn btn-sm btn-primary" 
                                                     target="_blank" title="Submit application"

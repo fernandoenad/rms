@@ -18,7 +18,8 @@ class VacancyController extends Controller
 
     public function index()
     {
-        $vacancies = Vacancy::latest()->get();
+        $vacancies = Vacancy::orderBy('id', 'DESC')->get();
+
         return view('admin.vacancies.index',['vacancies' => $vacancies]);
     }
 
