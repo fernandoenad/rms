@@ -264,18 +264,20 @@
                                                 Application was created on {{ $application->created_at->format('M d, Y @ h:ia') }}.
                                             </div>
                                         </div>
+                                        <!--
                                         <div class="direct-chat-msg left">
                                             <div class="direct-chat-infos clearfix">
                                                 <span class="direct-chat-name float-left">{{ config('app.name', '') }} System</span>
                                                 <span class="direct-chat-timestamp float-left"></span>
                                             </div>
+                                            
                                             <img class="direct-chat-img" src="{{url('/')}}/images/user.png" alt="user image">
-                                            <!--
+                                            
                                             <div class="direct-chat-text">
                                                 Send your query here but make sure that it is substantial... 
                                             </div>
-                                            -->
                                         </div>
+                                        -->
                                         @if(sizeof($applicationInquiries) > 0)
                                             @foreach($applicationInquiries as $applicationInquiry)
                                                 <!-- Post -->
