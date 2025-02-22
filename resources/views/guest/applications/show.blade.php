@@ -215,7 +215,7 @@
                                                             Status<br>
                                                         </td>
                                                         <td>                                                            
-                                                            <span class="badge bg-warning">IMPORTANT</span><
+                                                            <span class="badge bg-warning">IMPORTANT</span>
                                                             <br>
                                                             Please contact School (teaching position) / 
                                                             SDO-HR Office (non-teaching, school administration, and 
