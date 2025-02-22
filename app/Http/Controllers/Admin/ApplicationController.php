@@ -164,6 +164,12 @@ class ApplicationController extends Controller
 
         $inquiry = Inquiry::create($data);
 
+        // email 
+        $data['name'] =  $application->first_name;
+        $data['subject'] =  $application->application_code;
+
+        Mail::to($application->email)->queue(new UpdateMail($data));
+
         return redirect(route('admin.applications.edit_scores', [$application]))->with('status', 'Assessment was successfully updated.');
     }
 

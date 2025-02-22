@@ -9,7 +9,8 @@ use App\Models\Inquiry;
 use App\Models\Vacancy;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
-
+use Mail;
+use App\Mail\UpdateMail;
 
 class ApplicationController extends Controller
 {
@@ -91,6 +92,13 @@ class ApplicationController extends Controller
 
         $data['station_id'] = $vacancy->office_level;
         $newApplication->update(['station_id' => $data['station_id']]);
+
+        // email 
+        $data['name'] =  $newApplication->first_name;
+        $data['message'] =  'You have successfully applied for the ' . $vacancy->position_title . ' position!';
+        $data['subject'] =  $newApplication->application_code;
+
+        Mail::to($newApplication->email)->queue(new UpdateMail($data));
 
         $request->session()->put('guest_email', $request->email);
         
