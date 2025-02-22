@@ -135,7 +135,7 @@
                                                 </tr>
                                                 <tr>
                                                     <th>Address</th>
-                                                    <td>{{ $application->getAddress() }}</td>                                                   </td>
+                                                    <td>{{ $application->getAddress() }}</td>                                                   
                                                 </tr>
                                                 <tr>
                                                     <th>Age</th>
@@ -215,7 +215,9 @@
                                                             Status<br>
                                                         </td>
                                                         <td>                                                            
-                                                            <span class="badge bg-warning">Please contact school to have it marked as COMPLETED</span>
+                                                            <span class="badge bg-warning">Please contact School (teaching position) / 
+                                                                SDO-HR Office (non-teaching, school administration, and teaching-related positions) 
+                                                                to have it marked as COMPLETED.</span>
                                                         </td>                                                  
                                                     </tr>
                                                 @endif
@@ -241,8 +243,8 @@
                                                             <li><strong>This is already DONE!</strong> Step 1: Online submission of intents.</li>
                                                             <li><strong>Your NEXT step!</strong> Step 2: Submission of Pertinent Documents 
                                                                 (e.g., Letter of intents and other documents listed in the Checklist of 
-                                                                Requirements: Annex A/C)to your preferred school (for teaching position) / 
-                                                                school administration, and teaching-related positions.</li>
+                                                                Requirements: Annex A/C)to your preferred school (for teaching position) / SDO-HR Office
+                                                                (non-teaching, school administration, and teaching-related positions).</li>
                                                         </ol>
 
 
