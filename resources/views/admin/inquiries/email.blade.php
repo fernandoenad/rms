@@ -9,7 +9,7 @@
     <p>
         Best,<br>
         <br>
-        Secretariat
+        <strong>Secretariat</strong>
         <br>
         HRMPSB
     </p>

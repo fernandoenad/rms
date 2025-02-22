@@ -24,7 +24,7 @@ class UpdateMail extends Mailable
 
     public function build()
     {
-        return $this->from('bohol.hrms@deped.gov.ph')
+        return $this->from('no-reply-rms@deped.gov.ph')
             ->subject('Message from RMS')
             ->view('admin.applications.inquiries.email')
             ->with('data', $this->data);
@@ -36,7 +36,7 @@ class UpdateMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Update Mail',
+            subject: 'Message from RMS',
         );
     }
 
