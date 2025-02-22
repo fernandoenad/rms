@@ -98,8 +98,16 @@ class ApplicationController extends Controller
 
     public function destroy(Application $application)
     {
+        $data['name'] =  $application->first_name;
+        $data['subject'] =  $application->application_code;
+        $data['application'] = $application->application_code;
+
         $application->inquiries()->delete(); //deletes the inquries first
         $application->delete();
+
+        // email 
+        $data['message'] = 'Application was deleted by ' . $data['author'] =  auth()->user()->name;
+        Mail::to($application->email)->queue(new UpdateMail($data));
         
         return redirect(route('admin.applications.index'))->with('status', 'Application was successfully deleted.');
     }
