@@ -106,7 +106,7 @@ class ApplicationController extends Controller
         $application->delete();
 
         // email 
-        $data['message'] = 'Application was deleted by ' . $data['author'] =  auth()->user()->name;
+        $data['message'] = 'Application was deleted by ' . $data['author'] =  auth()->user()->name . '.';
         Mail::to($application->email)->queue(new UpdateMail($data));
         
         return redirect(route('admin.applications.index'))->with('status', 'Application was successfully deleted.');
