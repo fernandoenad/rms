@@ -74,7 +74,7 @@
                                                 <a href="{{route('admin.applications.edit', ['application' => $application])}}" class="btn btn-sm btn-warning" title="Modify">
                                                     <span class="fas primary fa-fw fa-edit"></span>
                                                 </a>
-                                                <a href="{{route('admin.applications.delete', ['application' => $application])}}" class="btn btn-sm btn-danger {{ $application->station_id != -1 ? 'disabled' : '' }}" title="Delete">
+                                                <a href="{{route('admin.applications.delete', ['application' => $application])}}" class="btn btn-sm btn-danger {{ isset($application->assessment) ? 'disabled' : '' }}" title="Delete">
                                                     <span class="fas fa-fw fa-trash"></span>
                                                 </a>
                                                 
