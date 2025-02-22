@@ -13,6 +13,8 @@ use App\Models\Assessment;
 use App\Models\Template;
 use Illuminate\Support\Facades\DB;
 use Auth;
+use Mail;
+use App\Mail\UpdateMail;
 
 class ApplicationController extends Controller
 {
@@ -180,8 +182,13 @@ class ApplicationController extends Controller
         ]);
 
         Inquiry::where('application_id', '=', $application->id)->update(['status' => 0]);
+
+        // email 
+        $data['name'] =  $application->first_name;
+
+        Mail::to($application->email)->queue(new UpdateMail($data));
         
-        return redirect(route('admin.applications.show', ['application' => $application]))->with('status', 'Inquiry message was successfully sent.');
+        return redirect(route('admin.applications.show', ['application' => $application]))->with('status', 'Message was successfully saved and emailed.');
     }
 
     public function vacancy_show(Vacancy $vacancy)

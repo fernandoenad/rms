@@ -141,7 +141,7 @@
                                                 @csrf 
                                                 @method('patch')
                                                 <div class="input-group input-group-sm mb-0">
-                                                    <textarea class="form-control form-control-sm" name="message" required placeholder="Inquiry message"></textarea>
+                                                    <textarea class="form-control form-control-sm" name="message" required placeholder="Message will saved and emailed to the applicant."></textarea>
                                                     <div class="input-group-append">
                                                         <button type="submit"  class="btn btn-danger">Send</button>
                                                     </div>
