@@ -36,7 +36,7 @@ class UpdateMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'DepEd Bohol RMS | Re: Application ID# ' . $this->data['subject']. ')' ,
+            subject: '[DepEd Bohol RMS] Re: Application ID# ' . $this->data['subject'] ,
         );
     }
 
