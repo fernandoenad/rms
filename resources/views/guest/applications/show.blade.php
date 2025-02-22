@@ -217,7 +217,8 @@
                                                         <td>                                                            
                                                             <span class="badge bg-warning">IMPORTANT</span>
                                                             <br>
-                                                            Please contact School (teaching position) / <br>
+                                                            If you already have submitted to your Pertinent Documents, <br>
+                                                            please contact School (teaching position) / <br>
                                                             SDO-HR Office (non-teaching, school administration, and  <br>
                                                             teaching-related positions) to have it marked COMPLETED. 
                                                         </td>                                                  
