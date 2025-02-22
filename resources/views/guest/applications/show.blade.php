@@ -117,7 +117,7 @@
                                         <a class="nav-link" href="#my-scores" data-toggle="tab">Scores</a>
                                     </li>
                                     <li class="nav-item">
-                                        <a class="nav-link" href="#my-queries" data-toggle="tab">Queries</a>
+                                        <a class="nav-link" href="#my-queries" data-toggle="tab">Updates</a>
                                     </li>
                                     
                                 </ul>
@@ -292,7 +292,8 @@
                                         @endif
                                         
                                     </div>
-                                        <form class="form-horizontal" method="post" action="{{ route('guest.applications.inquire2', $application) }}">
+                                    <!--
+                                    <form class="form-horizontal" method="post" action="{{ route('guest.applications.inquire2', $application) }}">
                                         @csrf 
                                         @method('post')
                                         <div class="input-group input-group-sm mb-0">
@@ -303,6 +304,7 @@
                                             </div>
                                         </div>
                                     </form>
+                                    -->
                                 </div>
                             </div>
                         </div>
