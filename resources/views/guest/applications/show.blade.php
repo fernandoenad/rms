@@ -215,9 +215,11 @@
                                                             Status<br>
                                                         </td>
                                                         <td>                                                            
-                                                            <span class="badge bg-warning">Please contact School (teaching position) / 
-                                                                SDO-HR Office (non-teaching, school administration, and teaching-related positions) 
-                                                                to have it marked as COMPLETED.</span>
+                                                            <span class="badge bg-warning">IMPORTANT</span><
+                                                            <br>
+                                                            Please contact School (teaching position) / 
+                                                            SDO-HR Office (non-teaching, school administration, and 
+                                                            teaching-related positions) to have it marked COMPLETED.
                                                         </td>                                                  
                                                     </tr>
                                                 @endif
