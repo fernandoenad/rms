@@ -36,7 +36,7 @@ class UpdateMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Message from RMS',
+            subject: 'Message from RMS (for Application ID: ' . $this->data->subject. ')' ,
         );
     }
 

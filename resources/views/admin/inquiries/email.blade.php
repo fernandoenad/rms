@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Message from RMS</title>
+    <title>Message from RMS (for Applcation ID: {{ $data['subject'] }})</title>
 </head>
 <body>
     <p>Hello, <strong>{{ $data['name'] }}</strong>!</p>

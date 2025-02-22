@@ -185,6 +185,7 @@ class ApplicationController extends Controller
 
         // email 
         $data['name'] =  $application->first_name;
+        $data['subject'] =  $application->application_code;
 
         Mail::to($application->email)->queue(new UpdateMail($data));
         
