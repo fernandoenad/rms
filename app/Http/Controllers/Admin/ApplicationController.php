@@ -135,6 +135,19 @@ class ApplicationController extends Controller
 
         $application->update($data);
 
+        $data['application_id'] = $application->id;
+        $data['author'] =  auth()->user()->name;
+        $data['message'] = 'The application details were updated.';
+        $data['status'] = 0;
+
+        $inquiry = Inquiry::create($data);
+
+        // email 
+        $data['name'] =  $application->first_name;
+        $data['subject'] =  $application->application_code;
+        $data['application'] = $application->application_code;
+        Mail::to($application->email)->queue(new UpdateMail($data));
+
         return redirect(route('admin.applications.index'))->with('status', 'Application was successfully updated.');
     }
 

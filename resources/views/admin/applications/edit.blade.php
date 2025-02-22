@@ -77,7 +77,7 @@
                             </div>
                         </div>
                         <div class="card-footer">
-                            <button type="submit" class="btn btn-primary">Update</button>
+                            <button type="submit" class="btn btn-primary" {{ isset($application->assessment) ? 'disabled' : '' }}>Update</button>
                             <a href="{{route('admin.applications.show', $application)}}" class="btn btn-default float-right">Cancel</a>
                         </div>
                     </form> 
