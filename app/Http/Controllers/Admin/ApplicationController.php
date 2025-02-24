@@ -218,7 +218,7 @@ class ApplicationController extends Controller
         $data['name'] =  $application->first_name;
         $data['subject'] =  $application->application_code;
         $data['application'] = $application->application_code;
-        //Mail::to($application->email)->queue(new UpdateMail($data));
+        Mail::to($application->email)->queue(new UpdateMail($data));
         
         return redirect(route('admin.applications.show', ['application' => $application]))->with('status', 'Message was successfully saved and emailed.');
     }

@@ -98,7 +98,7 @@ class ApplicationController extends Controller
         $data['message'] =  'You have successfully applied for the ' . $vacancy->position_title . ' position!';
         $data['subject'] =  $newApplication->application_code;
         $data['application'] = $newApplication->application_code;
-        //Mail::to($newApplication->email)->queue(new UpdateMail($data));
+        Mail::to($newApplication->email)->queue(new UpdateMail($data));
 
         $request->session()->put('guest_email', $request->email);
         
