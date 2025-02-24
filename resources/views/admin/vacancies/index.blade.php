@@ -57,6 +57,7 @@
                                     <th>Post</th>
                                     <th>SSC</th>
                                     <th>DSC</th>
+                                    <th>Applications</th>
                                     <th width="15%">Action</th>
                                 </tr>
                             </thead>
@@ -75,6 +76,7 @@
                                             <td>{{$vacancy->getStatus()}}</td>
                                             <td>{{$vacancy->getLevel1Status()}}</td>
                                             <td>{{$vacancy->getLevel2Status()}}</td>
+                                            <td class="text-right">{{$vacancy->applications->count()}}</td>
                                             <td>
                                                 <a href="{{ route('admin.vacancies.apply', $vacancy) }}" class="btn btn-sm btn-primary" 
                                                     target="_blank" title="Submit application"
