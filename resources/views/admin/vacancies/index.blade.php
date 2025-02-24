@@ -76,7 +76,7 @@
                                             <td>{{$vacancy->getStatus()}}</td>
                                             <td>{{$vacancy->getLevel1Status()}}</td>
                                             <td>{{$vacancy->getLevel2Status()}}</td>
-                                            <td class="text-right">{{$vacancy->applications->count()}}</td>
+                                            <td class="text-right">{{$vacancy->applications->where('station_id','>',0)->count()}}/{{$vacancy->applications->count()}}</td>
                                             <td>
                                                 <a href="{{ route('admin.vacancies.apply', $vacancy) }}" class="btn btn-sm btn-primary" 
                                                     target="_blank" title="Submit application"
