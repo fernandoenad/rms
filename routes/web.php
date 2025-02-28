@@ -72,6 +72,9 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/applications/{application}/edit', [AdminApplication::class, 'edit'])->name('admin.applications.edit');
     Route::get('/admin/applications/{application}/edit_scores', [AdminApplication::class, 'edit_scores'])->name('admin.applications.edit_scores');
     Route::get('/admin/applications/{application}/revert', [AdminApplication::class, 'revert'])->name('admin.applications.revert');
+    Route::get('/admin/applications/{application}/remove_station', [AdminApplication::class, 'remove_station'])->name('admin.applications.remove_station');
+    Route::get('/admin/applications/{application}/qualify', [AdminApplication::class, 'qualify'])->name('admin.applications.qualify');
+    Route::get('/admin/applications/{application}/disqualify', [AdminApplication::class, 'disqualify'])->name('admin.applications.disqualify');
     Route::put('/admin/applications/{application}', [AdminApplication::class, 'update'])->name('admin.applications.update');
     Route::put('/admin/applications/{application}/update_scores/', [AdminApplication::class, 'update_scores'])->name('admin.applications.update_scores');
     Route::patch('/admin/applications/{application}', [AdminApplication::class, 'saveInquiry'])->name('admin.applications.saveInquiry');

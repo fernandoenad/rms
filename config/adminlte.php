@@ -389,12 +389,7 @@ return [
             'icon' => 'fas fa-fw fa-robot',
             'active' => ['admin/ai', 'admin/ai/train']
         ],
-        [
-            'text' => 'Monitor',
-            'url'  => 'admin/monitor',
-            'icon' => 'fas fa-fw fa-list',
-            'active' => ['admin/monitor']
-        ],
+
         /** 
         ['header' => 'account_settings'],
         [

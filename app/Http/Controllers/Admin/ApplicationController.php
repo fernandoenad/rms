@@ -143,9 +143,37 @@ class ApplicationController extends Controller
 
         $application->update($data);
 
+        $data['message'] = 'The application details were updated.';
+        
+        $assessment = Assessment::join('applications', 'applications.id', '=', 'assessments.application_id')
+            ->join('vacancies', 'applications.vacancy_id', '=', 'vacancies.id')
+            ->where('applications.vacancy_id', '=', $application->vacancy_id)
+            ->where('applications.station_id', '=', $application->station_id)
+            ->where('applications.id', '=', $application->id)
+            ->select('assessments.*')
+            ->get();
+
+        if($assessment->count() == 0 && $data['station_id'] > 0){
+            $template = Template::find($application->vacancy->template_id);
+            $criteria = json_decode($template->template, true);
+            $asessment_details = $criteria;
+
+            foreach ($asessment_details as $key => $value) {
+                $asessment_details[$key] = is_numeric($asessment_details[$key]) ? 0 : '-';
+            }
+
+            $assessment = Assessment::create(['application_id' => $application->id,
+                'template_id' => $application->vacancy->template_id,
+                'assessment' => json_encode($asessment_details),
+                'status' => 2,
+            ]);
+
+            $data['message'] = 'The application was updated and assessed (initially/preliminary) and has been forwarded to the upper-Level CAC.';
+        }
+
         $data['application_id'] = $application->id;
         $data['author'] =  auth()->user()->name;
-        $data['message'] = 'The application details were updated.';
+        //$data['message'] = 'The application details were updated.';
         $data['status'] = 0;
 
         $inquiry = Inquiry::create($data);
@@ -156,7 +184,7 @@ class ApplicationController extends Controller
         $data['application'] = $application->application_code;
         //Mail::to($application->email)->queue(new UpdateMail($data));
 
-        return redirect(route('admin.applications.index'))->with('status', 'Application was successfully updated.');
+        return redirect(route('admin.applications.edit', ['application' => $application]))->with('status', 'Application was successfully updated.');
     }
 
     public function update_scores(Application $application, Request $request)
@@ -254,6 +282,52 @@ class ApplicationController extends Controller
 
         return redirect(route('admin.applications.show', $application))->with('status', 'The application status has been reverted.');
     }
+
+    public function remove_station(Application $application)
+    {
+        $assessment = $application->assessment;
+        $assessment->delete(); 
+
+        $application->update(['station_id' => $application->vacancy->office_level]);
+
+        $data['application_id'] = $application->id;
+        $data['author'] =  auth()->user()->name;
+        $data['message'] = 'The station tagging has been removed.';
+        $data['status'] = 0;
+
+        $inquiry = Inquiry::create($data);
+
+        return redirect(route('admin.applications.edit', $application))->with('status', $data['message']);
+    }
+
+    public function qualify(Application $application)
+    {
+        $application->assessment->update(['status' => 2]);
+
+        $data['application_id'] = $application->id;
+        $data['author'] =  auth()->user()->name;
+        $data['message'] = 'The application has been tagged as qualified.';
+        $data['status'] = 0;
+
+        $inquiry = Inquiry::create($data);
+
+        return redirect(route('admin.applications.edit', $application))->with('status', $data['message']);
+    }
+
+    public function disqualify(Application $application)
+    {
+        $application->assessment->update(['status' => 4]);
+
+        $data['application_id'] = $application->id;
+        $data['author'] =  auth()->user()->name;
+        $data['message'] = 'The application has been tagged as disqualified.';
+        $data['status'] = 0;
+
+        $inquiry = Inquiry::create($data);
+
+        return redirect(route('admin.applications.edit', $application))->with('status', $data['message']);
+    }
+
 
     public function vacancy_show_carview(Vacancy $vacancy)
     {

@@ -24,6 +24,12 @@
 @stop
 
 @section('content')
+    @if (session('status'))
+        <div class="alert alert-success alert-dismissible auto-close">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+            {{ session('status') }}
+        </div>
+    @endif
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
@@ -66,18 +72,45 @@
                                 <select type="text" class="form-control" placeholder="Enter position applied for" 
                                     name="station_id" class="@error('station_id') is-invalid @enderror"
                                     value="{{ $application->station_id }}">
-                                    <option value="0" {{ $application->station_id == -1 || $application->station_id == 0 ? 'selected' :'' }}>Not yet tagged</option>
+                                    <option value="0" {{ $application->station_id == -1 || $application->station_id == 0 ? 'selected' :'' }} {{ isset($application->assessment) ? 'disabled' : '' }}>Not yet tagged</option>
                                     @foreach($stations as $station)
                                         <option value="{{$station->id}}" {{ $station->id == $application->station_id ? 'selected' :'' }}>{{ $station->code}}- {{ $station->name}}</option>
                                     @endforeach
                                 </select>
                                 @error('station_id')
                                     <span class="text-danger"><small>{{ $message }}</small></span>
-                                @enderror                           
+                                @enderror   
+                                
+                                @if(isset($application->assessment))
+                                    <br>
+                                    <a href="{{route('admin.applications.remove_station', $application)}}" class="btn btn-danger"
+                                        onclick="return confirm('This will remove the school tagging permanently. Are you sure?')">Remove Station Tagging</a>
+                                @endif                           
+                            </div>
+                            <div class="form-group">
+                                <label for="#">Status</label>
+                                <input type="text" class="form-control" placeholder="Enter position applied for" 
+                                    name="" 
+                                    value="{{ isset($application->assessment) ? $application->assessment->get_status() : 'New' }}" readonly>
+                                @error('station_id')
+                                    <span class="text-danger"><small>{{ $message }}</small></span>
+                                @enderror 
+
+                                @if(isset($application->assessment))
+                                    <br>
+                                    @if($application->assessment->status == 4)
+                                    <a href="{{route('admin.applications.qualify', $application)}}" class="btn btn-success"
+                                        onclick="return confirm('This will tag the application as Qualified. Are you sure?')">Qualify</a>
+                                    @else
+                                    <a href="{{route('admin.applications.disqualify', $application)}}" class="btn btn-danger"
+                                        onclick="return confirm('This will tag the application as Disqualified. Are you sure?')">Disqualify</a>
+                                    @endif
+                                @endif                          
                             </div>
                         </div>
                         <div class="card-footer">
-                            <button type="submit" class="btn btn-primary" {{ isset($application->assessment) ? 'disabled' : '' }}>Update</button>
+                            <button type="submit" class="btn btn-primary">Update</button>
+                            
                             <a href="{{route('admin.applications.show', $application)}}" class="btn btn-default float-right">Cancel</a>
                         </div>
                     </form> 
