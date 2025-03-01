@@ -33,7 +33,7 @@
                     <div class="card">
                         <div class="card-body login-card-body">
                             <p class="login-box-msg">Sign in to start your session</p>
-
+                            <!--
                             <form action="{{route('login')}}" method="post">
                                 @csrf 
                                 @method('post')
@@ -75,31 +75,60 @@
                                             </label>
                                         </div>
                                     </div>
-                                    <!-- /.col -->
                                     <div class="col-4">
                                         <button type="submit" class="btn btn-primary btn-block">Sign In</button>
                                     </div>
-                                    <!-- /.col -->
                                 </div>
                             </form>
+                            -->
                             
                             <div class="social-auth-links text-center mb-3">
+                                <!--
                                 <p>- OR -</p>
                                 <a href="#" class="btn btn-block btn-primary">
                                 <i class="fab fa-facebook mr-2"></i> Sign in using Facebook
                                 </a>
-                                <a href="#" class="btn btn-block btn-danger">
-                                <i class="fab fa-google-plus mr-2"></i> Sign in using Google+
+                                
+                                <a href="{{ url('/auth/google') }}" class="btn btn-block btn-success">
+                                <i class="fab fa-google mr-2"></i> Sign in using Google
                                 </a>
+                                -->
+
+                                <a href="{{ url('/auth/google') }}" class="google-btn">
+									<img src="https://developers.google.com/identity/images/g-logo.png" alt="Google Logo" width="10%">
+									Sign in with DepEd GMail
+								</a>
+                                
+                                @if (session('not_reg'))
+                                    <br>
+									<div class="alert alert-warning">
+										<strong>{{ session('not_reg') }}</strong>
+										<a href="./rms/register">Register?</a>
+									</div>
+									
+								@endif
+								@if (session('not_deped'))
+									<div class="alert alert-warning">
+										<strong>{{ session('not_deped') }}</strong>										
+                                    </div>
+								@endif
+
+                                <br>
+                                <br>
+                                Forgot your DepEd GMail/Microsoft password? <br>
+								Request for reset
+								<a href="https://hrms.depedbohol.org/help/reset" target="_blank" class="google-btn">here</a>.
                             </div>
                             
                             <!-- /.social-auth-links -->
+                            <!--
                             <p class="mb-1">
                                 <a href="#">I forgot my password</a>
                             </p>
                             <p class="mb-0">
                                 <a href="#" class="text-center">Register a new membership</a>
                             </p>
+                            -->
                         </div>
                         <!-- /.login-card-body -->
                     </div>
