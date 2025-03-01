@@ -121,6 +121,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/vacancies/reports/list', [AdminVacancyReport::class, 'list'])->name('admin.vacancies.reports.list');
     Route::get('/admin/vacancies/reports/list/{application}/assess', [AdminVacancyReport::class, 'assess'])->name('admin.vacancies.reports.assess');
     Route::get('/admin/vacancies/reports/{office}', [AdminVacancyReport::class, 'show'])->name('admin.vacancies.reports.show');
+    Route::get('/admin/vacancies/reports/{office}/{station}', [AdminVacancyReport::class, 'show_station'])->name('admin.vacancies.reports.show_station');
 
     Route::get('/admin/vacancies/active', [AdminVacancy::class, 'active'])->name('admin.vacancies.active');
 

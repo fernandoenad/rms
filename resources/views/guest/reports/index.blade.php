@@ -40,11 +40,11 @@
                                     <th width="30%">District</th>
                                     <th class="text-right">Untagged applications</th>
                                     <th class="text-right">Tagged applications</th>
-                                    <th class="text-right">Pending (SRC)</th>
-                                    <th class="text-right">Completed (SRC)</th>
+                                    <th class="text-right">Pending (SSC)</th>
+                                    <th class="text-right">Completed (SSC)</th>
                                     <th class="text-right">Preliminary Performance</th>
-                                    <th class="text-right">Pending (DRC)</th>
-                                    <th class="text-right">Completed (DRC)</th>
+                                    <th class="text-right">Pending (DSC)</th>
+                                    <th class="text-right">Completed (DSC)</th>
                                     <th class="text-right">Comparative Assessment Performance</th>
                                 </tr>
                             </thead>

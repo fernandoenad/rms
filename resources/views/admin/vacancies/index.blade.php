@@ -43,9 +43,11 @@
                         <a class="" href="{{ route('admin.vacancies.reports.index') }}">
                             <i class="fas fa-list"></i> Show report
                         </a>
+                        <!--
                         <a class="float-right" href="{{ route('admin.vacancies.active') }}">
                             <i class="fas fa-search"></i> Active positions only
                         </a>
+                        -->
                         <br><br>
                         <table id="applications" class="table table-bordered table-striped">
                             <thead>

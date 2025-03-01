@@ -34,9 +34,9 @@ class Assessment extends Model
 
         switch($this->status){
             case 0: $label = 'New'; break;
-            case 1: $label = 'SRC Pending'; break;
-            case 2: $label = 'SRC Completed/DRC Pending'; break;
-            case 3: $label = 'DRC Completed'; break;
+            case 1: $label = 'SSC Pending'; break;
+            case 2: $label = 'SSC Completed/DSC Pending'; break;
+            case 3: $label = 'DSC Completed'; break;
             case 4: $label = 'Disqualified'; break;
         }
 

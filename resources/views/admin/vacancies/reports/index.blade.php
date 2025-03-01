@@ -1,7 +1,7 @@
 @extends('adminlte::page')
 
 @php
-    $title = "Active Positions";
+    $title = "Reports";
     $app_name = config('app.name', '') . ' [Admin]';
 @endphp 
 
@@ -36,9 +36,11 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">List</h3>
+                        <!--
                         <a class="float-right" href="{{ route('admin.vacancies.reports.nonassessed') }}">
                             Non-assessed (SRC) report
                         </a>
+                        -->
                     </div>
                     <div class="card-body">
                         <table id="list" class="table table-sm table-bordered table-striped">
@@ -47,10 +49,10 @@
                                     <th>District</th>
                                     <th class="text-right">Untagged applications</th>
                                     <th class="text-right">Tagged applications</th>
-                                    <th class="text-right">Pending (SRC)</th>
-                                    <th class="text-right">Completed (SRC)</th>
-                                    <th class="text-right">Pending (DRC)</th>
-                                    <th class="text-right">Completed (DRC)</th>
+                                    <th class="text-right">Pending (SSC)</th>
+                                    <th class="text-right">Completed (SSC)</th>
+                                    <th class="text-right">Pending (DSC)</th>
+                                    <th class="text-right">Completed (DSC)</th>
                                 </tr>
                             </thead>
                             <tbody>

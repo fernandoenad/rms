@@ -106,6 +106,21 @@ class VacancyReportController extends Controller
         return view('admin.vacancies.reports.show', ['office' => $office, 'applications' => $applications, 'stations' => $stations, 'src_t' => $src_t, 'src_p' => $src_p, 'src_c' => $src_c, 'drc_p' => $drc_p, 'drc_c' => $drc_c, 'cycle' => $cycle]);
     }
 
+    public function show_station(Office $office, Station $station)
+    {
+        $cycle = Vacancy::latest()->first()->cycle;
+
+        $applications = Application::join('vacancies', 'vacancies.id', '=', 'applications.vacancy_id')
+            ->where('applications.station_id', '=', $station->id)
+            ->where('vacancies.cycle', '=', $cycle)
+            ->orderBy('applications.last_name', 'ASC')
+            ->orderBy('applications.first_name', 'ASC')
+            ->select('applications.*')
+            ->get();
+        
+        return view('admin.vacancies.reports.show_station', ['office' => $office, 'applications' => $applications, 'station' => $station, 'cycle' => $cycle]);
+    }
+
 
     public function nonassessed()
     {

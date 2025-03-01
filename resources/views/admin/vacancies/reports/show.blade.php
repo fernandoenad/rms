@@ -1,7 +1,7 @@
 @extends('adminlte::page')
 
 @php
-    $title = "Active Positions";
+    $title = $office->name . " District";
     $app_name = config('app.name', '') . ' [Admin]';
 @endphp 
 
@@ -16,6 +16,7 @@
             <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="{{ route('admin.index') }}">Dashboard</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.index') }}">Positions</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('admin.vacancies.reports.index') }}">Reports</a></li>
                 <li class="breadcrumb-item active">{{ $title }}</li>
             </ol>
         </div>
@@ -43,10 +44,10 @@
                                 <tr>
                                     <th width="30%">Stations</th>
                                     <th class="text-right">Tagged applications</th>
-                                    <th class="text-right">Pending (SRC)</th>
-                                    <th class="text-right">Completed (SRC)</th>
-                                    <th class="text-right">Pending (DRC)</th>
-                                    <th class="text-right">Completed (DRC)</th>
+                                    <th class="text-right">Pending (SSC)</th>
+                                    <th class="text-right">Completed (SSC)</th>
+                                    <th class="text-right">Pending (DSC)</th>
+                                    <th class="text-right">Completed (DSC)</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -106,7 +107,7 @@
                                             ->count('applications.id');
                                     @endphp
                                     <tr>
-                                        <td>{{$station->name}}</td>
+                                        <td><a href="{{ route('admin.vacancies.reports.show_station', [$office, $station]) }}">{{$station->name}}</a></td>
                                         <td class="text-right">{{number_format($src_t, 0) }}</td>
                                         <td class="text-right">{{number_format($src_p, 0) }}</td>
                                         <td class="text-right">{{number_format($src_c, 0) }}

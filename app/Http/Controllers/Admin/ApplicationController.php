@@ -106,7 +106,7 @@ class ApplicationController extends Controller
         $application->delete();
 
         // email 
-        $data['message'] = 'Application was deleted by ' . $data['author'] =  auth()->user()->name . '.';
+        $data['message'] = 'Application was deleted by HR.';
         //Mail::to($application->email)->queue(new UpdateMail($data));
         
         return redirect(route('admin.applications.index'))->with('status', 'Application was successfully deleted.');
@@ -143,7 +143,7 @@ class ApplicationController extends Controller
 
         $application->update($data);
 
-        $data['message'] = 'The application details were updated.';
+        $data['message'] = 'The application details were updated by HR.';
         
         $assessment = Assessment::join('applications', 'applications.id', '=', 'assessments.application_id')
             ->join('vacancies', 'applications.vacancy_id', '=', 'vacancies.id')
@@ -168,7 +168,7 @@ class ApplicationController extends Controller
                 'status' => 2,
             ]);
 
-            $data['message'] = 'The application was updated and assessed (initially/preliminary) and has been forwarded to the upper-Level CAC.';
+            $data['message'] = 'The application was updated and assessed by HR. This has has been forwarded to the top-level committee.';
         }
 
         $data['application_id'] = $application->id;
@@ -212,7 +212,7 @@ class ApplicationController extends Controller
 
         $data['application_id'] = $application->id;
         $data['author'] =  auth()->user()->name;
-        $data['message'] = 'The assessment scores were updated in the top-most level. You can view your updated scores via the Scores tab.';
+        $data['message'] = 'The assessment scores were updated by HR. You can view your updated scores via the Scores tab.';
         $data['status'] = 0;
 
         $inquiry = Inquiry::create($data);
@@ -275,7 +275,7 @@ class ApplicationController extends Controller
 
         $data['application_id'] = $application->id;
         $data['author'] =  auth()->user()->name;
-        $data['message'] = 'Status has been sucessfuly reverted.';
+        $data['message'] = 'Status was reverted by HR.';
         $data['status'] = 0;
 
         $inquiry = Inquiry::create($data);
@@ -292,7 +292,7 @@ class ApplicationController extends Controller
 
         $data['application_id'] = $application->id;
         $data['author'] =  auth()->user()->name;
-        $data['message'] = 'The station tagging has been removed.';
+        $data['message'] = 'The station tagging has been removed by HR.';
         $data['status'] = 0;
 
         $inquiry = Inquiry::create($data);
@@ -306,7 +306,7 @@ class ApplicationController extends Controller
 
         $data['application_id'] = $application->id;
         $data['author'] =  auth()->user()->name;
-        $data['message'] = 'The application has been tagged as qualified.';
+        $data['message'] = 'The application has been tagged as qualified by HR.';
         $data['status'] = 0;
 
         $inquiry = Inquiry::create($data);
@@ -320,7 +320,7 @@ class ApplicationController extends Controller
 
         $data['application_id'] = $application->id;
         $data['author'] =  auth()->user()->name;
-        $data['message'] = 'The application has been tagged as disqualified.';
+        $data['message'] = 'The application has been tagged as disqualified by HR.';
         $data['status'] = 0;
 
         $inquiry = Inquiry::create($data);

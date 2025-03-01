@@ -109,8 +109,7 @@
                             </div>
                         </div>
                         <div class="card-footer">
-                            <button type="submit" class="btn btn-primary">Update</button>
-                            
+                            <button type="submit" class="btn btn-primary">Update</button> <small>Clicking Update with a tagged station will send the application to the top-level.</small>
                             <a href="{{route('admin.applications.show', $application)}}" class="btn btn-default float-right">Cancel</a>
                         </div>
                     </form> 
