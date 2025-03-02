@@ -98,23 +98,24 @@
 									<img src="https://developers.google.com/identity/images/g-logo.png" alt="Google Logo" width="10%">
 									Sign in with DepEd GMail
 								</a>
+                                <br>
+                                <br>
                                 
                                 @if (session('not_reg'))
-                                    <br>
 									<div class="alert alert-warning">
 										<strong>{{ session('not_reg') }}</strong>
 										<a href="./rms/register">Register?</a>
 									</div>
-									
+									<br>
 								@endif
 								@if (session('not_deped'))
 									<div class="alert alert-warning">
 										<strong>{{ session('not_deped') }}</strong>										
                                     </div>
+                                    <br>
 								@endif
 
-                                <br>
-                                <br>
+                                
                                 Forgot your DepEd GMail/Microsoft password? <br>
 								Request for reset
 								<a href="https://hrms.depedbohol.org/help/reset" target="_blank" class="google-btn">here</a>.
