@@ -154,7 +154,7 @@
                 <td>&nbsp;</td>
                 <td rowspan="4">
                     <img src="{{url('images/signatures/luarez.png')}}" height="50"><br>
-                    <strong>FAY C. LUAREZ EdD, PhD-TM, CESO VI</strong><br>OIC, Office of the Schools Division Superintendent
+                    <strong>FAY C. LUAREZ EdD, PhD-TM, CESO VI</strong><br>Asst. Schools Division Superintendent<br>OIC, Office of the Schools Division Superintendent
                 </td> 
             </tr>
             <tr align="center">
@@ -166,7 +166,7 @@
             <tr align="center">
                 <td></td>
                 <td>&nbsp;</td>
-                <td><img src="{{url('images/signatures/ompad.png')}}" height="50"><br><strong>EDUARDO A. OMPAD EdD, CESE</strong><br>Office of the Asst. Schools Division Superintendent<br>HRMPSB Chairman</td>
+                <td><img src="{{url('images/signatures/ompad.png')}}" height="50"><br><strong>EDUARDO A. OMPAD EdD, CESE</strong><br>Asst. Schools Division Superintendent<br>HRMPSB Chairman</td>
                 <td>&nbsp;</td>
             </tr>
         </table>

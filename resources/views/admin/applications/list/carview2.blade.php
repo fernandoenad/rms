@@ -155,7 +155,7 @@
                 <td>&nbsp;</td>
                 <td rowspan="4">
                     <img src="{{url('images/signatures/luarez.png')}}" height="50"><br>
-                    <strong>FAY C. LUAREZ EdD, PhD-TM, CESO VI</strong><br>OIC, Office of the Schools Division Superintendent
+                    <strong>FAY C. LUAREZ EdD, PhD-TM, CESO VI</strong><br>Asst. Schools Division Superintendent<br>OIC, Office of the Schools Division Superintendent
                 </td> 
             </tr>
             <tr align="center">
