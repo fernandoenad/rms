@@ -130,8 +130,8 @@
                 <td><img src="{{url('images/signatures/calamba.png')}}" height="50"><br><strong>RENATO D. CALAMBA PhD</strong><br>President, PSDSA<br>HRMPSB Member</td>
                 <td>&nbsp;</td>
                 <td rowspan="4">
-                    <img src="{{url('images/signatures/caberte.png')}}" height="50"><br>
-                    <strong>CASIANA P. CABERTE PhD, CESO VI</strong><br>OIC, Office of the Schools Division Superintendent
+                    <img src="{{url('images/signatures/luarez.png')}}" height="50"><br>
+                    <strong>FAY C. LUAREZ EdD, PhD-TM, CESO VI</strong><br>OIC, Office of the Schools Division Superintendent
                 </td> 
             </tr>
             <tr align="center">
@@ -141,9 +141,9 @@
                 <td>&nbsp;</td>
             </tr>
             <tr align="center">
-                <td><img src="{{url('images/signatures/luarez.png')}}" height="50"><br><strong>FAY C. LUAREZ PhD, EdD, TM, CESO VI</strong><br>Assistant Schools Division Superintendent<br>HRMPSB Vice Chairman</td>
+                <td></td>
                 <td>&nbsp;</td>
-                <td><img src="{{url('images/signatures/ompad.png')}}" height="50"><br><strong>EDUARDO A. OMPAD EdD, CESE</strong><br>OIC-Office of the Asst. Schools Division Superintendent<br>HRMPSB Chairman</td>
+                <td><img src="{{url('images/signatures/ompad.png')}}" height="50"><br><strong>EDUARDO A. OMPAD EdD, CESE</strong><br>Office of the Asst. Schools Division Superintendent<br>HRMPSB Chairman</td>
                 <td>&nbsp;</td>
 
             </tr>
