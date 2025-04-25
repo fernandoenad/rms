@@ -126,9 +126,9 @@
                            
             </tr>
             <tr align="center">
+                <td><img src="{{url('images/signatures/enad.png')}}" height="50"><br><strong>FERNANDO B. ENAD PhD</strong><br>Master Teacher II<br>HRMPSB Secretariat Head</td>
                 <td><img src="{{url('images/signatures/apale.png')}}" height="50"><br><strong>JUDITH S. APALE</strong><br>Administrative Officer IV<br>HRMPSB Member</td>
                 <td><img src="{{url('images/signatures/albutra.png')}}" height="50"><br><strong>FERMIN M. ALBUTRA MPA</strong><br>Administrative Officer V<br>HRMPSB Member</td>
-                <td><img src="{{url('images/signatures/calamba.png')}}" height="50"><br><strong>RENATO D. CALAMBA PhD</strong><br>President, PSDSA<br>HRMPSB Member</td>
                 <td>&nbsp;</td>
                 <td rowspan="4">
                     <img src="{{url('images/signatures/luarez.png')}}" height="50"><br>
@@ -142,10 +142,11 @@
                 <td>&nbsp;</td>
             </tr>
             <tr align="center">
-                <td></td>
                 <td>&nbsp;</td>
+                <td><img src="{{url('images/signatures/calamba.png')}}" height="50"><br><strong>RENATO D. CALAMBA PhD</strong><br>President, PSDSA<br>HRMPSB Member</td>
                 <td><img src="{{url('images/signatures/ompad.png')}}" height="50"><br><strong>EDUARDO A. OMPAD EdD, CESE</strong><br>Asst. Schools Division Superintendent<br>HRMPSB Chairman</td>
                 <td>&nbsp;</td>
+
             </tr>
         </table>
     </small>
