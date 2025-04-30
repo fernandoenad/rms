@@ -53,6 +53,11 @@ class Application extends Model
         return $this->last_name . ', ' . $this->first_name . ' ' . substr($this->middle_name, 0, 1);
     }
 
+    public function getFullname2()
+    {
+        return $this->last_name . ', ' . $this->first_name . ' ' . $this->middle_name;
+    }
+
     public function getAddress()
     {
         return $this->sitio . ', ' . $this->barangay . ', ' . $this->municipality . ' (' . $this->zip . ')';

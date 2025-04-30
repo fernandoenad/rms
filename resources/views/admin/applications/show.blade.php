@@ -155,7 +155,7 @@
                                             <tbody>
                                                 <tr>
                                                     <th width="20%">Name</th>
-                                                    <td>{{ $application->getFullname() }}</td>
+                                                    <td>{{ $application->getFullname2() }}</td>
                                                 </tr>
                                                 <tr>
                                                     <th>Address</th>
