@@ -13,7 +13,7 @@
             </tr>
             <tr align="center">
                 <td><strong>FERNANDO B. ENAD PhD</strong><br>Master Teacher II<br>HRMPSB Secretariat Head</td>
-                <td><strong>JUDITH S. APALE</strong><br>EPS II (M&E) / Conrrent HR<br>HRMPSB Member</td>
+                <td><strong>JUDITH S. APALE</strong><br>EPS II (M&E) / Concurrent HR<br>HRMPSB Member</td>
                 <td><strong>FERMIN M. ALBUTRA MPA</strong><br>Administrative Officer V<br>HRMPSB Member</td>
                 <td>&nbsp;</td>
                 <td rowspan="4">
