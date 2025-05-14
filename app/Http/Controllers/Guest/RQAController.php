@@ -28,13 +28,13 @@ class RQAController extends Controller
                 ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
                 ->get();
 
-            return view('admin.applications.list.carview3', ['vacancy' => $vacancy, 'assessments' => $assessments]);
+            return view('guest.rqas.carview3', ['vacancy' => $vacancy, 'assessments' => $assessments]);
         
 
         } else if(strpos($vacancy->position_title, 'Elementary') !== false || strpos($vacancy->position_title, 'Kindergarten') !== false) {
             $offices = Office::all();
 
-            return view('admin.applications.list.carview2', ['vacancy' => $vacancy, 'offices' => $offices]);
+            return view('guest.rqas.carview2', ['vacancy' => $vacancy, 'offices' => $offices]);
 
         } else {
             $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
@@ -46,7 +46,7 @@ class RQAController extends Controller
                 ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
                 ->get();
 
-            return view('admin.applications.list.carview', ['vacancy' => $vacancy, 'assessments' => $assessments]);
+            return view('guest.rqas.carview', ['vacancy' => $vacancy, 'assessments' => $assessments]);
         }
 
 
