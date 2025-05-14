@@ -15,8 +15,7 @@
         <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
                 <li class="breadcrumb-item"><a href="{{route('admin.index')}}">Dashboard</a></li>
-                <li class="breadcrumb-item"><a href="{{route('admin.applications.index')}}">Applications</a></li>
-                <li class="breadcrumb-item"><a href="{{route('admin.applications.show', ['application' => $application])}}">{{$application->application_code}}</a></li>
+                <li class="breadcrumb-item"><a href="{{route('admin.discrepancies.index')}}">Discrepancies</a></li>
                 <li class="breadcrumb-item active">{{ $title }}</li>
             </ol>
         </div>
@@ -35,9 +34,9 @@
 
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Modify Assessment for Application Code: <strong>{{$application->application_code}}</strong></h3>
+                        <h3 class="card-title">Modify Assessment for Application Code: <strong>{{$assessment->application->application_code}}</strong></h3>
                     </div>
-                    <form method="post" action="{{ route('admin.applications.update_scores', $application) }}">
+                    <form method="post" action="{{route('admin.discrepancies.update', $assessment)}}">
                         @csrf 
                         @method('put')
                     <div class="card-body p-0">
@@ -45,14 +44,14 @@
                             <tbody>
                                 <tr>
                                     <th width="30%">Name</th>
-                                    <td>{{ $application->getFullname() }}</td>
+                                    <td>{{ $assessment->application->getFullname() }}</td>
                                 </tr>
                                 <tr>
                                     <th>Position title applied for</th>
-                                    <td>{{ $application->vacancy->position_title }}</td>
+                                    <td>{{ $assessment->application->vacancy->position_title }}</td>
                                 </tr>
                                 @php 
-                                    $assessment = App\Models\Assessment::where('application_id', '=', $application->id)->first();
+                                    $assessment = App\Models\Assessment::where('application_id', '=', $assessment->application->id)->first();
 
                                 @endphp
                                 <tr>
@@ -61,7 +60,7 @@
                                 </tr>
                                 @php 
                                     $assessment_scores = json_decode($assessment->assessment);
-                                    $template = App\Models\Template::find($application->vacancy->template_id);
+                                    $template = App\Models\Template::find($assessment->application->vacancy->template_id);
                                     $assessment_template = json_decode($template->template, true);
                                     $total_points = 0;
                                 @endphp 
@@ -76,7 +75,6 @@
                                                     name="{{ $key }}" class="@error('{{ $key }}') is-invalid @enderror"
                                                     max="{{ $assessment_template[$key] }}"
                                                     step="{{ is_numeric($value) ? '0.001' : '' }}"
-                                                    {{$application->vacancy->level2_status == 3 ? 'disabled' :'' }}
                                                     value="{{ $value }}">
                                                 @error($key)
                                                     <span class="text-danger"><small>{{ $message }}</small></span>
@@ -84,22 +82,28 @@
                                             </div>
                                         </td>
                                     </tr>
-                                    
                                 @endforeach
+                                <tr>
+                                    <th>Score</th>
+                                    <td>
+                                        Raw: <strong>{{$assessment->score}} </strong><br>
+                                        Published: <strong>{{$total_points}} </strong>
+                                </td>
+                                </tr>
+
                                
                             </tbody>
                         </table>                    
                     </div>
 
                     <div class="card-footer p-2">
-                        <button type="submit" class="btn btn-warning {{$application->vacancy->level2_status == 3 ? 'disabled' :'' }}">Update</button>
-                        <a href="{{route('admin.discrepancies.modify', $application->assessment->first())}}"  class="btn btn-warning">Override</a>
-
+                        <button type="submit" class="btn btn-primary" {{$assessment->status != 3 ? 'disabled':''}}>Update</button>
                         <div class="float-right">
-                            <a href="{{route('admin.applications.show', $application)}}" 
+                            <a href="{{route('admin.discrepancies.index')}}" 
                             class="btn btn-info"><i class="fas fa-reply"></i> Back</a>
                         </div>
                     </div>
+                    </form>
                 </div>
             </div>
         </div>

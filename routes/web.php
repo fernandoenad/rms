@@ -14,6 +14,8 @@ use App\Http\Controllers\Admin\VacancyController as AdminVacancy;
 use App\Http\Controllers\Admin\VacancyReportController as AdminVacancyReport;
 use App\Http\Controllers\Admin\TrainingController as AdminTraining;
 use App\Http\Controllers\Guest\OpenAIController;
+use App\Http\Controllers\Admin\DiscrepancyController as AdminDiscrepancy;
+
 
 use Laravel\Socialite\Facades\Socialite;
 use App\Models\User;
@@ -159,6 +161,11 @@ Route::group(['middleware' => ['admin']], function () {
     Route::get('/admin/ai/{training}/modify', [AdminTraining::class, 'modify'])->name('admin.ai.modify');
     Route::post('/admin/ai/{training}/modify', [AdminTraining::class, 'update'])->name('admin.ai.update');
     Route::get('/admin/ai/{training}/delete', [AdminTraining::class, 'delete'])->name('admin.ai.delete');
+
+    Route::get('/admin/discrepancies/', [AdminDiscrepancy::class, 'index'])->name('admin.discrepancies.index');
+    Route::get('/admin/discrepancies/{assessment}', [AdminDiscrepancy::class, 'modify'])->name('admin.discrepancies.modify');
+    Route::put('/admin/discrepancies/{assessment}', [AdminDiscrepancy::class, 'update'])->name('admin.discrepancies.update');
+
 });
 
 

@@ -62,4 +62,5 @@ class Application extends Model
     {
         return $this->sitio . ', ' . $this->barangay . ', ' . $this->municipality . ' (' . $this->zip . ')';
     }
+
 }

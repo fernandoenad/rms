@@ -389,6 +389,12 @@ return [
             'icon' => 'fas fa-fw fa-robot',
             'active' => ['admin/ai', 'admin/ai/train']
         ],
+        [
+            'text' => 'Discrepancies',
+            'url'  => 'admin/discrepancies',
+            'icon' => 'fas fa-fw fa-list',
+            'active' => ['admin/disrepancies', 'regex:@^admin/discrepancies/\d+$@']
+        ],
 
         /** 
         ['header' => 'account_settings'],

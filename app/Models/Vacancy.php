@@ -77,7 +77,7 @@ class Vacancy extends Model
         } else if($this->level2_status == 2){
             $status_name = "Completed";
         } else if($this->level2_status == 3){
-            $status_name = "Completed";
+            $status_name = "Posted";
         } else {
             $status_name = "";
         }
