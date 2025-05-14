@@ -82,7 +82,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="5">0 applications found.</td>
+                                        <td colspan="6">0 applications found.</td>
                                     </tr>
                                 @endif
                             </tbody>
