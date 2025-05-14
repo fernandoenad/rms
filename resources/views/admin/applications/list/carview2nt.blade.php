@@ -134,7 +134,11 @@
 
             <br>
             <small>
-                @include('admin.applications.list.footer')
+                @if($vacancy->level2_status==3)
+                    @include('admin.applications.list.footer2')
+                @else 
+                    @include('admin.applications.list.footer')
+                @endif
             </small>
         </div>
     @empty
