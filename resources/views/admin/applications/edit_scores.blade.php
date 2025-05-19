@@ -93,7 +93,7 @@
 
                     <div class="card-footer p-2">
                         <button type="submit" class="btn btn-warning {{$application->vacancy->level2_status == 3 ? 'disabled' :'' }}">Update</button>
-                        <a href="{{route('admin.discrepancies.modify', $application->assessment->first())}}"  class="btn btn-warning">Override</a>
+                        <a href="{{route('admin.discrepancies.modify', $application->assessment->id)}}"  class="btn btn-warning">Override</a>
 
                         <div class="float-right">
                             <a href="{{route('admin.applications.show', $application)}}" 

@@ -19,7 +19,7 @@ class RQAController extends Controller
 
     public function show(Vacancy $vacancy)
     {
-        if(strpos($vacancy->position_title, 'Elementary SPIMS') !== false  || strpos($vacancy->position_title, 'Secondary SPIMS') !== false) {
+        if(strpos($vacancy->position_title, 'Elementary for SPIMS') !== false  || strpos($vacancy->position_title, 'Secondary for SPIMS') !== false) {
             $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
                 ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
                 ->where('applications.vacancy_id', '=', $vacancy->id)
