@@ -44,7 +44,7 @@
             <table width="100%" border="0">
                 <tr><td align="center"><image src="{{url('/')}}/images/header.png" height="100"></td</tr>
             </table>
-            <h4 class="text-center mb-3" align="center">COMPARATIVE ASSESSMENT RESULT - REGISTRY OF QUALIFIED APPLICANTS (CAR-RQA)</h4>
+            <h4 class="text-center mb-3" align="center">COMPARATIVE ASSESSMENT RESULT (CAR)</h4>
 
             <small>
             <table>
@@ -69,8 +69,8 @@
                     ->whereIn('applications.station_id', $station_ids)
                     ->where('applications.vacancy_id', '=', $vacancy->id)
                     ->where('assessments.status', '=', 3)
-                    ->where('assessments.score', '>=', 50)
-                    ->orderBy('assessments.score', 'DESC')
+                    ->orderBy('applications.last_name', 'ASC')
+                    ->orderBy('applications.first_name', 'ASC')
                     ->get();
             @endphp
 
