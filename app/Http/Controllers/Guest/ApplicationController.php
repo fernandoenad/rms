@@ -68,7 +68,7 @@ class ApplicationController extends Controller
             'barangay' => 'required|min:2|max:255',
             'municipality' => 'required',
             'zip' => 'required|integer|between:6300,6400',
-            'age' => 'required|integer|between:18,60',
+            'age' => 'required|integer|between:18,70',
             'gender' => 'required',
             'civil_status' => 'required',
             'religion' => 'required|min:1|max:255',
