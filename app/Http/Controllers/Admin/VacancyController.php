@@ -18,9 +18,18 @@ class VacancyController extends Controller
 
     public function index()
     {
-        $vacancies = Vacancy::orderBy('id', 'DESC')->get();
+        $vacancies = \App\Models\Vacancy::query()
+            ->select(['id','cycle','position_title'])
+            ->withCount([
+                'applications', // total applications
+                'applications as applications_with_station_count' => function ($q) {
+                    $q->where('station_id', '>', 0);
+                },
+            ])
+            ->orderByDesc('id')
+            ->get(50);
 
-        return view('admin.vacancies.index',['vacancies' => $vacancies]);
+        return view('admin.vacancies.index', compact('vacancies'));
     }
 
     public function create()

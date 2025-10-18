@@ -64,47 +64,49 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @if(sizeof($vacancies) > 0)
-                                    @foreach($vacancies as $vacancy)
-                                        <tr>
-                                            <td>{{$vacancy->id}}</td>
-                                            <td>{{$vacancy->cycle}}</td>
-                                            <td>
-                                                <a href="{{ route('admin.applications.vacancy.show', $vacancy) }}">
-                                                {{$vacancy->position_title}}
-                                                </a>
-                                            </td>
-                                            <td>{{$vacancy->getOffice()}}</td>
-                                            <td>{{$vacancy->getStatus()}}</td>
-                                            <td>{{$vacancy->getLevel1Status()}}</td>
-                                            <td>{{$vacancy->getLevel2Status()}}</td>
-                                            <td class="text-right">{{$vacancy->applications->where('station_id','>',0)->count()}}/{{$vacancy->applications->count()}}</td>
-                                            <td>
-                                                <a href="{{ route('admin.vacancies.apply', $vacancy) }}" class="btn btn-sm btn-primary" 
-                                                    target="_blank" title="Submit application"
-                                                    onclick="return confirm('IMPORTANT: Only click OK if approved by the HRMPSB Chair!')">
-                                                    <span class="fas primary fa-fw fa-inbox"></span>
-                                                </a>
-                                                <a href="{{ route('admin.vacancies.edit', $vacancy) }}" class="btn btn-sm btn-warning" title="Modify">
-                                                    <span class="fas primary fa-fw fa-edit"></span>
-                                                </a>
-                                                @php 
-                                                    $count_applications = App\Models\Application::where('vacancy_id', '=', $vacancy->id)->count();
-                                                @endphp
-                                                <a href="{{ route('admin.vacancies.delete', $vacancy) }}" class="btn btn-sm btn-danger {{ $count_applications > 0 ? 'disabled' : '' }}" title="Delete">
-                                                    <span class="fas fa-fw fa-trash"></span>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                @else
+                                @forelse($vacancies as $vacancy)
                                     <tr>
-                                        <td colspan="6">0 vacancies found.</td>
-                                    </tr>
-                                @endif
-                            </tbody>
+                                        <td>{{ $vacancy->id }}</td>
+                                        <td>{{ $vacancy->cycle }}</td>
+                                        <td>
+                                            <a href="{{ route('admin.applications.vacancy.show', $vacancy) }}">
+                                                {{ $vacancy->position_title }}
+                                            </a>
+                                        </td>
+                                        <td>{{ $vacancy->getOffice() }}</td>
+                                        <td>{{ $vacancy->getStatus() }}</td>
+                                        <td>{{ $vacancy->getLevel1Status() }}</td>
+                                        <td>{{ $vacancy->getLevel2Status() }}</td>
+                                        <td class="text-right">
+                                            {{ $vacancy->applications_with_station_count }}/{{ $vacancy->applications_count }}
+                                        </td>
+                                        <td>
+                                            <a href="{{ route('admin.vacancies.apply', $vacancy) }}"
+                                            class="btn btn-sm btn-primary"
+                                            target="_blank"
+                                            title="Submit application"
+                                            onclick="return confirm('IMPORTANT: Only click OK if approved by the HRMPSB Chair!')">
+                                                <span class="fas primary fa-fw fa-inbox"></span>
+                                            </a>
 
-                    </table>
+                                            <a href="{{ route('admin.vacancies.edit', $vacancy) }}"
+                                            class="btn btn-sm btn-warning" title="Modify">
+                                                <span class="fas primary fa-fw fa-edit"></span>
+                                            </a>
+
+                                            <a href="{{ route('admin.vacancies.delete', $vacancy) }}"
+                                            class="btn btn-sm btn-danger {{ $vacancy->applications_count > 0 ? 'disabled' : '' }}"
+                                            title="Delete">
+                                                <span class="fas fa-fw fa-trash"></span>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="9">0 vacancies found.</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

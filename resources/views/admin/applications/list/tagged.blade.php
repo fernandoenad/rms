@@ -49,6 +49,14 @@
                             </button>
                             <div class="dropdown-menu">
                                 <div class="dropdown-divider"></div>
+                                <h6 class="dropdown-header">CAReER</h6>
+                                <a class="dropdown-item" target="_blank" href="{{route('admin.applications.vacancy.show.careerview', [$vacancy, 'division'])}}">
+                                    CAReER (DO Level)
+                                </a>
+                                <a class="dropdown-item" target="_blank" href="{{route('admin.applications.vacancy.show.careerview', [$vacancy, 'district'])}}">
+                                    CAReER (Per District)
+                                </a>
+                                <div class="dropdown-divider"></div>
                                 <h6 class="dropdown-header">Teaching</h6>
                                 <a class="dropdown-item" target="_blank" href="{{route('admin.applications.vacancy.show.carview', $vacancy)}}">
                                     CAR-RQA (DO Level)

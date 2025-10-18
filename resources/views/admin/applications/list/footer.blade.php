@@ -1,4 +1,4 @@
-<table border="0">
+        <table border="0">
             <tr>
                 <td width="22%" align="left">Prepared by the Division Ranking Committee
                     <br><em>(All members should affix signature)</em>
