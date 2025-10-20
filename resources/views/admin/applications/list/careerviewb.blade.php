@@ -152,7 +152,6 @@
                 ->whereIn('applications.station_id', $station_ids)
                 ->where('applications.vacancy_id', '=', $vacancy->id)
                 ->where('assessments.status', '=', 3)
-                ->where('assessments.score', '>=', 50)
                 ->orderBy('assessments.application_id', 'ASC')
                 ->get();
         @endphp
