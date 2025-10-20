@@ -97,7 +97,7 @@
                             <td>{{ $application->application_code }}</td>
                             @foreach($assessment_details as $key => $value)
                                     @php $total_points += is_numeric($value) ? $value : 0; @endphp
-                                    <td align="right">{{ is_numeric($value) ? number_format($value,3) : number_format($total_points,2) }}</td>
+                                    <td align="right">{{ is_numeric($value) ? number_format($value,3) : number_format($total_points,3) }}</td>
                             @endforeach
                             <td align="left">{{ $assessment->status == 2 ? 'Initial only. / ' . end($assessment_details) :  end($assessment_details) }}</td>
                             @php $school = App\Models\Station::find($application->station_id); @endphp
@@ -219,7 +219,7 @@
                         <td>{{ $application->application_code }}</td>
                         @foreach($assessment_details as $key => $value)
                                 @php $total_points += is_numeric($value) ? $value : 0; @endphp
-                                <td align="right">{{ is_numeric($value) ? number_format($value,3) : number_format($total_points,2) }}</td>
+                                <td align="right">{{ is_numeric($value) ? number_format($value,3) : number_format($total_points,3) }}</td>
                         @endforeach
                         <td align="left">{{ $assessment->status == 2 ? 'Initial only. / ' . end($assessment_details) :  end($assessment_details) }}</td>
                         @php $school = App\Models\Station::find($application->station_id); @endphp
