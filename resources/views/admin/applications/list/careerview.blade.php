@@ -113,7 +113,7 @@
             </small>
 
             <br>
-            <small>
+            <small><small>
             <table border="0">
                 <tr>
                     <td width=30%" colspan="2" align="left">Prepared by the HRMPSB
@@ -140,7 +140,7 @@
                 </tr>
 
             </table>
-            </small>
+            </small></small>
         </div>
     @else 
         @foreach($offices as $office)
@@ -238,7 +238,7 @@
         </small>
 
         <br>
-        <small>
+        <small><small>
         <table border="0">
             <tr>
                 <td width=30%" colspan="2" align="left">Prepared by the HRMPSB
@@ -265,7 +265,7 @@
                 </tr>
 
         </table>
-        </small>
+        </small></small>
         </div>
         @endforeach
     @endif
