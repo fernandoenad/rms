@@ -134,7 +134,7 @@
                     <td><strong>FERMIN M. ALBUTRA</strong><br>Administrative Officer V<br>HRMPSB Member</td>
                     <td><strong>RENATO D. CALAMBA PhD</strong><br>President, PSDSA<br>HRMPSB Member</td>
                     <td><strong>CARMELA M. RESTIFICAR PhD</strong><br>Chief, CID<br>HRMPSB Member</td>
-                    <td><strong>EDUARDO M. OMPAD EdD, CESE</strong><br><small>Asst. Schools Division Superintendent</small><br>HRMPSB Member</td>
+                    <td><strong>EDUARDO A. OMPAD EdD, CESE</strong><br><small>Asst. Schools Division Superintendent</small><br>HRMPSB Member</td>
                     <td><strong></strong></td>
                     <td valign="top"><strong>FAY C. LUAREZ EdD, PhD-TM, CESO VI<br></strong>Schools Division Superintendent</td>
                 </tr>
@@ -259,7 +259,7 @@
                     <td><strong>FERMIN M. ALBUTRA</strong><br>Administrative Officer V<br>HRMPSB Member</td>
                     <td><strong>RENATO D. CALAMBA PhD</strong><br>President, PSDSA<br>HRMPSB Member</td>
                     <td><strong>CARMELA M. RESTIFICAR PhD</strong><br>Chief, CID<br>HRMPSB Member</td>
-                    <td><strong>EDUARDO M. OMPAD EdD, CESE</strong><br><small>Asst. Schools Division Superintendent</small><br>HRMPSB Member</td>
+                    <td><strong>EDUARDO A. OMPAD EdD, CESE</strong><br><small>Asst. Schools Division Superintendent</small><br>HRMPSB Member</td>
                     <td><strong></strong></td>
                     <td valign="top"><strong>FAY C. LUAREZ EdD, PhD-TM, CESO VI<br></strong>Schools Division Superintendent</td>
                 </tr>
