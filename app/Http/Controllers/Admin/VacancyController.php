@@ -19,7 +19,7 @@ class VacancyController extends Controller
     public function index()
     {
         $vacancies = \App\Models\Vacancy::query()
-            ->select(['id','cycle','position_title'])
+            ->select(['id','cycle','position_title', 'level1_status', 'level2_status'])
             ->withCount([
                 'applications', // total applications
                 'applications as applications_with_station_count' => function ($q) {
