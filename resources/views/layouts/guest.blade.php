@@ -36,9 +36,11 @@
                         <li class="nav-item">
                             <a class="nav-link {{ Route::currentRouteName() == 'guest.vacancies.index' || Route::currentRouteName() == 'guest.vacancies.apply'  ? 'active' : ''}}" href="{{ route('guest.vacancies.index') }}">Vacancies</a>
                         </li> 
+                        <!--
                         <li class="nav-item">
                             <a class="nav-link {{ Route::currentRouteName() == 'guest.reports.index' ? 'active' : ''}}" href="{{ route('guest.reports.index') }}">Reports</a>
                         </li> 
+                        -->
                         <li class="nav-item">
                             <a class="nav-link {{ Route::currentRouteName() == 'guest.rqas.index' ? 'active' : ''}}" href="{{ route('guest.rqas.index') }}">CAR-RQAs</a>
                         </li> 
