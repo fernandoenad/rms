@@ -19,6 +19,17 @@ class RQAController extends Controller
 
     public function show(Vacancy $vacancy)
     {
+        $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
+            ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
+            ->where('applications.vacancy_id', '=', $vacancy->id)
+            ->where('assessments.status', '=', 3)
+            ->where('assessments.score', '>=', 50)
+            ->orderBy('applications.application_code', 'ASC')
+            ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
+            ->get();
+
+        return view('guest.rqas.carview', ['vacancy' => $vacancy, 'assessments' => $assessments]);
+       /** 
         if(strpos($vacancy->position_title, 'Elementary for SPIMS') !== false  || strpos($vacancy->position_title, 'Secondary for SPIMS') !== false) {
             $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
                 ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
@@ -34,7 +45,7 @@ class RQAController extends Controller
         } else if(strpos($vacancy->position_title, 'Elementary') !== false || strpos($vacancy->position_title, 'Kindergarten') !== false) {
             $offices = Office::all();
 
-            return view('guest.rqas.carview2', ['vacancy' => $vacancy, 'offices' => $offices]);
+            return view('guest.rqas.carview3', ['vacancy' => $vacancy, 'offices' => $offices]);
 
         } else {
             $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
@@ -46,8 +57,9 @@ class RQAController extends Controller
                 ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
                 ->get();
 
-            return view('guest.rqas.carview', ['vacancy' => $vacancy, 'assessments' => $assessments]);
+            return view('guest.rqas.carview3', ['vacancy' => $vacancy, 'assessments' => $assessments]);
         }
+        */
 
 
     }

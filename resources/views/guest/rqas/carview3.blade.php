@@ -26,99 +26,122 @@
         td{
             padding: 5px;
         }
+        .section {
+            page-break-after: always;
+        }
     </style>
 </head>
 <body>
-    <div class="container-fluid mt-0">
-        <table width="100%" border="0">
-            <tr><td align="center"><image src="{{url('/')}}/images/header.png" height="100"></td</tr>
-        </table>
-        <h4 class="text-center mb-3" align="center">COMPARATIVE ASSESSMENT RESULT - REGISTRY OF QUALIFIED APPLICANTS (CAR-RQA)</h4>
+        <div class="container-fluid mt-0">
+            <table width="100%" border="0">
+                <tr><td align="center"><image src="{{url('/')}}/images/header.png" height="100"></td</tr>
+            </table>
+            <h4 class="text-center mb-3" align="center">COMPARATIVE ASSESSMENT RESULT FOR EXPANDED RECLASSIFICATION (CAReER)</h4>
 
-        <small>
-        <table>
-            <tr>
-                <td width="40%" align="left">Position: <strong>{{ $vacancy->position_title }}</strong></td>
-                <td width="40%"></td>
-                <td width="20%">Date of Final Deliberation: <strong>___________</strong></td>
-            </tr>
-            <tr>
-                <td align="left">Office: <strong>DepEd Bohol</strong></td>
-                <td></td>
-                <td></td>
-            </tr>
-        </table>
-        </small>
-
-        <br>
-        <small>
-        <table border="1">
-            <thead>
-                <tr class="table-danger" align="center">
-                    <td scope="col" colspan="2" rowspan="2"><strong>Name of Application<strong></td>
-                    <td scope="col" rowspan="2" width="8%"><strong>Application Code<strong></td>
-                    <td scope="col" colspan="7" width="8%"><strong>COMPARATIVE ASSESSMENT RESULTS<strong></td>
-                    <td scope="col" rowspan="2" width="8%"><strong>Remarks<strong></td>
-                    <td scope="col" rowspan="2" width="14%"><strong>School Applied for<strong></td>
-                    <td scope="col" colspan="2" width="5%"><strong><small>For Background Investigation (Y/N)</small><strong></td>
-                    <td scope="col" rowspan="2" width="7%">
-                        <strong><small><small>For Appointment</strong><br>To filed-out by the Appointing Officer/ Authority; Please sign opposite the name of the applicant)</small></small></td>
-                    <td scope="col" rowspan="2" width="7%">
-                        <strong><small>Status of Appointment</strong><br>(Based on availability of PBET/ LET/LEPT)</small></td>
+            <small>
+            <table>
+                <tr>
+                    <td width="40%" align="left">Position: <strong>{{ $vacancy->position_title }}</strong></td>
+                    <td width="40%"></td>
+                    <td width="20%">Date of Final Deliberation: <strong>___________</strong></td>
                 </tr>
-                <tr class="table-danger" align="center">
-                    <th scope="col" width="4%">Education <small>(10 pts)</small></th>
-                    <th scope="col" width="4%">Training <small>(10 pts)</small></th>
-                    <th scope="col" width="4%">Experience <small>(10 pts)</small></th>
-                    <th scope="col" width="4%">Rating <small>(10 pts)</small></th>
-                    <th scope="col" width="4%">COI<br><small>(35 pts)</small></th>
-                    <th scope="col" width="4%">NCOI<br><small>(25 pts)</small></th>
-                    <th scope="col" width="4%">Total <small>(100 pts)</small></th>
-                    <th scope="col" width="3%">Yes</th>
-                    <th scope="col" width="3%">No</th>
+                <tr>
+                    <td align="left">Schools Division Office: <strong>DepEd Bohol</strong></td>
+                    <td></td>
+                    <td></td>
                 </tr>
-            </thead>
-            <tbody>
-                @php $i=1; @endphp 
+            </table>
+            </small>
 
-                @foreach($assessments as $assessment)
-                    @php 
-                        $assessment_details = json_decode($assessment->assessment, true); 
-                        $application = App\Models\Application::where('id', '=', $assessment->application_id)->get()->first();
-                        $total_points = 0;
-                    @endphp 
-                    <tr>
-                        <td width="2%">{{ $i }}</td>
-                        <td>******************</td>
-                        <td>{{ $application->application_code }}</td>
-                        @foreach($assessment_details as $key => $value)
-                                @php $total_points += is_numeric($value) ? $value : 0; @endphp
-                                <td align="right">{{ is_numeric($value) ? number_format($value,2) : number_format($total_points,2) }}</td>
-                        @endforeach
-                        <td align="left">{{ $assessment->status == 2 ? 'Initial only. / ' . end($assessment_details) :  end($assessment_details) }}</td>
-                        @php $school = App\Models\Station::find($application->station_id); @endphp
-                        @php $district = App\Models\Office::find($school->office_id); @endphp
-                        <td><small>{{ $school->code }}-{{ substr($school->name, 0, 20) }}</small></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
+            <br>
+            <small>
+            <table border="1">
+                <thead>
+                    <tr class="table-danger" align="center">
+                        <td scope="col" colspan="2" rowspan="2" width="18%"><strong>Name of Applicant<strong><br><em>(in no particular order)</em></td>
+                        <td scope="col" rowspan="2" width="8%"><strong>Application Code<strong></td>
+                        @php 
+                            $template_details = json_decode($vacancy->template->template, true); 
+                            $field_count = count($template_details);
+                        @endphp
+                        <td scope="col" colspan="{{ $field_count }}"><strong>COMPARATIVE ASSESSMENT RESULTS<strong></td>
+                        <td scope="col" rowspan="2" width="8%"><strong>Remarks<strong></td>
+                        <td scope="col" colspan="2" width="5%"><strong><small>For Background Investigation (Y/N)</small><strong></td>
+                        <td scope="col" rowspan="2" width="7%">
+                            <strong><small><small>For Recommendation</strong><br>To filed-out by the Schools Division Superintendent; Please sign opposite the name of the applicant)</small></small>
+                        </td>
                     </tr>
-                    @php $i++; @endphp 
-                @endforeach
-            </tbody>
-        </table>
-        </small>
+                    <tr class="table-danger" align="center">
+                        @php $trimmed = array_slice($template_details, 0, -1, true); @endphp
+                        @foreach($trimmed as $key => $value)
+                            <th valign="top" scope="col" width="4%">{!! str_replace('_', '<br>', $key) !!}<br><small>({{ $value }} pts)</small></th>
+                        @endforeach
+                        <th valign="top" scope="col" width="4%">Total<br><small>(100 pts)</small></th>
+                        <th valign="top" scope="col" width="3%">Yes</th>
+                        <th valign="top" scope="col" width="3%">No</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php $i=1; @endphp 
 
-        <br>
-        <small>
-            @if($vacancy->level2_status==3)
-                @include('admin.applications.list.footer2')
-            @else 
-                @include('admin.applications.list.footer')
-            @endif
-        </small>
-    </div>
+                    @foreach($assessments as $assessment)
+                        @php 
+                            $assessment_details = json_decode($assessment->assessment, true); 
+                            $application = App\Models\Application::where('id', '=', $assessment->application_id)->get()->first();
+                            $total_points = 0;
+                        @endphp 
+                        <tr>
+                            <td width="2%">{{ $i }}</td>
+                            <td><em>[redacted due to data privacy]</em></td>
+                            <td>{{ $application->application_code }}</td>
+                            @foreach($assessment_details as $key => $value)
+                                    @php $total_points += is_numeric($value) ? $value : 0; @endphp
+                                    <td align="right">{{ is_numeric($value) ? number_format($value,3) : number_format($total_points,3) }}</td>
+                            @endforeach
+                            <td align="left">{{ $assessment->status == 2 ? 'Initial only. / ' . end($assessment_details) :  end($assessment_details) }}</td>
+                            @php $school = App\Models\Station::find($application->station_id); @endphp
+                            <td><small></small></td>
+                            <td></td>
+                            <td></td>
+
+                        </tr>
+                        @php $i++; @endphp 
+                    @endforeach
+                </tbody>
+            </table>
+            </small>
+
+            <br>
+            <small>
+            <table border="0">
+                <tr>
+                    <td width=30%" colspan="2" align="left">Prepared by the HRMPSB
+                        <br><em>(All members should affix signature)</em>
+                        <br>
+                        <br>
+                        <br>
+                        <br>
+                    </td>
+                    <td width="15%"></td>
+                    <td width="15%"></td>
+                    <td width="15%"></td>
+                    <td width="8%"></td>
+                    <td width="20%">Approved by:</td>     
+                </tr>
+                <tr align="center">
+                    <td><strong>_____________________<br></strong>Name and Position<br>HRMPSB Member</td>
+                    <td><strong>_____________________<br></strong>Name and Position<br>HRMPSB Member</td>
+                    <td><strong>_____________________<br></strong>Name and Position<br>HRMPSB Member</td>
+                    <td><strong>_____________________<br></strong>Name and Position<br>HRMPSB Member</td>
+                    <td><strong>_____________________<br></strong>Name and Position<br>HRMPSB Member</td>
+                    <td><strong></strong></td>
+                    <td valign="top"><strong>___________________________<br></strong>Schools Division Superintendent</td>
+                </tr>
+
+            </table>
+            </small>
+        </div>
+
     <script src="{{ asset('js/app.js') }}" type="text/js"></script>
 </body>
 </html>
