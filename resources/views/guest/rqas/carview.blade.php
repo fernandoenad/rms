@@ -139,7 +139,7 @@
                     <td><strong>_____________________<br></strong>Name and Position<br>HRMPSB Member</td>
                     <td><strong>_____________________<br></strong>Name and Position<br>HRMPSB Member</td>
                     <td><strong>_____________________<br></strong>Name and Position<br>HRMPSB Member</td>
-                    <td><strong>_____________________<br></strong>Name and Position<br>HRMPSB Member</td>
+                    <td><strong>_____________________<br></strong>Name and Position<br>HRMPSB Chairperson</td>
                     <td><strong></strong></td>
                     <td valign="top"><strong>___________________________<br></strong>Schools Division Superintendent</td>
                 </tr>
