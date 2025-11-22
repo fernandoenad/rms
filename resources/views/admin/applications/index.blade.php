@@ -79,8 +79,7 @@
                                                 {{$application->vacancy->position_title}}
                                                 </a>
                                             </td>
-                                            @php  $station = App\Models\Station::find($application->station_id); @endphp
-                                            <td>{{ isset($station) ? $station->name : 'Untagged' }}</td>
+                                            <td>{{ optional($application->station)->name ?? 'Untagged' }}</td>
                                             <td>
                                                 <a href="{{route('admin.applications.edit', ['application' => $application])}}" class="btn btn-xs btn-warning" title="Modify application">
                                                     <span class="fas primary fa-fw fa-edit"></span>

@@ -25,7 +25,7 @@ class ApplicationController extends Controller
 
     public function index()
     {
-        $applications = Application::latest()->take(100)->get();
+        $applications = Application::with(['vacancy', 'station'])->latest()->take(100)->get();
 
         return view('admin.applications.index',['applications' => $applications]);
     }
@@ -34,7 +34,8 @@ class ApplicationController extends Controller
     {
         $search_str = $request->input('search_str');
 
-        $applications = Application::where('application_code', $search_str)
+        $applications = Application::with(['vacancy', 'station'])
+            ->where('application_code', $search_str)
             ->orWhere('first_name', 'LIKE', '%' . $search_str . '%')
             ->orWhere('last_name', 'LIKE', '%' . $search_str . '%')
             ->get();
@@ -253,7 +254,9 @@ class ApplicationController extends Controller
 
     public function vacancy_show(Vacancy $vacancy)
     {
-        $applications = Application::where('vacancy_id', '=', $vacancy->id)->get();
+        $applications = Application::with(['station', 'assessment'])
+            ->where('vacancy_id', '=', $vacancy->id)
+            ->get();
 
         return view('admin.applications.list.index', ['vacancy' => $vacancy, 'applications' => $applications]);
     }
@@ -261,8 +264,10 @@ class ApplicationController extends Controller
 
     public function vacancy_show_tagged(Vacancy $vacancy)
     {
-        $applications = Application::where('vacancy_id', '=', $vacancy->id)
-            ->where('station_id', '!=', -1)->get();
+        $applications = Application::with(['station', 'assessment'])
+            ->where('vacancy_id', '=', $vacancy->id)
+            ->where('station_id', '!=', -1)
+            ->get();
 
         return view('admin.applications.list.tagged', ['vacancy' => $vacancy, 'applications' => $applications]);
     }
@@ -331,13 +336,13 @@ class ApplicationController extends Controller
 
     public function vacancy_show_carview(Vacancy $vacancy)
     {
-        $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
-            ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
-            ->where('applications.vacancy_id', '=', $vacancy->id)
+        $assessments = Assessment::with(['application.station.office'])
+            ->whereHas('application', function ($query) use ($vacancy) {
+                $query->where('vacancy_id', '=', $vacancy->id);
+            })
             ->where('assessments.status', '=', 3)
             ->where('assessments.score', '>=', 50)
             ->orderBy('assessments.score', 'DESC')
-            ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
             ->get();
         
         if(str_contains($vacancy->template->type,'Non-Teaching')){
@@ -351,52 +356,102 @@ class ApplicationController extends Controller
     {
         $offices = Office::all();
 
-        $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
-            ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
-            ->where('applications.vacancy_id', '=', $vacancy->id)
+        $assessments = Assessment::with(['application.station.office'])
+            ->whereHas('application', function ($query) use ($vacancy) {
+                $query->where('vacancy_id', '=', $vacancy->id);
+            })
             ->where('assessments.status', '=', 3)
             ->where('assessments.score', '>=', 50)
             ->orderBy('assessments.score', 'DESC')
-            ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
             ->get();
 
-        return view('admin.applications.list.careerview', ['vacancy' => $vacancy, 'assessments' => $assessments, 'offices' => $offices, 'level' => $level]);
+        $assessmentsByOffice = $assessments
+            ->filter(function ($assessment) {
+                return optional($assessment->application->station)->office_id !== null;
+            })
+            ->groupBy(function ($assessment) {
+                return $assessment->application->station->office_id;
+            });
+
+        return view('admin.applications.list.careerview', [
+            'vacancy' => $vacancy,
+            'assessments' => $assessments,
+            'assessmentsByOffice' => $assessmentsByOffice,
+            'offices' => $offices,
+            'level' => $level,
+        ]);
     } 
 
     public function vacancy_show_careerviewb(Vacancy $vacancy, $level)
     {
         $offices = Office::all();
 
-        $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
-            ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
-            ->where('applications.vacancy_id', '=', $vacancy->id)
-            ->where('assessments.status', '=', 3)
-            ->orderBy('assessments.application_id', 'ASC')
-            ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
+        $assessments = Assessment::with(['application.station.office'])
+            ->whereHas('application', function ($query) use ($vacancy) {
+                $query->where('vacancy_id', '=', $vacancy->id);
+            })
+            ->where('status', '=', 3)
+            ->orderBy('application_id', 'ASC')
             ->get();
 
-        return view('admin.applications.list.careerviewb', ['vacancy' => $vacancy, 'assessments' => $assessments, 'offices' => $offices, 'level' => $level]);
+        $assessmentsByOffice = $assessments
+            ->filter(function ($assessment) {
+                return optional($assessment->application->station)->office_id !== null;
+            })
+            ->groupBy(function ($assessment) {
+                return $assessment->application->station->office_id;
+            });
+
+        return view('admin.applications.list.careerviewb', [
+            'vacancy' => $vacancy,
+            'assessments' => $assessments,
+            'assessmentsByOffice' => $assessmentsByOffice,
+            'offices' => $offices,
+            'level' => $level,
+        ]);
     } 
 
     public function vacancy_show_carview2(Vacancy $vacancy)
     {
         $offices = Office::all();
+        $assessments = Assessment::with(['application.station.office'])
+            ->whereHas('application', function ($query) use ($vacancy) {
+                $query->where('vacancy_id', '=', $vacancy->id);
+            })
+            ->where('assessments.status', '=', 3)
+            ->where('assessments.score', '>=', 50)
+            ->orderBy('assessments.score', 'DESC')
+            ->get();
+
+        $assessmentsByOffice = $assessments
+            ->filter(function ($assessment) {
+                return optional($assessment->application->station)->office_id !== null;
+            })
+            ->groupBy(function ($assessment) {
+                return $assessment->application->station->office_id;
+            });
+
+        $viewData = [
+            'vacancy' => $vacancy,
+            'offices' => $offices,
+            'assessmentsByOffice' => $assessmentsByOffice,
+        ];
 
         if(str_contains($vacancy->template->type,'SG')){
-            return view('admin.applications.list.carview2nt', ['vacancy' => $vacancy, 'offices' => $offices]);
+            return view('admin.applications.list.carview2nt', $viewData);
         } else {
-            return view('admin.applications.list.carview2', ['vacancy' => $vacancy, 'offices' => $offices]);
+            return view('admin.applications.list.carview2', $viewData);
         }
     }
 
     public function vacancy_show_carview3(Vacancy $vacancy)
     {
-        $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
-            ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
-            ->where('applications.vacancy_id', '=', $vacancy->id)
+        $assessments = Assessment::with(['application.station.office'])
+            ->whereHas('application', function ($query) use ($vacancy) {
+                $query->where('vacancy_id', '=', $vacancy->id);
+            })
             ->where('assessments.status', '=', 3)
             ->orderBy('assessments.score', 'DESC')
-            ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
             ->get();
 
         if(str_contains($vacancy->template->type,'SG')){
@@ -408,14 +463,19 @@ class ApplicationController extends Controller
 
     public function vacancy_show_carview4(Vacancy $vacancy)
     {
-        $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
-            ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
-            ->where('applications.vacancy_id', '=', $vacancy->id)
+        $assessments = Assessment::with(['application' => function ($query) use ($vacancy) {
+                $query->where('vacancy_id', '=', $vacancy->id)
+                    ->orderBy('applications.last_name', 'ASC')
+                    ->orderBy('applications.first_name', 'ASC')
+                    ->orderBy('applications.middle_name', 'ASC');
+            }, 'application.station.office'])
+            ->whereHas('application', function ($query) use ($vacancy) {
+                $query->where('vacancy_id', '=', $vacancy->id);
+            })
             ->where('assessments.status', '>=', 2)
-            ->orderBy('applications.last_name', 'ASC')
-            ->orderBy('applications.first_name', 'ASC')
-            ->orderBy('applications.middle_name', 'ASC')
-            ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
+            ->orderBy(Application::select('last_name')->whereColumn('applications.id', 'assessments.application_id'))
+            ->orderBy(Application::select('first_name')->whereColumn('applications.id', 'assessments.application_id'))
+            ->orderBy(Application::select('middle_name')->whereColumn('applications.id', 'assessments.application_id'))
             ->get();
 
         return view('admin.applications.list.carview4nt', ['vacancy' => $vacancy, 'assessments' => $assessments]);
@@ -423,13 +483,13 @@ class ApplicationController extends Controller
 
     public function vacancy_show_carview5(Vacancy $vacancy)
     {
-        $assessments = Assessment::join('applications', 'assessments.application_id', '=', 'applications.id')
-            ->join('hrms.stations', 'applications.station_id', '=', 'stations.id')
-            ->where('applications.vacancy_id', '=', $vacancy->id)
+        $assessments = Assessment::with(['application.station.office'])
+            ->whereHas('application', function ($query) use ($vacancy) {
+                $query->where('vacancy_id', '=', $vacancy->id);
+            })
             ->where('assessments.status', '=', 3)
             ->where('assessments.score', '>=', 50)
             ->orderBy('assessments.score', 'DESC')
-            ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
             ->get();
 
         return view('admin.applications.list.carview5nt', ['vacancy' => $vacancy, 'assessments' => $assessments]);

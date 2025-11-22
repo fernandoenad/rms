@@ -109,8 +109,7 @@
                                                 </a>
                                             </td>
                                             <td>{{$application->getFullname()}}</td>
-                                            @php  $station = App\Models\Station::find($application->station_id); @endphp
-                                            <td>{{ isset($station) ? $station->name . ' (' . $station->code . ')' : ($application->station_id == 0 ? 'Division' : 'Untagged') }}</td>
+                                            <td>{{ optional($application->station)->name ? $application->station->name . ' (' . $application->station->code . ')' : ($application->station_id == 0 ? 'Division' : 'Untagged') }}</td>
                                             @php  $assessment = $application->assessment; @endphp
                                             <td><small>{{isset($assessment) ? $assessment->get_status() : 'Not assessed yet' }}</small></td>
                                             <td>

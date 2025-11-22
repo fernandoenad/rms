@@ -84,21 +84,20 @@
                 @foreach($assessments as $assessment)
                     @php 
                         $assessment_details = json_decode($assessment->assessment, true); 
-                        $application = App\Models\Application::where('id', '=', $assessment->application_id)->get()->first();
+                        $application = $assessment->application;
                         $total_points = 0;
                     @endphp 
                     <tr>
                         <td width="2%">{{ $i }}</td>
-                        <td>{{ strtoupper($application->getFullname()) }}</td>
-                        <td>{{ $application->application_code }}</td>
+                        <td>{{ strtoupper(optional($application)->getFullname()) }}</td>
+                        <td>{{ $application?->application_code }}</td>
                         @foreach($assessment_details as $key => $value)
                                 @php $total_points += is_numeric($value) ? $value : 0; @endphp
                                 <td align="right">{{ is_numeric($value) ? number_format($value,2) : number_format($total_points,2) }}</td>
                         @endforeach
                         <td align="left">{{ $assessment->status == 2 ? 'Initial only. / ' . end($assessment_details) :  end($assessment_details) }}</td>
-                        @php $school = App\Models\Station::find($application->station_id); @endphp
-                        @php $district = App\Models\Office::find($school->office_id); @endphp
-                        <td><small>{{ $school->code }}-{{ substr($school->name, 0, 20) }}</small></td>
+                        @php $school = optional($application)->station; @endphp
+                        <td><small>{{ $school?->code }}-{{ substr($school?->name, 0, 20) }}</small></td>
                         <td></td>
                         <td></td>
                         <td></td>

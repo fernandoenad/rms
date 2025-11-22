@@ -67,8 +67,7 @@
                                             </td>
                                             <td>{{$application->email}}</td>
                                             <td>{{$application->getFullname()}}</td>
-                                            @php  $station = App\Models\Station::find($application->station_id); @endphp
-                                            <td>{{ isset($station) ? $station->name : ($application->station_id == 0 ? 'Division' : 'Untagged') }}</td>
+                                            <td>{{ optional($application->station)->name ?? ($application->station_id == 0 ? 'Division' : 'Untagged') }}</td>
                                             @php  $assessment = $application->assessment; @endphp
                                             <td>
                                                 <a href="{{route('admin.applications.edit', ['application' => $application])}}" class="btn btn-sm btn-warning" title="Modify">

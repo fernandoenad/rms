@@ -11,5 +11,8 @@ class Station extends Model
 
     protected $connection = 'mysql_2';
 
-
+    public function office()
+    {
+        return $this->belongsTo(Office::class);
+    }
 }

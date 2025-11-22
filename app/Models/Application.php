@@ -48,6 +48,11 @@ class Application extends Model
         return $this->hasOne(Assessment::class);
     }
 
+    public function station(): BelongsTo
+    {
+        return $this->belongsTo(Station::class);
+    }
+
     public function getFullname()
     {
         return $this->last_name . ', ' . $this->first_name . ' ' . substr($this->middle_name, 0, 1);
