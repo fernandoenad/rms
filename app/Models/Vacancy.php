@@ -35,6 +35,11 @@ class Vacancy extends Model
         return $this->belongsTo(Template::class);
     }
 
+    public function exams(): HasMany
+    {
+        return $this->hasMany(Exam::class);
+    }
+
     public function getOffice(){
         if($this->office_level == 0){
             $office_level = "SDO";

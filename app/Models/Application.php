@@ -53,6 +53,11 @@ class Application extends Model
         return $this->belongsTo(Station::class);
     }
 
+    public function examAttempts(): HasMany
+    {
+        return $this->hasMany(ExamAttempt::class);
+    }
+
     public function getFullname()
     {
         return $this->last_name . ', ' . $this->first_name . ' ' . substr($this->middle_name, 0, 1);

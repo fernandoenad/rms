@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Auth;
 use Mail;
 use App\Mail\UpdateMail;
+use App\Models\Exam;
 
 class ApplicationController extends Controller
 {
@@ -89,7 +90,10 @@ class ApplicationController extends Controller
     {
         $applicationInquiries = $application->inquiries;
 
-        return view('admin.applications.show',['application' => $application, 'applicationInquiries' => $applicationInquiries]);
+        return view('admin.applications.show',[
+            'application' => $application,
+            'applicationInquiries' => $applicationInquiries,
+        ]);
     }
 
     public function delete(Application $application)

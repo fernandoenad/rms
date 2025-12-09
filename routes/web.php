@@ -15,6 +15,8 @@ use App\Http\Controllers\Admin\VacancyReportController as AdminVacancyReport;
 use App\Http\Controllers\Admin\TrainingController as AdminTraining;
 use App\Http\Controllers\Guest\OpenAIController;
 use App\Http\Controllers\Admin\DiscrepancyController as AdminDiscrepancy;
+use App\Http\Controllers\Admin\WrittenExamController as AdminWrittenExam;
+use App\Http\Controllers\Admin\WrittenExamItemController as AdminWrittenExamItem;
 
 
 use Laravel\Socialite\Facades\Socialite;
@@ -81,6 +83,10 @@ Route::get('/applications/my', [GuestApplication::class, 'my'])->name('guest.app
 Route::get('/applications/{application}', [GuestApplication::class, 'show'])->name('guest.applications.show');
 Route::post('/applications/{application}/inquire', [GuestApplication::class, 'inquire'])->name('guest.applications.inquire');
 Route::post('/applications/{application}/inquire2', [OpenAIController::class, 'inquire2'])->name('guest.applications.inquire2');
+Route::post('/applications/{application}/assessment/{exam}/start', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'start'])->name('guest.assessments.attempts.start');
+Route::get('/assessments/attempts/{attempt}', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'take'])->name('guest.assessments.attempts.take');
+Route::post('/assessments/attempts/{attempt}/answer', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'saveAnswer'])->name('guest.assessments.attempts.answer');
+Route::post('/assessments/attempts/{attempt}/submit', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'submit'])->name('guest.assessments.attempts.submit');
 
 
 // auth routes
@@ -137,6 +143,29 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/vacancies/{vacancy}/delete', [AdminVacancy::class, 'delete'])->name('admin.vacancies.delete');
     Route::get('/admin/vacancies/{vacancy}/apply', [AdminVacancy::class, 'apply'])->name('admin.vacancies.apply');
 
+    Route::get('/admin/assessment', [AdminWrittenExam::class, 'index'])->name('admin.assessments.index');
+    Route::get('/admin/assessment/create', [AdminWrittenExam::class, 'create'])->name('admin.assessments.create');
+    Route::post('/admin/assessment', [AdminWrittenExam::class, 'store'])->name('admin.assessments.store');
+    Route::get('/admin/assessment/{exam}/edit', [AdminWrittenExam::class, 'edit'])->name('admin.assessments.edit');
+    Route::put('/admin/assessment/{exam}', [AdminWrittenExam::class, 'update'])->name('admin.assessments.update');
+    Route::put('/admin/assessment/{exam}/toggle', [AdminWrittenExam::class, 'toggleStatus'])->name('admin.assessments.toggle');
+    Route::put('/admin/assessment/{exam}/regenerate-key', [AdminWrittenExam::class, 'regenerateKey'])->name('admin.assessments.regenerate_key');
+    Route::delete('/admin/assessment/{exam}', [AdminWrittenExam::class, 'destroy'])->name('admin.assessments.destroy');
+    Route::get('/admin/assessment/{exam}/results', [AdminWrittenExam::class, 'results'])->name('admin.assessments.results');
+    Route::delete('/admin/assessment/{exam}/attempts/{attempt}', [AdminWrittenExam::class, 'destroyAttempt'])->name('admin.assessments.attempts.destroy');
+    Route::get('/admin/assessment/{exam}/items', [AdminWrittenExamItem::class, 'index'])->name('admin.assessments.items.index');
+    Route::get('/admin/assessment/{exam}/items/create', [AdminWrittenExamItem::class, 'create'])->name('admin.assessments.items.create');
+    Route::post('/admin/assessment/{exam}/items', [AdminWrittenExamItem::class, 'store'])->name('admin.assessments.items.store');
+    Route::post('/admin/assessment/{exam}/items/import', [AdminWrittenExamItem::class, 'import'])->name('admin.assessments.items.import');
+    Route::get('/admin/assessment/{exam}/items/{item}/edit', [AdminWrittenExamItem::class, 'edit'])->name('admin.assessments.items.edit');
+    Route::put('/admin/assessment/{exam}/items/{item}', [AdminWrittenExamItem::class, 'update'])->name('admin.assessments.items.update');
+    Route::put('/admin/assessment/{exam}/items/{item}/toggle', [AdminWrittenExamItem::class, 'toggleStatus'])->name('admin.assessments.items.toggle');
+    Route::delete('/admin/assessment/{exam}/items/{item}', [AdminWrittenExamItem::class, 'destroy'])->name('admin.assessments.items.destroy');
+    Route::post('/admin/applications/{application}/assessment/{exam}/start', [\App\Http\Controllers\Admin\ExamAttemptController::class, 'start'])->name('admin.assessments.attempts.start');
+    Route::get('/admin/assessments/attempts/{attempt}', [\App\Http\Controllers\Admin\ExamAttemptController::class, 'take'])->name('admin.assessments.attempts.take');
+    Route::post('/admin/assessments/attempts/{attempt}/answer', [\App\Http\Controllers\Admin\ExamAttemptController::class, 'saveAnswer'])->name('admin.assessments.attempts.answer');
+    Route::post('/admin/assessments/attempts/{attempt}/submit', [\App\Http\Controllers\Admin\ExamAttemptController::class, 'submit'])->name('admin.assessments.attempts.submit');
+
     Route::get('/admin/inquiries', [AdminInquiry::class, 'index'])->name('admin.inquiries.index');
 });
 
@@ -169,6 +198,3 @@ Route::group(['middleware' => ['admin']], function () {
     Route::put('/admin/discrepancies/{assessment}', [AdminDiscrepancy::class, 'update'])->name('admin.discrepancies.update');
 
 });
-
-
-

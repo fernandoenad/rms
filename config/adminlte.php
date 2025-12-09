@@ -364,6 +364,19 @@ return [
             'active' => ['admin/vacancies', 'admin/vacancies/active', 'admin/vacancies/create', 'regex:@^admin/vacancies/[0-9]+$@', 'regex:@^admin/vacancies/\d+/delete+$@', 'regex:@^admin/vacancies/\d+/edit+$@', 'admin/vacancies/reports', 'admin/vacancies/reports/list', 'admin/vacancies/reports/nonassessed', 'regex:@^admin/vacancies/reports/\d+$@', 'regex:@^admin/vacancies/reports/\d+/\d+$@']
         ],
         [
+            'text' => 'Assessments',
+            'url'  => 'admin/assessment',
+            'icon' => 'fas fa-fw fa-pen',
+            'active' => [
+                'admin/assessment/create',
+                'regex:@^admin/assessment/\\d+/items/create$@',
+                'regex:@^admin/assessment/\\d+/items$@',
+                'regex:@^admin/assessment/\\d+/items/\\d+/edit$@',
+                'regex:@^admin/assessment/\\d+/results$@'
+
+            ]
+        ],
+        [
             'text' => 'Applications',
             'url'  => 'admin/applications',
             'icon' => 'fas fa-fw fa-folder',
@@ -381,7 +394,6 @@ return [
             'url'  => 'admin/users',
             'icon' => 'fas fa-fw fa-users',
             'active' => ['admin/users', 'admin/users/create', 'regex:@^admin/users/[0-9]+$@', 'regex:@^admin/users/\d+/delete+$@', 'regex:@^admin/users/\d+/edit+$@']
-
         ],
         [
             'text' => 'AI Tool',

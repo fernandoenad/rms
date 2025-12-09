@@ -35,7 +35,7 @@
                 </div>
             @endif
 
-            @if (session('status'))
+            @if (session('status_creation'))
                 <div class="col-lg-6 offset-lg-3">
                     <div class="position-relative p-3 bg-gray" style="height: 180px">
                         <div class="ribbon-wrapper ribbon-xl">
@@ -43,7 +43,7 @@
                                 Success
                             </div>
                         </div>
-                        {{ session('status') }}<br><br>
+                        {{ session('status_creation') }}<br><br>
                         <h4>Your application code is <strong>{{$application->application_code}}</strong></h4>
                         <p>
                             Make sure to print the cover page by clicking <a href="#" onclick="window.print()">here</a>.<br>
@@ -52,6 +52,12 @@
 
                     </div>
                 </div><br>
+            @endif
+            @if (session('status_assessment'))
+                <div class="alert alert-info alert-dismissible auto-close">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
+                    {{ session('status_assessment') }}
+                </div>
             @endif
             <div class="row">
                 <div class="col-md-4">
@@ -118,6 +124,9 @@
                                     </li>
                                     <li class="nav-item">
                                         <a class="nav-link" href="#my-queries" data-toggle="tab">Updates @if($application->vacancy->office_level == 0)/Queries @endif</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="#my-assessments" data-toggle="tab">Assessment</a>
                                     </li>
                                     
                                 </ul>
@@ -230,6 +239,85 @@
                                         </table>
                                     </div>
                                 </div>
+                                <div class="chart tab-pane" id="my-assessments">
+                                    <div class="card-body table-responsive p-0">
+                                        <table class="table table-hover text-nowrap">
+                                            <thead>
+                                                <tr>
+                                                    <th>Exam</th>
+                                                    <th>Duration</th>
+                                                    <th>Score</th>
+                                                    <th>Status</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @php $hasAssessmentRel = $application->assessment !== null; @endphp
+                                                @forelse($exams as $exam)
+                                                    @php
+                                                        $attempt = $exam->attempts->first();
+                                                        $submitted = $attempt && $attempt->status == 2;
+                                                    @endphp
+                                                    <tr>
+                                                        <td>{{ $exam->title }}</td>
+                                                        <td>{{ $exam->duration }} min</td>
+                                                        <td>
+                                                            @if(isset($attempt) && $attempt->status == 2)
+                                                                @php
+                                                                    $total = $exam->writtenExams->where('status',1)->count();
+                                                                    $answers = $attempt->answers;
+                                                                    $correct = 0;
+                                                                    foreach($exam->writtenExams as $item){
+                                                                        $a = $answers->firstWhere('written_exam_id', $item->id);
+                                                                        if($a && strtoupper($a->selected_option) == strtoupper($item->answer_key)){
+                                                                            $correct++;
+                                                                        }
+                                                                    }
+                                                                    $scorePct = $total > 0 ? round(($correct / $total) * 100, 2) : 0;
+                                                                @endphp
+                                                                {{ $correct }} / {{ $total }} ({{ $scorePct }}%)
+                                                            @else
+                                                                -
+                                                            @endif
+                                                        </td>
+                                                        <td>
+                                                            @if($submitted)
+                                                                Submitted
+                                                            @elseif($attempt && $attempt->status == 1)
+                                                                In progress
+                                                            @else
+                                                                Not started
+                                                            @endif
+                                                        </td>
+                                                        <td>
+                                                            @if(!$hasAssessmentRel)
+                                                                <button class="btn btn-sm btn-secondary" disabled>Not eligible</button>
+                                                            @elseif($submitted)
+                                                                <button class="btn btn-sm btn-success" disabled>Completed</button>
+                                                            @else
+                                                                <form method="post" action="{{ route('guest.assessments.attempts.start', [$application, $exam]) }}" class="d-inline">
+                                                                    @csrf
+                                                                    <div class="input-group input-group-sm">
+                                                                        <input type="text" name="enrollment_key" class="form-control" placeholder="Enrollment key" required>
+                                                                        <div class="input-group-append">
+                                                                            <button type="submit" class="btn btn-primary" onclick="return confirm('This is a single-attempt test. Countdown starts after OK. Proceed?');">
+                                                                                {{ $attempt ? 'Continue' : 'Take test' }}
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </form>
+                                                            @endif
+                                                        </td>
+                                                    </tr>
+                                                @empty
+                                                    <tr>
+                                                        <td colspan="5">No active assessments for this position.</td>
+                                                    </tr>
+                                                @endforelse
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
                                 <div class="chart tab-pane" id="my-next">
                                 <div class="card-body table-responsive p-0">
                                         <table class="table table-hover table-borderless">
@@ -310,7 +398,7 @@
                                             <textarea class="form-control form-control-sm" name="message" id="message" required 
                                                 placeholder="Query message"></textarea>
                                             <div class="input-group-append">
-                                                <button type="submit"  class="btn btn-danger">Send</button>
+                                                <button type="submit"  class="btn btn-danger" disabled>Send</button>
                                             </div>
                                         </div>
                                     </form>

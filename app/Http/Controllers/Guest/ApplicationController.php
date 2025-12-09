@@ -46,13 +46,19 @@ class ApplicationController extends Controller
     public function show(Request $request, Application $application)
     {
         $applicationInquiries = $application->inquiries;
+        $exams = \App\Models\Exam::where('vacancy_id', $application->vacancy_id)
+            ->where('status', 1)
+            ->with(['attempts' => function($q) use ($application) {
+                $q->where('application_id', $application->id);
+            }])
+            ->get();
 
         if($request->session()->get('guest_email') == $application->email){
             $oldDate = Carbon::parse($application->updated_at);
             $nowDate = Carbon::parse(date('Y-m-d h:i:s'));
             $diffInDays =  $oldDate->diffInDays($nowDate);
         
-            return view('guest.applications.show', ['application' => $application, 'applicationInquiries' => $applicationInquiries, 'diffInDays' => $diffInDays]);
+            return view('guest.applications.show', ['application' => $application, 'applicationInquiries' => $applicationInquiries, 'diffInDays' => $diffInDays, 'exams' => $exams]);
         } else {
             abort(401);
         }   
@@ -102,7 +108,7 @@ class ApplicationController extends Controller
 
         $request->session()->put('guest_email', $request->email);
         
-        return redirect(route('guest.applications.show', ['application' => $newApplication]))->with('status', 'Application was successful!');
+        return redirect(route('guest.applications.show', ['application' => $newApplication]))->with('status_creation', 'Application was successful!');
     }
 
     public function inquire(Application $application, Request $request)
