@@ -59,6 +59,13 @@ class ExamAttemptController extends Controller
                 'started_at' => Carbon::now(),
                 'status' => 1,
             ]);
+            if (!$attempt->question_order) {
+                $items = $exam->writtenExams()->where('status', 1)->pluck('id')->toArray();
+                if ($exam->shuffle_items) {
+                    shuffle($items);
+                }
+                $attempt->update(['question_order' => json_encode($items)]);
+            }
         }
 
         return redirect()->route('guest.assessments.attempts.take', $attempt);
@@ -76,9 +83,14 @@ class ExamAttemptController extends Controller
 
         $attempt->load('exam.writtenExams', 'answers');
         $exam = $attempt->exam;
-        $items = $exam->writtenExams->where('status', 1);
-        if ($exam->shuffle_items) {
-            $items = $items->shuffle();
+        $itemsCollection = $exam->writtenExams->where('status', 1);
+        $items = $itemsCollection;
+        if ($attempt->question_order) {
+            $order = json_decode($attempt->question_order, true) ?: [];
+            $items = $itemsCollection->sortBy(function($item) use ($order) {
+                $pos = array_search($item->id, $order);
+                return $pos !== false ? $pos : PHP_INT_MAX;
+            });
         }
 
         $durationMinutes = $exam->duration ?? 0;

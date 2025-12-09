@@ -80,6 +80,7 @@
                 </div>
             </div>
         </div>
+        <br><br><br><br>
     </section>
 
     <form id="autoSubmitForm" method="post" action="{{ route('guest.assessments.attempts.submit', $attempt) }}">

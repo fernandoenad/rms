@@ -17,6 +17,7 @@ class ExamAttempt extends Model
         'started_at',
         'ended_at',
         'status',
+        'question_order',
     ];
 
     protected $dates = [
