@@ -52,7 +52,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($attempts as $attempt)
+                                @forelse($attempts as $attempt)
                                     @php
                                         $app = $attempt->application;
                                         $total = $exam->writtenExams->count();
@@ -119,7 +119,11 @@
                                             </div>
                                         </div>
                                     </div>
-                                @endforeach
+                                @empty
+                                    <tr>
+                                        <td colspan="6">No attempts submitted yet.</td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                         <div class="mt-3">
