@@ -123,30 +123,12 @@ class WrittenExamController extends Controller
         $attempts = $exam->attempts()
             ->with(['application', 'answers', 'answers.item'])
             ->where('status', 2)
-            ->get();
-
-        $results = $attempts->map(function($attempt) use ($exam) {
-            $total = $exam->writtenExams->count();
-            $correct = 0;
-            foreach ($exam->writtenExams as $item) {
-                $ans = $attempt->answers->firstWhere('written_exam_id', $item->id);
-                if ($ans && strtoupper($ans->selected_option) == strtoupper($item->answer_key)) {
-                    $correct++;
-                }
-            }
-            $pct = $total > 0 ? round(($correct / $total) * 100, 2) : 0;
-            return [
-                'attempt' => $attempt,
-                'application' => $attempt->application,
-                'correct' => $correct,
-                'total' => $total,
-                'pct' => $pct,
-            ];
-        });
+            ->paginate(25)
+            ->withQueryString();
 
         return view('admin.assessments.results', [
             'exam' => $exam,
-            'results' => $results,
+            'attempts' => $attempts,
         ]);
     }
 

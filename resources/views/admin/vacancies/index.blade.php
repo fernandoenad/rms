@@ -40,15 +40,19 @@
                         </a>
                     </div>
                     <div class="card-body">
-                        <a class="" href="{{ route('admin.vacancies.reports.index') }}">
-                            <i class="fas fa-list"></i> Show report
-                        </a>
-                        <!--
-                        <a class="float-right" href="{{ route('admin.vacancies.active') }}">
-                            <i class="fas fa-search"></i> Active positions only
-                        </a>
-                        -->
-                        <br><br>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <a class="" href="{{ route('admin.vacancies.reports.index') }}">
+                                <i class="fas fa-list"></i> Show report
+                            </a>
+                            <form class="form-inline" method="get" action="{{ route('admin.vacancies.index') }}">
+                                <div class="input-group input-group-sm">
+                                    <input type="text" name="q" class="form-control" placeholder="Search position or cycle" value="{{ $search ?? '' }}">
+                                    <div class="input-group-append">
+                                        <button class="btn btn-default" type="submit"><i class="fas fa-search"></i></button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
                         <table id="applications" class="table table-bordered table-striped">
                             <thead>
                                 <tr>
@@ -106,6 +110,9 @@
                                 @endforelse
                             </tbody>
                         </table>
+                        <div class="mt-3">
+                            {{ $vacancies->links('pagination::simple-bootstrap-4') }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -120,21 +127,8 @@
 @section('css')
 @stop
 
-@section('plugins.Datatables', true)
+@section('plugins.Datatables', false)
 
 @section('js')
     <script> console.log('Hi!'); </script>
-    <script>
-        $(function () {
-            $("#applications").DataTable({
-                "responsive": true,
-                "lengthChange": true,
-                "autoWidth": false,
-                "pageLength": 10,
-                "lengthMenu": [5, 10, 25, 50, 100, 1000, 2000, 3000, 4000, 5000], // You can customize these values
-                "ordering": false, // Disable initial sorting
-                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-            }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-        });
-    </script>
 @stop

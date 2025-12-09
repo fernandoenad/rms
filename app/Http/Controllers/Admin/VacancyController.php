@@ -18,6 +18,8 @@ class VacancyController extends Controller
 
     public function index()
     {
+        $search = request('q');
+
         $vacancies = \App\Models\Vacancy::query()
             ->select(['id','cycle','position_title', 'level1_status', 'level2_status'])
             ->withCount([
@@ -26,10 +28,17 @@ class VacancyController extends Controller
                     $q->where('station_id', '>', 0);
                 },
             ])
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('position_title', 'like', '%' . $search . '%')
+                        ->orWhere('cycle', 'like', '%' . $search . '%');
+                });
+            })
             ->orderByDesc('id')
-            ->get(50);
+            ->simplePaginate(15)
+            ->withQueryString();
 
-        return view('admin.vacancies.index', compact('vacancies'));
+        return view('admin.vacancies.index', compact('vacancies', 'search'));
     }
 
     public function create()

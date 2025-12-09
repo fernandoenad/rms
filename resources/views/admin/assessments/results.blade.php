@@ -37,7 +37,10 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <table id="results" class="table table-bordered table-striped">
+                        <div class="d-flex justify-content-end mb-2">
+                            {{ $attempts->links('pagination::bootstrap-4') }}
+                        </div>
+                        <table class="table table-bordered table-striped">
                             <thead>
                                 <tr>
                                     <th>Application</th>
@@ -49,17 +52,26 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($results as $row)
+                                @foreach($attempts as $attempt)
                                     @php
-                                        $attempt = $row['attempt'];
-                                        $app = $row['application'];
+                                        $app = $attempt->application;
+                                        $total = $exam->writtenExams->count();
+                                        $answers = $attempt->answers;
+                                        $correct = 0;
+                                        foreach($exam->writtenExams as $item) {
+                                            $ans = $answers->firstWhere('written_exam_id', $item->id);
+                                            if ($ans && strtoupper($ans->selected_option) == strtoupper($item->answer_key)) {
+                                                $correct++;
+                                            }
+                                        }
+                                        $pct = $total > 0 ? round(($correct / $total) * 100, 2) : 0;
                                     @endphp
                                     <tr>
                                         <td>{{ $app ? $app->application_code : '-' }}</td>
                                         <td>{{ $app ? $app->getFullname() : '-' }}</td>
                                         <td>{{ $attempt->started_at }}</td>
                                         <td>{{ $attempt->ended_at }}</td>
-                                        <td>{{ $row['correct'] }} / {{ $row['total'] }} ({{ $row['pct'] }}%)</td>
+                                        <td>{{ $correct }} / {{ $total }} ({{ $pct }}%)</td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-info" data-toggle="modal" data-target="#reviewModal{{ $attempt->id }}">
                                                 <i class="fas fa-eye"></i> Review
@@ -83,10 +95,10 @@
                                                     </button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    <p><strong>Score:</strong> {{ $row['correct'] }} / {{ $row['total'] }} ({{ $row['pct'] }}%)</p>
+                                                    <p><strong>Score:</strong> {{ $correct }} / {{ $total }} ({{ $pct }}%)</p>
                                                     @foreach($exam->writtenExams as $idx => $item)
                                                         @php
-                                                            $ans = $attempt->answers->firstWhere('written_exam_id', $item->id);
+                                                            $ans = $answers->firstWhere('written_exam_id', $item->id);
                                                             $isCorrect = $ans && strtoupper($ans->selected_option) == strtoupper($item->answer_key);
                                                         @endphp
                                                         <div class="mb-3">
@@ -110,6 +122,9 @@
                                 @endforeach
                             </tbody>
                         </table>
+                        <div class="mt-3">
+                            {{ $attempts->links('pagination::bootstrap-4') }}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -121,15 +136,8 @@
     @include('layouts.footer')
 @stop
 
-@section('plugins.Datatables', true)
+@section('plugins.Datatables', false)
 
 @section('js')
-<script>
-    $(function () {
-        $("#results").DataTable({
-            "responsive": true, "lengthChange": false, "autoWidth": false, "pageLength": 10,
-            "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-        }).buttons().container().appendTo('#results_wrapper .col-md-6:eq(0)');
-    });
-</script>
+<script>console.log('Results loaded');</script>
 @stop
