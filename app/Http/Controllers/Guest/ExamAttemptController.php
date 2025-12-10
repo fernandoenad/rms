@@ -92,6 +92,7 @@ class ExamAttemptController extends Controller
                 return $pos !== false ? $pos : PHP_INT_MAX;
             });
         }
+        $items = $items->values();
 
         $durationMinutes = $exam->duration ?? 0;
         $elapsedSeconds = $attempt->started_at ? now()->diffInSeconds($attempt->started_at) : 0;
@@ -146,6 +147,8 @@ class ExamAttemptController extends Controller
         $attempt->update([
             'ended_at' => Carbon::now(),
             'status' => 2,
+            'auto_submitted' => $request->filled('auto_submit_reason'),
+            'auto_submit_reason' => $request->input('auto_submit_reason'),
         ]);
 
         return redirect()->route('guest.applications.show', $application)->with('status_assessment', 'Assessment submitted.');

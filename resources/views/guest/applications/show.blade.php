@@ -248,6 +248,7 @@
                                                     <th>Duration</th>
                                                     <th>Score</th>
                                                     <th>Status</th>
+                                                    <th>Note</th>
                                                     <th>Action</th>
                                                 </tr>
                                             </thead>
@@ -290,6 +291,15 @@
                                                             @endif
                                                         </td>
                                                         <td>
+                                                            @if($submitted && $attempt && $attempt->auto_submitted)
+                                                                <button type="button" class="btn btn-link p-0" data-toggle="modal" data-target="#attemptNoteModal{{ $attempt->id }}" title="View auto-submit note">
+                                                                    <i class="fas fa-info-circle text-info"></i>
+                                                                </button>
+                                                            @else
+                                                                -
+                                                            @endif
+                                                        </td>
+                                                        <td>
                                                             @if(!$hasAssessmentRel)
                                                                 <button class="btn btn-sm btn-secondary" disabled>Not eligible</button>
                                                             @elseif($submitted)
@@ -311,11 +321,36 @@
                                                     </tr>
                                                 @empty
                                                     <tr>
-                                                        <td colspan="5">No active assessments for this position.</td>
+                                                        <td colspan="6">No active assessments for this position.</td>
                                                     </tr>
                                                 @endforelse
                                             </tbody>
                                         </table>
+                                        @foreach($exams as $exam)
+                                            @php $attempt = $exam->attempts->first(); @endphp
+                                            @if($attempt && $attempt->auto_submitted)
+                                                <div class="modal fade" id="attemptNoteModal{{ $attempt->id }}" tabindex="-1" aria-labelledby="attemptNoteLabel{{ $attempt->id }}" aria-hidden="true">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title" id="attemptNoteLabel{{ $attempt->id }}">Auto-submit details</h5>
+                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                    <span aria-hidden="true">&times;</span>
+                                                                </button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <p><strong>Exam:</strong> {{ $exam->title }}</p>
+                                                                <p><strong>Reason:</strong> {{ $attempt->auto_submit_reason ?? 'Unknown' }}</p>
+                                                                <p><strong>Submitted at:</strong> {{ $attempt->ended_at }}</p>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        @endforeach
                                     </div>
                                 </div>
                                 <div class="chart tab-pane" id="my-next">

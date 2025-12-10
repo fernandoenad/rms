@@ -47,6 +47,7 @@
                     <div class="card-footer">
                         <form method="post" action="{{ route('admin.assessments.attempts.submit', $attempt) }}">
                             @csrf
+                            <input type="hidden" name="auto_submit_reason" id="manual_reason" value="">
                             <button type="submit" class="btn btn-primary" onclick="return confirm('Submit your answers now?');">Submit answers</button>
                             <a href="{{ route('admin.assessments.index') }}" class="btn btn-default float-right">Back</a>
                         </form>
@@ -71,14 +72,24 @@
     const remainingSeconds = {{ $remainingSeconds }};
     let countdown = remainingSeconds;
     const countdownEl = document.getElementById('countdown');
-    const submitUrl = "{{ route('admin.assessments.attempts.submit', $attempt) }}";
+    let submitted = false;
+
+    function submitAssessment(reason = '') {
+        if (!submitted) {
+            submitted = true;
+            if (reason) {
+                document.getElementById('auto_reason').value = reason;
+            }
+            document.getElementById('autoSubmitForm').submit();
+        }
+    }
 
     function updateCountdown() {
         const minutes = Math.floor(countdown / 60);
         const seconds = countdown % 60;
         countdownEl.textContent = `Time left: ${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
         if (countdown <= 0) {
-            document.getElementById('autoSubmitForm').submit();
+            submitAssessment('timeout');
         } else {
             countdown--;
             setTimeout(updateCountdown, 1000);
@@ -105,9 +116,16 @@
                 }).catch((err) => console.error(err));
             });
         });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                submitAssessment('visibilitychange');
+            }
+        });
     });
 </script>
 <form id="autoSubmitForm" method="post" action="{{ route('admin.assessments.attempts.submit', $attempt) }}">
     @csrf
+    <input type="hidden" name="auto_submit_reason" id="auto_reason" value="">
 </form>
 @stop

@@ -18,6 +18,8 @@ class ExamAttempt extends Model
         'ended_at',
         'status',
         'question_order',
+        'auto_submitted',
+        'auto_submit_reason',
     ];
 
     protected $dates = [

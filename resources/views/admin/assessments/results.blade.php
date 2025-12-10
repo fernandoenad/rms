@@ -48,6 +48,7 @@
                                     <th>Start</th>
                                     <th>End</th>
                                     <th>Score</th>
+                                    <th>Note</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -72,6 +73,15 @@
                                         <td>{{ $attempt->started_at }}</td>
                                         <td>{{ $attempt->ended_at }}</td>
                                         <td>{{ $correct }} / {{ $total }} ({{ $pct }}%)</td>
+                                        <td>
+                                            @if($attempt->auto_submitted)
+                                                <button type="button" class="btn btn-link p-0" data-toggle="modal" data-target="#attemptNoteModal{{ $attempt->id }}" title="View auto-submit note">
+                                                    <i class="fas fa-info-circle text-info"></i>
+                                                </button>
+                                            @else
+                                                -
+                                            @endif
+                                        </td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-info" data-toggle="modal" data-target="#reviewModal{{ $attempt->id }}">
                                                 <i class="fas fa-eye"></i> Review
@@ -121,7 +131,7 @@
                                     </div>
                                 @empty
                                     <tr>
-                                        <td colspan="6">No attempts submitted yet.</td>
+                                        <td colspan="7">No attempts submitted yet.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -131,9 +141,47 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            @foreach($attempts as $attempt)
+                @if($attempt->auto_submitted)
+                    @php
+                        $app = $attempt->application;
+                        $total = $exam->writtenExams->count();
+                        $answers = $attempt->answers;
+                        $correct = 0;
+                        foreach($exam->writtenExams as $item) {
+                            $ans = $answers->firstWhere('written_exam_id', $item->id);
+                            if ($ans && strtoupper($ans->selected_option) == strtoupper($item->answer_key)) {
+                                $correct++;
+                            }
+                        }
+                        $pct = $total > 0 ? round(($correct / $total) * 100, 2) : 0;
+                    @endphp
+                    <div class="modal fade" id="attemptNoteModal{{ $attempt->id }}" tabindex="-1" aria-labelledby="attemptNoteLabel{{ $attempt->id }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="attemptNoteLabel{{ $attempt->id }}">Auto-submit details</h5>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body">
+                                    <p><strong>Application:</strong> {{ $app ? $app->application_code : '-' }}</p>
+                                    <p><strong>Reason:</strong> {{ $attempt->auto_submit_reason ?? 'Unknown' }}</p>
+                                    <p><strong>Submitted at:</strong> {{ $attempt->ended_at }}</p>
+                                    <p><strong>Score:</strong> {{ $correct }} / {{ $total }} ({{ $pct }}%)</p>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            @endforeach
         </div>
     </div>
+</div>
 @stop
 
 @section('footer')

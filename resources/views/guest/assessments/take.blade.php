@@ -72,6 +72,7 @@
                         <div class="card-footer">
                             <form method="post" action="{{ route('guest.assessments.attempts.submit', $attempt) }}">
                                 @csrf
+                                <input type="hidden" name="auto_submit_reason" id="manual_reason" value="">
                                 <button type="submit" class="btn btn-primary" onclick="return confirm('Submit your answers now?');">Submit answers</button>
                                 <a href="{{ route('guest.applications.show', $attempt->application_id) }}" class="btn btn-default float-right">Back</a>
                             </form>
@@ -85,6 +86,7 @@
 
     <form id="autoSubmitForm" method="post" action="{{ route('guest.assessments.attempts.submit', $attempt) }}">
         @csrf
+        <input type="hidden" name="auto_submit_reason" id="auto_reason" value="">
     </form>
 @overwrite
 
@@ -102,9 +104,12 @@
     const questionCounter = document.getElementById('questionCounter');
     const navButtons = Array.from(document.querySelectorAll('.nav-btn'));
 
-    function submitAssessment() {
+    function submitAssessment(reason = '') {
         if (!submitted) {
             submitted = true;
+            if (reason) {
+                document.getElementById('auto_reason').value = reason;
+            }
             document.getElementById('autoSubmitForm').submit();
         }
     }
@@ -141,7 +146,7 @@
         const seconds = countdown % 60;
         countdownEl.textContent = `Time left: ${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
         if (countdown <= 0) {
-            submitAssessment();
+            submitAssessment('timeout');
         } else {
             countdown--;
             setTimeout(updateCountdown, 1000);
@@ -202,7 +207,7 @@
 
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
-                submitAssessment();
+                submitAssessment('visibilitychange');
             }
         });
     });
