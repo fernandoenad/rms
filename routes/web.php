@@ -60,7 +60,7 @@ Route::get('/auth/google/callback', function () {
 });
 
 // root route
-Route::get('/', [GuestHome::class, 'index'])->name('guest.index');
+Route::redirect('/', '/applications')->name('guest.index');
 
 // not yet applied
 Route::get('/vacancies', [GuestVacancy::class, 'index'])->name('guest.vacancies.index');
