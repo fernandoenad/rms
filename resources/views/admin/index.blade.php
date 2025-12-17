@@ -27,7 +27,7 @@
             <div class="col-lg-3">
                 <div class="small-box bg-danger">
                     <div class="inner">
-                        <h3>{{ $inquiries->count()}}</h3>
+                        <h3>{{ $inquiries }}</h3>
                         <p>Inquiries</p>
                     </div>
                     <div class="icon">
@@ -51,7 +51,7 @@
             <div class="col-lg-3">
                 <div class="small-box bg-info">
                     <div class="inner">
-                        <h3>{{ $applications->count()}}</h3>
+                        <h3>{{ $applications }}</h3>
                         <p>Applications</p>
                     </div>
                     <div class="icon">
@@ -63,7 +63,7 @@
             <div class="col-lg-3">
                 <div class="small-box bg-default">
                     <div class="inner">
-                        <h3>{{ $users->count()}}</h3>
+                        <h3>{{ $users }}</h3>
                         <p>Users</p>
                     </div>
                     <div class="icon">

@@ -119,8 +119,10 @@ class ApplicationController extends Controller
 
     public function edit(Application $application)
     {
-        $vacancies = Vacancy::all();
-        $stations = Station::all();
+        // Load application with relationships to prevent N+1
+        $application->load(['vacancy', 'station', 'assessment']);
+        $vacancies = Vacancy::select('id', 'position_title', 'cycle')->get();
+        $stations = Station::select('id', 'name', 'office_id')->get();
 
         return view('admin.applications.edit',['application' => $application, 'vacancies' => $vacancies, 'stations' => $stations]);
     }

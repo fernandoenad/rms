@@ -31,12 +31,18 @@ class HomeController extends Controller
      */
     public function index()
     {
-        $applications = Application::all();
-        $inquiries = Inquiry::where('status', '=', 1)->get();
+        // Use counts instead of loading all records for dashboard stats
+        $applicationsCount = Application::count();
+        $inquiriesCount = Inquiry::where('status', '=', 1)->count();
         $vacancies = Vacancy::where('status', '=', 1)->get();
-        $users = User::all();
+        $usersCount = User::count();
         
-        return view('admin.index', ['applications' => $applications, 'inquiries' => $inquiries, 'vacancies' => $vacancies, 'users' => $users]);
+        return view('admin.index', [
+            'applications' => $applicationsCount, 
+            'inquiries' => $inquiriesCount, 
+            'vacancies' => $vacancies, 
+            'users' => $usersCount
+        ]);
     }
 
     public function change_password()
@@ -69,8 +75,9 @@ class HomeController extends Controller
 
     public function get_notifications(Request $request)
     {
-        $inquiries = Inquiry::where('status', '=', 1)->orderBy('created_at','desc')->get();
-        $notifications = $inquiries->take(5);
+        // Get count separately and limit the query to 5 for notifications
+        $inquiriesCount = Inquiry::where('status', '=', 1)->count();
+        $notifications = Inquiry::where('status', '=', 1)->orderBy('created_at','desc')->limit(5)->get();
         
         $dropdownHtml = '';
         
@@ -85,7 +92,7 @@ class HomeController extends Controller
         $dropdownHtml .= "<div class='dropdown-divider'></div>";
 
         return [
-            'label'       => count($inquiries),
+            'label'       => $inquiriesCount,
             'label_color' => 'danger',
             'icon_color'  => 'dark',
             'dropdown'    => $dropdownHtml,
