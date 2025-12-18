@@ -133,11 +133,17 @@ class ApplicationController extends Controller
 
     public function show(Application $application)
     {
+        $application->load(['vacancy', 'assessment', 'inquiries']);
+        
+        // Load station from mysql_2 connection
+        $station = Station::find($application->station_id);
+        
         $applicationInquiries = $application->inquiries;
 
         return view('admin.applications.show',[
             'application' => $application,
             'applicationInquiries' => $applicationInquiries,
+            'station' => $station,
         ]);
     }
 
@@ -304,13 +310,55 @@ class ApplicationController extends Controller
         return redirect(route('admin.applications.show', ['application' => $application]))->with('status', 'Message was successfully saved and emailed.');
     }
 
-    public function vacancy_show(Vacancy $vacancy)
+    public function vacancy_show(Request $request, Vacancy $vacancy)
     {
-        $applications = Application::with(['station', 'assessment'])
-            ->where('vacancy_id', '=', $vacancy->id)
-            ->get();
+        if ($request->ajax()) {
+            $stationsTable = config('database.connections.mysql_2.database') . '.stations';
+            
+            $applications = Application::with(['assessment'])
+                ->select([
+                    'applications.*',
+                    'stations.name as station_name'
+                ])
+                ->leftJoin($stationsTable . ' as stations', 'applications.station_id', '=', 'stations.id')
+                ->where('applications.vacancy_id', '=', $vacancy->id);
+            
+            return DataTables::of($applications)
+                ->addColumn('application_code_link', function ($application) {
+                    return '<a href="' . route('admin.applications.show', $application) . '" title="View">' . $application->application_code . '</a>';
+                })
+                ->addColumn('fullname', function ($application) {
+                    return $application->getFullname();
+                })
+                ->addColumn('station_name_display', function ($application) {
+                    return $application->station_name ?? ($application->station_id == 0 ? 'Division' : 'Untagged');
+                })
+                ->addColumn('action', function ($application) {
+                    $editBtn = '<a href="' . route('admin.applications.edit', ['application' => $application]) . '" class="btn btn-sm btn-warning" title="Modify"><span class="fas primary fa-fw fa-edit"></span></a> ';
+                    
+                    $deleteDisabled = isset($application->assessment) ? 'disabled' : '';
+                    $deleteBtn = '<a href="' . route('admin.applications.delete', ['application' => $application]) . '" class="btn btn-sm btn-danger ' . $deleteDisabled . '" title="Delete"><span class="fas fa-fw fa-trash"></span></a>';
+                    
+                    return $editBtn . $deleteBtn;
+                })
+                ->filterColumn('fullname', function($query, $keyword) {
+                    $query->where(function($q) use ($keyword) {
+                        $q->where('applications.first_name', 'LIKE', "%{$keyword}%")
+                          ->orWhere('applications.last_name', 'LIKE', "%{$keyword}%")
+                          ->orWhere('applications.middle_name', 'LIKE', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('station_name_display', function($query, $keyword) {
+                    $query->where('stations.name', 'LIKE', "%{$keyword}%");
+                })
+                ->orderColumn('fullname', function ($query, $order) {
+                    $query->orderBy('applications.last_name', $order);
+                })
+                ->rawColumns(['application_code_link', 'action'])
+                ->make(true);
+        }
 
-        return view('admin.applications.list.index', ['vacancy' => $vacancy, 'applications' => $applications]);
+        return view('admin.applications.list.index', ['vacancy' => $vacancy]);
     }
 
 

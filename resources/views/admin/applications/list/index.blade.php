@@ -46,48 +46,22 @@
                             <i class="fas fa-search"></i> Tagged positions only
                         </a>
                         <br><br>
-                        <table id="applications" class="table table-bordered table-striped">
-                            <thead>
-                                <tr>
-                                    <th width="15%">Code</th>
-                                    <th>Email</th>
-                                    <th width="20%">Name</th>
-                                    <th>Station/Unit</th>
-                                    <th width="10%">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if(sizeof($applications) > 0)
-                                    @foreach($applications as $application)
-                                        <tr>
-                                            <td>
-                                                <a href="{{route('admin.applications.show', $application)}}" title="View">
-                                                    {{$application->application_code}}
-                                                </a>
-                                            </td>
-                                            <td>{{$application->email}}</td>
-                                            <td>{{$application->getFullname()}}</td>
-                                            <td>{{ optional($application->station)->name ?? ($application->station_id == 0 ? 'Division' : 'Untagged') }}</td>
-                                            @php  $assessment = $application->assessment; @endphp
-                                            <td>
-                                                <a href="{{route('admin.applications.edit', ['application' => $application])}}" class="btn btn-sm btn-warning" title="Modify">
-                                                    <span class="fas primary fa-fw fa-edit"></span>
-                                                </a>
-                                                <a href="{{route('admin.applications.delete', ['application' => $application])}}" class="btn btn-sm btn-danger {{ isset($application->assessment) ? 'disabled' : '' }}" title="Delete">
-                                                    <span class="fas fa-fw fa-trash"></span>
-                                                </a>
-                                                
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                @else
+                        <div class="table-responsive">
+                            <table id="applications" class="table table-bordered table-striped table-sm" style="width:100%">
+                                <thead>
                                     <tr>
-                                        <td colspan="5">0 applications found.</td>
+                                        <th width="15%">Code</th>
+                                        <th>Email</th>
+                                        <th width="20%">Name</th>
+                                        <th>Station/Unit</th>
+                                        <th width="10%">Action</th>
                                     </tr>
-                                @endif
-                            </tbody>
-
-                    </table>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -100,44 +74,81 @@
 @stop
 
 @section('css')
-<link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
-<!-- Buttons CSS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.1.1/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
+<style>
+    .dt-buttons {
+        margin-bottom: 10px;
+    }
+    .dt-buttons .btn {
+        margin-right: 5px;
+    }
+</style>
 @stop
 
 @section('plugins.Datatables', true)
 
 @section('js')
-    <script> console.log('Hi!'); </script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap4.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.colVis.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+<script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap4.min.js"></script>
 
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
-    <!-- DataTables JS -->
-    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
-    <!-- Buttons JS -->
-    <script src="https://cdn.datatables.net/buttons/2.1.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.1.1/js/buttons.flash.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.1.1/js/buttons.html5.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.1.1/js/buttons.print.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.1.1/js/buttons.colVis.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
-
-    <script>
-        $(function () {
-            $("#applications").DataTable({
-                "responsive": true,
-                "lengthChange": true,
-                "autoWidth": false,
-                "pageLength": 10,
-                "lengthMenu": [5, 10, 25, 50, 100, 1000, 2000, 3000, 4000, 5000], // You can customize these values
-                "ordering": false, // Disable initial sorting
-                "dom": 'Blfrtip', // Ensure the buttons are displayed
-                "buttons": ["excel", "pdf", "print", "colvis"]
-            }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+<script>
+    $(function () {
+        $("#applications").DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: "{{ route('admin.applications.vacancy.show', $vacancy) }}",
+            columns: [
+                { data: 'application_code_link', name: 'application_code' },
+                { data: 'email', name: 'email' },
+                { data: 'fullname', name: 'fullname' },
+                { data: 'station_name_display', name: 'station_name_display' },
+                { data: 'action', name: 'action', orderable: false, searchable: false }
+            ],
+            responsive: true,
+            lengthChange: true,
+            autoWidth: false,
+            pageLength: 10,
+            lengthMenu: [10, 25, 50, 100, 500, 1000],
+            order: [[0, 'desc']],
+            dom: '<"row"<"col-md-6"B><"col-md-6"f>>rtip',
+            buttons: [
+                {
+                    extend: 'excel',
+                    className: 'btn btn-success btn-sm',
+                    text: '<i class="fas fa-file-excel"></i> Excel',
+                    exportOptions: { columns: [0, 1, 2, 3] }
+                },
+                {
+                    extend: 'pdf',
+                    className: 'btn btn-danger btn-sm',
+                    text: '<i class="fas fa-file-pdf"></i> PDF',
+                    exportOptions: { columns: [0, 1, 2, 3] }
+                },
+                {
+                    extend: 'print',
+                    className: 'btn btn-info btn-sm',
+                    text: '<i class="fas fa-print"></i> Print',
+                    exportOptions: { columns: [0, 1, 2, 3] }
+                },
+                {
+                    extend: 'colvis',
+                    className: 'btn btn-secondary btn-sm',
+                    text: '<i class="fas fa-columns"></i> Columns'
+                }
+            ]
         });
-    </script>
-
-
+    });
+</script>
 @stop

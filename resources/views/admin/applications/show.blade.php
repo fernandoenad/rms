@@ -37,7 +37,6 @@
                         <h3 class="profile-username text-center">{{$application->getFullname()}}</h3>
                         <p class="text-muted text-center">
                             {{$application->vacancy->position_title}}<br>
-                            @php  $station = App\Models\Station::find($application->station_id); @endphp
                             {{ isset($station) ? $station->name : ($application->station_id == 0 ? 'Division' : 'Untagged') }}
                         </p>
                         
@@ -264,16 +263,5 @@
 @section('css')
 @stop
 
-@section('plugins.Datatables', true)
-
 @section('js')
-    <script> console.log('Hi!'); </script>
-    <script>
-        $(function () {
-            $("#applications").DataTable({
-            "responsive": true, "lengthChange": false, "autoWidth": false,
-            "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-            }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-        });
-    </script>
 @stop
