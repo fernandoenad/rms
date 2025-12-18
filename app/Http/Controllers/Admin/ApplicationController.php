@@ -167,7 +167,8 @@ class ApplicationController extends Controller
         // Load application with relationships to prevent N+1
         $application->load(['vacancy', 'station', 'assessment']);
         $vacancies = Vacancy::select('id', 'position_title', 'cycle')->get();
-        $stations = Station::select('id', 'name', 'office_id')->get();
+        $stations = Station::select('id', 'name', 'code','office_id')->get();
+
 
         return view('admin.applications.edit',['application' => $application, 'vacancies' => $vacancies, 'stations' => $stations]);
     }
