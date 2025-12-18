@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Assessment;
 use App\Models\Template;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Facades\DataTables;
 
 class DiscrepancyController extends Controller
@@ -18,9 +19,12 @@ class DiscrepancyController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $assessments = Assessment::with(['application.vacancy'])
+            $assessments = DB::table('assessments')
                 ->select([
-                    'assessments.*',
+                    'assessments.id',
+                    'assessments.assessment',
+                    'assessments.status',
+                    'assessments.score',
                     'applications.application_code',
                     'applications.first_name',
                     'applications.last_name',
@@ -41,7 +45,14 @@ class DiscrepancyController extends Controller
                     return $assessment->last_name . ', ' . $assessment->first_name . ' ' . $middleInitial;
                 })
                 ->addColumn('status_label', function ($assessment) {
-                    return $assessment->get_status();
+                    $labels = [
+                        0 => 'New',
+                        1 => 'SSC Pending',
+                        2 => 'SSC Completed/DSC Pending',
+                        3 => 'DSC Completed',
+                        4 => 'Disqualified',
+                    ];
+                    return $labels[$assessment->status] ?? null;
                 })
                 ->addColumn('raw_score', function ($assessment) {
                     $assessment_scores = json_decode($assessment->assessment, true) ?? [];
