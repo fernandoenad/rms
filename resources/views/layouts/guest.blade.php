@@ -5,11 +5,19 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    
+    <!-- DNS Prefetch & Preconnect for faster external resource loading -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//cdn.datatables.net">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.datatables.net" crossorigin>
+    
     <title>@yield('title')</title>
     <link rel="stylesheet" href="{{url('/')}}/vendor/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="{{url('/')}}/vendor/overlayScrollbars/css/OverlayScrollbars.min.css">
     <link rel="stylesheet" href="{{url('/')}}/vendor/adminlte/dist/css/adminlte.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700,300italic,400italic,600italic&display=swap">
     <link rel="stylesheet" href="//cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.css">
     @yield('css')

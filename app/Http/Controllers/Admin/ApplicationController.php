@@ -16,6 +16,7 @@ use Auth;
 use Mail;
 use App\Mail\UpdateMail;
 use App\Models\Exam;
+use Yajra\DataTables\Facades\DataTables;
 
 class ApplicationController extends Controller
 {
@@ -24,24 +25,68 @@ class ApplicationController extends Controller
         $this->middleware('auth');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $applications = Application::with(['vacancy', 'station'])->latest()->take(100)->get();
+        if ($request->ajax()) {
+            $stationsTable = config('database.connections.mysql_2.database') . '.stations';
+            
+            $applications = Application::with(['assessment'])
+                ->select([
+                    'applications.*',
+                    'vacancies.position_title as vacancy_position_title',
+                    'stations.name as station_name'
+                ])
+                ->leftJoin('vacancies', 'applications.vacancy_id', '=', 'vacancies.id')
+                ->leftJoin($stationsTable . ' as stations', 'applications.station_id', '=', 'stations.id');
+            
+            return DataTables::of($applications)
+                ->addColumn('application_code_link', function ($application) {
+                    return '<a href="' . route('admin.applications.show', $application) . '" title="View">' . $application->application_code . '</a>';
+                })
+                ->addColumn('fullname', function ($application) {
+                    return $application->getFullname();
+                })
+                ->addColumn('position_title', function ($application) {
+                    return '<a href="' . route('admin.applications.vacancy.show', $application->vacancy_id) . '">' . ($application->vacancy_position_title ?? '') . '</a>';
+                })
+                ->addColumn('station_name_display', function ($application) {
+                    return $application->station_name ?? 'Untagged';
+                })
+                ->addColumn('action', function ($application) {
+                    $editBtn = '<a href="' . route('admin.applications.edit', ['application' => $application]) . '" class="btn btn-xs btn-warning" title="Modify application"><span class="fas primary fa-fw fa-edit"></span></a> ';
+                    
+                    if ($application->assessment !== null) {
+                        $scoreBtn = '<a href="' . route('admin.applications.edit_scores', ['application' => $application]) . '" class="btn btn-xs btn-primary" title="Modify assessment"><span class="fas primary fa-fw fa-list"></span></a> ';
+                    } else {
+                        $scoreBtn = '<a href="#" class="btn btn-xs btn-primary" title="Modify assessment" onClick="return confirm(\'Action not permitted! This application was not taken-in yet. Take in the application first via the School/Office portal.\')"><span class="fas primary fa-fw fa-list"></span></a> ';
+                    }
+                    
+                    $deleteDisabled = isset($application->assessment) ? 'disabled' : '';
+                    $deleteBtn = '<a href="' . route('admin.applications.delete', ['application' => $application]) . '" class="btn btn-xs btn-danger ' . $deleteDisabled . '" title="Delete"><span class="fas fa-fw fa-trash"></span></a>';
+                    
+                    return $editBtn . $scoreBtn . $deleteBtn;
+                })
+                ->filterColumn('fullname', function($query, $keyword) {
+                    $query->where(function($q) use ($keyword) {
+                        $q->where('applications.first_name', 'LIKE', "%{$keyword}%")
+                          ->orWhere('applications.last_name', 'LIKE', "%{$keyword}%")
+                          ->orWhere('applications.middle_name', 'LIKE', "%{$keyword}%");
+                    });
+                })
+                ->filterColumn('position_title', function($query, $keyword) {
+                    $query->where('vacancies.position_title', 'LIKE', "%{$keyword}%");
+                })
+                ->filterColumn('station_name_display', function($query, $keyword) {
+                    $query->where('stations.name', 'LIKE', "%{$keyword}%");
+                })
+                ->orderColumn('fullname', function ($query, $order) {
+                    $query->orderBy('applications.last_name', $order);
+                })
+                ->rawColumns(['application_code_link', 'position_title', 'action'])
+                ->make(true);
+        }
 
-        return view('admin.applications.index',['applications' => $applications]);
-    }
-
-    public function search(Request $request)
-    {
-        $search_str = $request->input('search_str');
-
-        $applications = Application::with(['vacancy', 'station'])
-            ->where('application_code', $search_str)
-            ->orWhere('first_name', 'LIKE', '%' . $search_str . '%')
-            ->orWhere('last_name', 'LIKE', '%' . $search_str . '%')
-            ->get();
-
-        return view('admin.applications.index',['applications' => $applications]);
+        return view('admin.applications.index');
     }
 
     public function create()

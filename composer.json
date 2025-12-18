@@ -14,9 +14,11 @@
         "laravel/tinker": "^2.8",
         "laravel/ui": "^4.3",
         "openai-php/client": "^0.10.3",
-        "predis/predis": "^3.3"
+        "predis/predis": "^3.3",
+        "yajra/laravel-datatables-oracle": "^10.11"
     },
     "require-dev": {
+        "barryvdh/laravel-debugbar": "^3.16",
         "fakerphp/faker": "^1.9.1",
         "laravel/pint": "^1.0",
         "laravel/sail": "^1.18",

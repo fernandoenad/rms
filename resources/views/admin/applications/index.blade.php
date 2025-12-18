@@ -40,19 +40,7 @@
                         </a>
                     </div>
                     <div class="card-body">
-                        <form class="form-inline float-right" method="post" action="{{route('admin.applications.search')}}">
-                            @csrf
-                            @method('put')
-                            <div class="input-group input-group-md">
-                                <input id="search_str" name="search_str" class="form-control form-control-navbar @error('search_str') is-invalid @enderror" value="{{ old('search_str') ?? request()->get('search_str') }}" type="text" placeholder="Search application..." aria-label="Search">
-                                <div class="input-group-append">
-                                    <button class="btn btn-primary" type="submit">
-                                        <i class="fas fa-search"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </form>
-                        <table id="list" class="table table-bordered table-striped">
+                        <table id="applications-table" class="table table-bordered table-striped table-sm table-hover" style="width:100%">
                             <thead>
                                 <tr>
                                     <th width="15%">Code</th>
@@ -63,56 +51,8 @@
                                     <th width="10%">Action</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                @if(sizeof($applications) > 0)
-                                    @foreach($applications as $application)
-                                        <tr>
-                                            <td>
-                                                <a href="{{route('admin.applications.show', $application)}}" title="View">
-                                                    {{$application->application_code}}
-                                                </a>
-                                            </td>
-                                            <td>{{$application->email}}</td>
-                                            <td>{{$application->getFullname()}}</td>
-                                            <td>
-                                                <a href="{{ route('admin.applications.vacancy.show', $application->vacancy_id) }}">
-                                                {{$application->vacancy->position_title}}
-                                                </a>
-                                            </td>
-                                            <td>{{ optional($application->station)->name ?? 'Untagged' }}</td>
-                                            <td>
-                                                <a href="{{route('admin.applications.edit', ['application' => $application])}}" class="btn btn-xs btn-warning" title="Modify application">
-                                                    <span class="fas primary fa-fw fa-edit"></span>
-                                                </a>
-                                                @if($application->assessment !== null)
-                                                    <a href="{{route('admin.applications.edit_scores', ['application' => $application])}}" class="btn btn-xs btn-primary" title="Modify assessment">
-                                                        <span class="fas primary fa-fw fa-list"></span>  
-                                                    </a>
-                                                @else 
-                                                <a href="#" class="btn btn-xs btn-primary" title="Modify assessment" onClick="return confirm('Action not permitted! This application was not taken-in yet. Take in the application first via the School/Office portal.')">
-                                                    <span class="fas primary fa-fw fa-list"></span>  
-                                                </a>
-                                                @endif
-                                                <!--
-                                                <a href="{{route('admin.applications.edit_scores', ['application' => $application])}}" class="btn btn-xs btn-primary" title="Modify scores">
-                                                    <span class="fas primary fa-fw fa-list"></span>
-                                                </a>
-                                                -->
-                                                <a href="{{route('admin.applications.delete', ['application' => $application])}}" class="btn btn-xs btn-danger {{ isset($application->assessment) ? 'disabled' : '' }}" title="Delete">
-                                                    <span class="fas fa-fw fa-trash"></span>
-                                                </a>
-                                                
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                @else
-                                    <tr>
-                                        <td colspan="6">0 applications found.</td>
-                                    </tr>
-                                @endif
-                            </tbody>
-
-                    </table>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -125,45 +65,89 @@
 @stop
 
 @section('css')
-<link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
-<!-- Buttons CSS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.1.1/css/buttons.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/dataTables.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.1.1/css/buttons.bootstrap4.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap4.min.css">
+<style>
+    .dt-buttons {
+        margin-bottom: 10px;
+    }
+    .dt-buttons .btn {
+        margin-right: 5px;
+    }
+</style>
 @stop
 
 @section('plugins.Datatables', true)
 
 @section('js')
-    <script> console.log('Hi!'); </script>
-
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
-    <!-- DataTables JS -->
     <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
-    <!-- Buttons JS -->
+    <script src="https://cdn.datatables.net/1.11.3/js/dataTables.bootstrap4.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.1.1/js/dataTables.buttons.min.js"></script>
-    <script src="https://cdn.datatables.net/buttons/2.1.1/js/buttons.flash.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.1.1/js/buttons.bootstrap4.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.9/js/responsive.bootstrap4.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.1.1/js/buttons.html5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.1.1/js/buttons.print.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.1.1/js/buttons.colVis.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
 
     <script>
+        
         $(function () {
-            $("#list").DataTable({
-                "responsive": true,
-                "lengthChange": true,
-                "autoWidth": false,
-                "pageLength": 10,
-                "lengthMenu": [10, 25, 50, 100, 1000, 2000, 3000, 4000, 5000], // You can customize these values
-                "ordering": false, // Disable initial sorting
-                "searching": false, // Disable the search feature
-                "dom": 'Blfrtip', // Ensure the buttons are displayed
-                "buttons": ["excel", "pdf", "print", "colvis"]
-            }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
+            $('#applications-table').DataTable({
+                processing: true,
+                serverSide: true,
+                responsive: true,
+                ajax: '{{ route("admin.applications.index") }}',
+                columns: [
+                    { data: 'application_code_link', name: 'applications.application_code' },
+                    { data: 'email', name: 'applications.email' },
+                    { data: 'fullname', name: 'fullname', orderable: true },
+                    { data: 'position_title', name: 'position_title' },
+                    { data: 'station_name_display', name: 'station_name_display' },
+                    { data: 'action', name: 'action', orderable: false, searchable: false }
+                ],
+                order: [[0, 'desc']],
+                pageLength: 25,
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                dom: "<'row'<'col-sm-12 col-md-6'B><'col-sm-12 col-md-6'f>>" +
+                     "<'row'<'col-sm-12'tr>>" +
+                     "<'row'<'col-sm-12 col-md-4'l><'col-sm-12 col-md-4'i><'col-sm-12 col-md-4'p>>",
+                buttons: [
+                    {
+                        extend: 'excel',
+                        text: '<i class="fas fa-file-excel"></i> Excel',
+                        className: 'btn btn-success btn-sm',
+                        exportOptions: {
+                            columns: [0, 1, 2, 3, 4]
+                        }
+                    },
+                    {
+                        extend: 'pdf',
+                        text: '<i class="fas fa-file-pdf"></i> PDF',
+                        className: 'btn btn-danger btn-sm',
+                        exportOptions: {
+                            columns: [0, 1, 2, 3, 4]
+                        }
+                    },
+                    {
+                        extend: 'print',
+                        text: '<i class="fas fa-print"></i> Print',
+                        className: 'btn btn-info btn-sm',
+                        exportOptions: {
+                            columns: [0, 1, 2, 3, 4]
+                        }
+                    },
+                    {
+                        extend: 'colvis',
+                        text: '<i class="fas fa-columns"></i> Columns',
+                        className: 'btn btn-secondary btn-sm'
+                    }
+                ]
+            });
         });
     </script>
-
-
 @stop
