@@ -5,8 +5,9 @@
 
     RewriteEngine On
 
-    # Redirect to HTTPS
+    # Redirect to HTTPS (works with proxies/load balancers)
     RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
     # Handle Authorization Header
