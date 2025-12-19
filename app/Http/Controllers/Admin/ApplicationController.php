@@ -30,21 +30,31 @@ class ApplicationController extends Controller
         if ($request->ajax()) {
             $stationsTable = config('database.connections.mysql_2.database') . '.stations';
             
-            $applications = Application::with(['assessment'])
+            $applications = Application::query()
                 ->select([
-                    'applications.*',
+                    'applications.id',
+                    'applications.application_code',
+                    'applications.email',
+                    'applications.first_name',
+                    'applications.middle_name',
+                    'applications.last_name',
+                    'applications.vacancy_id',
+                    'applications.station_id',
+                    'applications.created_at',
                     'vacancies.position_title as vacancy_position_title',
-                    'stations.name as station_name'
+                    'stations.name as station_name',
+                    'assessments.id as assessment_id'
                 ])
                 ->leftJoin('vacancies', 'applications.vacancy_id', '=', 'vacancies.id')
-                ->leftJoin($stationsTable . ' as stations', 'applications.station_id', '=', 'stations.id');
+                ->leftJoin($stationsTable . ' as stations', 'applications.station_id', '=', 'stations.id')
+                ->leftJoin('assessments', 'applications.id', '=', 'assessments.application_id');
             
-            return DataTables::of($applications)
+            return DataTables::eloquent($applications)
                 ->addColumn('application_code_link', function ($application) {
-                    return '<a href="' . route('admin.applications.show', $application) . '" title="View">' . $application->application_code . '</a>';
+                    return '<a href="' . route('admin.applications.show', $application->id) . '" title="View">' . $application->application_code . '</a>';
                 })
                 ->addColumn('fullname', function ($application) {
-                    return $application->getFullname();
+                    return $application->last_name . ', ' . $application->first_name . ' ' . substr($application->middle_name ?? '', 0, 1);
                 })
                 ->addColumn('position_title', function ($application) {
                     return '<a href="' . route('admin.applications.vacancy.show', $application->vacancy_id) . '">' . ($application->vacancy_position_title ?? '') . '</a>';
@@ -53,16 +63,16 @@ class ApplicationController extends Controller
                     return $application->station_name ?? 'Untagged';
                 })
                 ->addColumn('action', function ($application) {
-                    $editBtn = '<a href="' . route('admin.applications.edit', ['application' => $application]) . '" class="btn btn-xs btn-warning" title="Modify application"><span class="fas primary fa-fw fa-edit"></span></a> ';
+                    $editBtn = '<a href="' . route('admin.applications.edit', ['application' => $application->id]) . '" class="btn btn-xs btn-warning" title="Modify application"><span class="fas primary fa-fw fa-edit"></span></a> ';
                     
-                    if ($application->assessment !== null) {
-                        $scoreBtn = '<a href="' . route('admin.applications.edit_scores', ['application' => $application]) . '" class="btn btn-xs btn-primary" title="Modify assessment"><span class="fas primary fa-fw fa-list"></span></a> ';
+                    if ($application->assessment_id !== null) {
+                        $scoreBtn = '<a href="' . route('admin.applications.edit_scores', ['application' => $application->id]) . '" class="btn btn-xs btn-primary" title="Modify assessment"><span class="fas primary fa-fw fa-list"></span></a> ';
                     } else {
                         $scoreBtn = '<a href="#" class="btn btn-xs btn-primary" title="Modify assessment" onClick="return confirm(\'Action not permitted! This application was not taken-in yet. Take in the application first via the School/Office portal.\')"><span class="fas primary fa-fw fa-list"></span></a> ';
                     }
                     
-                    $deleteDisabled = isset($application->assessment) ? 'disabled' : '';
-                    $deleteBtn = '<a href="' . route('admin.applications.delete', ['application' => $application]) . '" class="btn btn-xs btn-danger ' . $deleteDisabled . '" title="Delete"><span class="fas fa-fw fa-trash"></span></a>';
+                    $deleteDisabled = $application->assessment_id !== null ? 'disabled' : '';
+                    $deleteBtn = '<a href="' . route('admin.applications.delete', ['application' => $application->id]) . '" class="btn btn-xs btn-danger ' . $deleteDisabled . '" title="Delete"><span class="fas fa-fw fa-trash"></span></a>';
                     
                     return $editBtn . $scoreBtn . $deleteBtn;
                 })
