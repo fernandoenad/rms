@@ -30,8 +30,8 @@ class ApplicationController extends Controller
         if ($request->ajax()) {
             $stationsTable = config('database.connections.mysql_2.database') . '.stations';
             
-            $applications = Application::query()
-                ->select([
+            $applications = DB::table('applications')
+                ->select(
                     'applications.id',
                     'applications.application_code',
                     'applications.email',
@@ -44,12 +44,12 @@ class ApplicationController extends Controller
                     'vacancies.position_title as vacancy_position_title',
                     'stations.name as station_name',
                     'assessments.id as assessment_id'
-                ])
+                )
                 ->leftJoin('vacancies', 'applications.vacancy_id', '=', 'vacancies.id')
                 ->leftJoin($stationsTable . ' as stations', 'applications.station_id', '=', 'stations.id')
                 ->leftJoin('assessments', 'applications.id', '=', 'assessments.application_id');
             
-            return DataTables::eloquent($applications)
+            return DataTables::of($applications)
                 ->addColumn('application_code_link', function ($application) {
                     return '<a href="' . route('admin.applications.show', $application->id) . '" title="View">' . $application->application_code . '</a>';
                 })
