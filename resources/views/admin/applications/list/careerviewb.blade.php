@@ -126,18 +126,8 @@
                     <td width="15%"></td>
                     <td width="15%"></td>
                     <td width="8%"></td>
-                    <td width="20%">Approved by:</td>     
+                    <td width="20%"></td>     
                 </tr>
-                <tr align="center">
-                    <td><strong>_____________________<br></strong>Name and Position<br>HRMPSB Member</td>
-                    <td><strong>_____________________<br></strong>Name and Position<br>HRMPSB Member</td>
-                    <td><strong>_____________________<br></strong>Name and Position<br>HRMPSB Member</td>
-                    <td><strong>_____________________<br></strong>Name and Position<br>HRMPSB Member</td>
-                    <td><strong>_____________________<br></strong>Name and Position<br>HRMPSB Chairperson</td>
-                    <td><strong></strong></td>
-                    <td valign="top"><strong>___________________________<br></strong>Schools Division Superintendent</td>
-                </tr>
-
             </table>
             </small>
         </div>

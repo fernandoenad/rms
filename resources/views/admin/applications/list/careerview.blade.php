@@ -126,18 +126,8 @@
                     <td width="15%"></td>
                     <td width="15%"></td>
                     <td width="6%"></td>
-                    <td width="22%">Approved by:</td>     
+                    <td width="22%"></td>     
                 </tr>
-                <tr valign="top" align="center">
-                    <td><strong>JUDITH S. APALE</strong><br>EPS II M&E/Concurrent HRMO<br>HRMPSB Member</td>
-                    <td><strong>FERMIN M. ALBUTRA</strong><br>Administrative Officer V<br>HRMPSB Member</td>
-                    <td><strong>RENATO D. CALAMBA PhD</strong><br>President, PSDSA<br>HRMPSB Member</td>
-                    <td><strong>CARMELA M. RESTIFICAR PhD</strong><br>Chief, CID<br>HRMPSB Member</td>
-                    <td><strong>EDUARDO A. OMPAD EdD, CESE</strong><br><small>Asst. Schools Division Superintendent</small><br>HRMPSB Chairperson</td>
-                    <td><strong></strong></td>
-                    <td valign="top"><strong>FAY C. LUAREZ EdD, PhD-TM, CESO VI<br></strong>Schools Division Superintendent</td>
-                </tr>
-
             </table>
             </small></small>
         </div>
