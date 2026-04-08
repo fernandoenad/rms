@@ -33,12 +33,14 @@
                     <div class="card">
                         <div class="card-body login-card-body">
                             <p class="login-box-msg">Sign in to start your session</p>
-                            <!--
+                            
+                            @if(app()->environment('local'))
+                            {{-- Local/Development Login Form --}}
                             <form action="{{route('login')}}" method="post">
                                 @csrf 
                                 @method('post')
-                                <div class="input-group">
-                                    <input type="email" name="email" class="form-control" placeholder="Email" class="@error('email') is-invalid @enderror" value="{{ old('email')}}" autofocus>
+                                <div class="input-group mb-3">
+                                    <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" placeholder="Email" value="{{ old('email')}}" autofocus>
                                     <div class="input-group-append">
                                         <div class="input-group-text">
                                             <span class="fas fa-envelope"></span>
@@ -52,9 +54,9 @@
                                 @if (session('status'))
                                     <span class="text-danger"><small>{{ session('status') }}</small></span>
                                 @endif
-                                <p></p>
-                                <div class="input-group">
-                                    <input type="password" name="password" class="form-control" placeholder="Password" class="@error('password') is-invalid @enderror">
+
+                                <div class="input-group mb-3">
+                                    <input type="password" name="password" class="form-control @error('password') is-invalid @enderror" placeholder="Password">
                                     <div class="input-group-append">
                                         <div class="input-group-text">
                                             <span class="fas fa-lock"></span>
@@ -64,12 +66,11 @@
                                 @error('password')
                                     <span class="text-danger"><small>{{ $message }}</small></span>
                                 @enderror
-                                <p></p>
                                 
                                 <div class="row">
                                     <div class="col-8">
                                         <div class="icheck-primary">
-                                            <input type="checkbox" id="remember">
+                                            <input type="checkbox" name="remember" id="remember">
                                             <label for="remember">
                                                 Remember Me
                                             </label>
@@ -80,20 +81,11 @@
                                     </div>
                                 </div>
                             </form>
-                            -->
+                            
+                            <hr>
+                            @endif
                             
                             <div class="social-auth-links text-center mb-3">
-                                <!--
-                                <p>- OR -</p>
-                                <a href="#" class="btn btn-block btn-primary">
-                                <i class="fab fa-facebook mr-2"></i> Sign in using Facebook
-                                </a>
-                                
-                                <a href="{{ url('/auth/google') }}" class="btn btn-block btn-success">
-                                <i class="fab fa-google mr-2"></i> Sign in using Google
-                                </a>
-                                -->
-
                                 <a href="{{ url('/auth/google') }}" class="google-btn">
 									<img src="https://developers.google.com/identity/images/g-logo.png" alt="Google Logo" width="10%">
 									Sign in with DepEd GMail
