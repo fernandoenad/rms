@@ -26,7 +26,7 @@
         td{
             padding: 5px;
         }
-        <style>
+
         /* Add a page break before each h1 element */
         h1 {
             page-break-before: always;
@@ -40,6 +40,8 @@
 </head>
 <body>
     @forelse($offices as $office)
+        @php $officeAssessments = $assessmentsByOffice->get($office->id, collect()); @endphp
+
         <div class="container-fluid mt-0 section">
         <table width="100%" border="0">
             <tr><td align="center"><image src="{{url('/')}}/images/header.png" height="100"></td</tr>
@@ -62,9 +64,6 @@
             </small>
             <br>
             <small>
-            @php $officeAssessments = $assessmentsByOffice->get($office->id, collect()); @endphp
-            @continue($officeAssessments->isEmpty())
-
             <table border="1">
                 <thead>
                     <tr class="table-danger" align="center">
@@ -94,7 +93,7 @@
                 <tbody>
                     @php $i=1; @endphp 
 
-                    @foreach($officeAssessments as $assessment)
+                    @forelse($officeAssessments as $assessment)
                         @php 
                             $assessment_details = json_decode($assessment->assessment, true); 
                             $application = $assessment->application;
@@ -117,7 +116,11 @@
                             <td></td>
                         </tr>
                         @php $i++; @endphp 
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="16" align="center"><strong>***No applications found.***</strong></td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
 
