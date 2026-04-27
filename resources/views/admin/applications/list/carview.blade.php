@@ -33,7 +33,13 @@
         <table width="100%" border="0">
             <tr><td align="center"><image src="{{url('/')}}/images/header.png" height="100"></td</tr>
         </table>
-        <h4 class="text-center mb-3" align="center">COMPARATIVE ASSESSMENT RESULT - REGISTRY OF QUALIFIED APPLICANTS (CAR-RQA)</h4>
+        <h4 class="text-center mb-3" align="center">
+            @if(strpos($vacancy->position_title, 'reclass') !== false)   
+                COMPARATIVE ASSESSMENT RESULT FOR EXPANDED RECLASSIFICATION (CAReER)  
+            @else 
+                COMPARATIVE ASSESSMENT RESULT - REGISTRY OF QUALIFIED APPLICANTS (CAR-RQA)
+            @endif
+        </h4>
 
         <small>
         <table>

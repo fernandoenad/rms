@@ -93,7 +93,7 @@
                     @foreach($assessments as $assessment)
                         @php 
                             $assessment_details = json_decode($assessment->assessment, true); 
-                            $application = App\Models\Application::where('id', '=', $assessment->application_id)->get()->first();
+                            $application = $assessment->application;
                             $total_points = 0;
                         @endphp 
                         <tr>
