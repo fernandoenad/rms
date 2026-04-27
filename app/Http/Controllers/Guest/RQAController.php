@@ -13,7 +13,7 @@ class RQAController extends Controller
     public function index()
     {
         $vacancies = Vacancy::orderBy('id', 'desc')->get();
-        
+
         return view('guest.rqas.index',['vacancies' => $vacancies]);
     }
 
@@ -24,7 +24,7 @@ class RQAController extends Controller
             ->where('applications.vacancy_id', '=', $vacancy->id)
             ->where('assessments.status', '=', 3)
             ->where('assessments.score', '>=', 50)
-            ->orderBy('applications.application_code', 'ASC')
+            ->orderBy('assessments.score', 'DESC')
             ->select('stations.name', 'stations.code', 'assessments.*', 'applications.*')
             ->get();
 
