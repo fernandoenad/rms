@@ -72,6 +72,7 @@
                         @endphp
                         <td scope="col" colspan="{{ $field_count }}"><strong>COMPARATIVE ASSESSMENT RESULTS<strong></td>
                         <td scope="col" rowspan="2" width="8%"><strong>Remarks<strong></td>
+                        <td scope="col" rowspan="2" width="14%"><strong>School Applied for<strong></td>
                         <td scope="col" colspan="2" width="5%"><strong><small>For Background Investigation (Y/N)</small><strong></td>
                         <td scope="col" rowspan="2" width="7%">
                             <strong><small><small>For Recommendation</strong><br>To filed-out by the Schools Division Superintendent; Please sign opposite the name of the applicant)</small></small>
