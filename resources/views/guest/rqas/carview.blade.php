@@ -37,10 +37,10 @@
                 <tr><td align="center"><image src="{{url('/')}}/images/header.png" height="100"></td</tr>
             </table>
             <h4 class="text-center mb-3" align="center">
-                @if(strpos($vacancy->position_title, 'reclass') !== false)     
-                    COMPARATIVE ASSESSMENT RESULT
+                @if(strpos($vacancy->position_title, 'reclass') !== false)   
+                    COMPARATIVE ASSESSMENT RESULT FOR EXPANDED RECLASSIFICATION (CAReER)  
                 @else 
-                    COMPARATIVE ASSESSMENT RESULT FOR EXPANDED RECLASSIFICATION (CAReER)
+                    COMPARATIVE ASSESSMENT RESULT
                 @endif
             </h4>
 
