@@ -106,7 +106,7 @@
                             @endforeach
                             <td align="left">{{ $assessment->status == 2 ? 'Initial only. / ' . end($assessment_details) :  end($assessment_details) }}</td>
                             @php $school = App\Models\Station::find($application->station_id); @endphp
-                            <td><small></small></td>
+                            <td><small>{{ $school?->code }}-{{ substr($school?->name, 0, 20) }}</small></td>
                             <td></td>
                             <td></td>
 
