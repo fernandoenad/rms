@@ -110,6 +110,7 @@
                             <td><small>{{ $school?->code }}-{{ substr($school?->name, 0, 20) }}</small></td>
                             <td></td>
                             <td></td>
+                            <td></td>
 
                         </tr>
                         @php $i++; @endphp 
