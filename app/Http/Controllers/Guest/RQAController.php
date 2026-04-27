@@ -12,8 +12,8 @@ class RQAController extends Controller
 {
     public function index()
     {
-        $vacancies = Vacancy::get();
-
+        $vacancies = Vacancy::orderBy('id', 'desc')->get();
+        
         return view('guest.rqas.index',['vacancies' => $vacancies]);
     }
 
