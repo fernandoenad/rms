@@ -40,7 +40,7 @@
                 @if(strpos($vacancy->position_title, 'reclass') !== false)   
                     COMPARATIVE ASSESSMENT RESULT FOR EXPANDED RECLASSIFICATION (CAReER)  
                 @else 
-                    COMPARATIVE ASSESSMENT RESULT
+                    COMPARATIVE ASSESSMENT RESULT - REGISTRY OF QUALIFIED APPLICANTS (CAR-RQA)
                 @endif
             </h4>
 
