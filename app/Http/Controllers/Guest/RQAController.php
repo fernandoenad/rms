@@ -12,7 +12,7 @@ class RQAController extends Controller
 {
     public function index()
     {
-        $vacancies = Vacancy::latest()->get();
+        $vacancies = Vacancy::get();
 
         return view('guest.rqas.index',['vacancies' => $vacancies]);
     }
