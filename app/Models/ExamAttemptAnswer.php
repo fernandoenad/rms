@@ -11,18 +11,10 @@ class ExamAttemptAnswer extends Model
     use HasFactory;
 
     protected $fillable = [
-        'exam_attempt_id',
-        'written_exam_id',
-        'selected_option',
+        'exam_attempt_id', 'written_exam_id', 'selected_option_id', 'selected_option',
     ];
 
-    public function attempt(): BelongsTo
-    {
-        return $this->belongsTo(ExamAttempt::class, 'exam_attempt_id');
-    }
-
-    public function item(): BelongsTo
-    {
-        return $this->belongsTo(WrittenExam::class, 'written_exam_id');
-    }
+    public function attempt(): BelongsTo { return $this->belongsTo(ExamAttempt::class, 'exam_attempt_id'); }
+    public function item(): BelongsTo { return $this->belongsTo(WrittenExam::class, 'written_exam_id'); }
+    public function selectedOption(): BelongsTo { return $this->belongsTo(WrittenExamOption::class, 'selected_option_id'); }
 }
