@@ -1,137 +1,31 @@
 @extends('adminlte::page')
-
-@php
-    $title = "New Written Exam";
-    $app_name = config('app.name', '') . ' [Admin]';
-@endphp
-
-@section('title', config('app.name', '') . ' | ' . $title)
-
-@section('content_header')
-    <div class="row mb-2">
-        <div class="col-sm-6">
-            <h1 class="m-0">{{ $title }}</h1>
-        </div>
-        <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-                <li class="breadcrumb-item"><a href="{{ route('admin.index') }}">Dashboard</a></li>
-                <li class="breadcrumb-item active">Assessments</li>
-                <li class="breadcrumb-item"><a href="{{ route('admin.assessments.index') }}">Written Exams</a></li>
-                <li class="breadcrumb-item active">{{ $title }}</li>
-            </ol>
-        </div>
-    </div>
-@stop
-
+@section('title','New Written Exam')
+@section('content_header')<h1>New Written Exam</h1>@stop
 @section('content')
-    @if (session('status'))
-        <div class="alert alert-success alert-dismissible auto-close">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-            {{ session('status') }}
-        </div>
-    @endif
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Accomplish the form below</h3>
-                        </div>
-                    <form method="post" action="{{ route('admin.assessments.store') }}">
-                        @csrf
-                        @method('post')
-                        <div class="card-body">
-                            <h5 class="text-primary mb-3">Test details</h5>
-                            <div class="form-group">
-                                <label for="vacancy_id">Position</label>
-                                <select name="vacancy_id" id="vacancy_id" class="form-control @error('vacancy_id') is-invalid @enderror">
-                                    <option value="">---select---</option>
-                                    @foreach($vacancies as $vacancy)
-                                        <option value="{{ $vacancy->id }}" {{ old('vacancy_id') == $vacancy->id ? 'selected' : '' }}>
-                                            {{ $vacancy->position_title }} ({{ $vacancy->cycle }})
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('vacancy_id')
-                                    <span class="text-danger"><small>{{ $message }}</small></span>
-                                @enderror
-                            </div>
-                            <div class="form-group">
-                                <label for="title">Exam title</label>
-                                <input type="text" id="title" class="form-control @error('title') is-invalid @enderror" placeholder="Enter exam title"
-                                    name="title" value="{{ old('title') }}" autofocus>
-                                @error('title')
-                                    <span class="text-danger"><small>{{ $message }}</small></span>
-                                @enderror
-                            </div>
-                            <div class="form-group">
-                                <label for="start_date">Start date</label>
-                                <input type="datetime-local" id="start_date" class="form-control @error('start_date') is-invalid @enderror"
-                                    name="start_date" value="{{ old('start_date') }}">
-                                @error('start_date')
-                                    <span class="text-danger"><small>{{ $message }}</small></span>
-                                @enderror
-                            </div>
-                            <div class="form-group">
-                                <label for="end_date">End date</label>
-                                <input type="datetime-local" id="end_date" class="form-control @error('end_date') is-invalid @enderror"
-                                    name="end_date" value="{{ old('end_date') }}">
-                                @error('end_date')
-                                    <span class="text-danger"><small>{{ $message }}</small></span>
-                                @enderror
-                            </div>
-                            <div class="form-group">
-                                <label for="duration">Duration (minutes)</label>
-                                <input type="number" min="1" id="duration" class="form-control @error('duration') is-invalid @enderror" placeholder="Enter duration in minutes"
-                                    name="duration" value="{{ old('duration') }}">
-                                @error('duration')
-                                    <span class="text-danger"><small>{{ $message }}</small></span>
-                                @enderror
-                            </div>
-                            <div class="form-group">
-                                <label for="shuffle_items">Shuffle items</label>
-                                <select id="shuffle_items" name="shuffle_items" class="form-control @error('shuffle_items') is-invalid @enderror">
-                                    <option value="">---select---</option>
-                                    <option value="1" {{ old('shuffle_items', '0') == '1' ? 'selected' : '' }}>Yes</option>
-                                    <option value="0" {{ old('shuffle_items', '0') == '0' ? 'selected' : '' }}>No</option>
-                                </select>
-                                @error('shuffle_items')
-                                    <span class="text-danger"><small>{{ $message }}</small></span>
-                                @enderror
-                            </div>
-                            <div class="form-group">
-                                <label for="status">Status</label>
-                                <select id="status" name="status" class="form-control @error('status') is-invalid @enderror">
-                                    <option value="">---select---</option>
-                                    <option value="0" {{ old('status', '') === '0' ? 'selected' : '' }}>Draft</option>
-                                    <option value="1" {{ old('status') == '1' ? 'selected' : '' }}>Published</option>
-                                </select>
-                                @error('status')
-                                    <span class="text-danger"><small>{{ $message }}</small></span>
-                                @enderror
-                            </div>
-                        </div>
-                        <div class="card-footer">
-                            <button type="submit" class="btn btn-primary" onclick="return confirm('Are you sure you want to save this exam?');">Submit</button>
-                            <button type="reset" class="btn btn-default">Clear</button>
-                            <a href="{{ url()->previous() }}" class="btn btn-default float-right">Cancel</a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-@stop
-
-@section('footer')
-    @include('layouts.footer')
-@stop
-
-@section('css')
-@stop
-
-@section('plugins.Datatables', true)
-
-@section('js')
-    <script>console.log('Written exam create loaded');</script>
+@if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+<form method="post" action="{{ route('admin.assessments.store') }}">@csrf
+<div class="card"><div class="card-body">
+<div class="form-group"><label>Position</label><select name="vacancy_id" class="form-control" required>
+<option value="">Select</option>@foreach($vacancies as $v)<option value="{{ $v->id }}" {{ old('vacancy_id')==$v->id?'selected':'' }}>{{ $v->position_title }} ({{ $v->cycle }})</option>@endforeach
+</select></div>
+<div class="form-row">
+<div class="form-group col-md-8"><label>Exam title</label><input name="title" value="{{ old('title') }}" class="form-control" required></div>
+<div class="form-group col-md-4"><label>Exam code</label><input name="code" value="{{ old('code') }}" class="form-control" placeholder="Auto if blank"></div>
+</div>
+<div class="form-row">
+<div class="form-group col-md-4"><label>Opens</label><input type="datetime-local" name="start_date" value="{{ old('start_date') }}" class="form-control" required></div>
+<div class="form-group col-md-4"><label>Closes</label><input type="datetime-local" name="end_date" value="{{ old('end_date') }}" class="form-control" required></div>
+<div class="form-group col-md-4"><label>Duration (minutes)</label><input type="number" min="1" name="duration" value="{{ old('duration',60) }}" class="form-control" required></div>
+</div>
+<div class="form-group"><label>Who may take it?</label><select name="access_mode" class="form-control">
+<option value="all_taken_in" selected>All taken-in applicants for the position</option>
+<option value="selected_applicants">Selected applicants only</option>
+</select><small class="text-muted">Explicit assignment is optional; all taken-in is the scalable default.</small></div>
+<div class="form-row">
+<div class="form-group col-md-4"><label>Shuffle questions</label><select name="shuffle_items" class="form-control"><option value="1">Yes</option><option value="0">No</option></select></div>
+<div class="form-group col-md-4"><label>Shuffle options</label><select name="shuffle_options" class="form-control"><option value="1">Yes</option><option value="0">No</option></select></div>
+<div class="form-group col-md-4"><label>Status</label><select name="status" class="form-control"><option value="0">Draft</option><option value="1">Published</option></select></div>
+</div>
+</div><div class="card-footer"><button class="btn btn-primary">Create Exam Set</button></div></div>
+</form>
 @stop
