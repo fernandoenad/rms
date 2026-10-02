@@ -7,6 +7,8 @@ use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\Vacancy;
 use App\Models\WrittenExam;
+use App\Models\WrittenExamOption;
+use App\Services\AssessmentAiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -119,6 +121,80 @@ class WrittenExamController extends Controller
 
         return redirect()->route('admin.assessments.edit', $copy)
             ->with('status', 'Exam duplicated as a draft. Set its schedule before publishing.');
+    }
+
+
+    public function generateAi(Request $request, Exam $exam, AssessmentAiService $ai)
+    {
+        if ($exam->attempts()->exists()) {
+            return back()->with('status', 'Cannot generate items after attempts exist. Duplicate the exam as a new set.');
+        }
+
+        $data = $request->validate([
+            'count' => 'required|integer|min:1|max:100',
+            'solo_unistructural' => 'required|integer|min:0|max:100',
+            'solo_multistructural' => 'required|integer|min:0|max:100',
+            'solo_relational' => 'required|integer|min:0|max:100',
+            'solo_extended_abstract' => 'required|integer|min:0|max:100',
+        ]);
+
+        $distribution = [
+            'unistructural' => $data['solo_unistructural'],
+            'multistructural' => $data['solo_multistructural'],
+            'relational' => $data['solo_relational'],
+            'extended_abstract' => $data['solo_extended_abstract'],
+        ];
+
+        if (array_sum($distribution) !== 100) {
+            return back()->with('status', 'SOLO distribution must total 100%.');
+        }
+
+        try {
+            $items = $ai->generateWrittenItems($exam->vacancy, (int)$data['count'], $distribution);
+
+            DB::transaction(function () use ($exam, $items) {
+                foreach ($items as $generated) {
+                    if (!isset($generated['question'], $generated['options'], $generated['correct_index'])
+                        || count($generated['options']) !== 4
+                        || !in_array((int)$generated['correct_index'], [0,1,2,3], true)) {
+                        continue;
+                    }
+
+                    $letters = ['A','B','C','D'];
+                    $answerKey = $letters[(int)$generated['correct_index']];
+
+                    $item = WrittenExam::create([
+                        'exam_id' => $exam->id,
+                        'enrollment_key' => $exam->enrollment_key,
+                        'question' => $generated['question'],
+                        'option_a' => $generated['options'][0],
+                        'option_b' => $generated['options'][1],
+                        'option_c' => $generated['options'][2],
+                        'option_d' => $generated['options'][3],
+                        'answer_key' => $answerKey,
+                        'solo_level' => $generated['solo_level'] ?? null,
+                        'difficulty' => $generated['difficulty'] ?? null,
+                        'competency_basis' => $generated['competency_basis'] ?? null,
+                        'rationale' => $generated['rationale'] ?? null,
+                        'ai_generated' => true,
+                        'status' => 1,
+                    ]);
+
+                    foreach ($generated['options'] as $index => $text) {
+                        WrittenExamOption::create([
+                            'written_exam_id' => $item->id,
+                            'option_text' => $text,
+                            'is_correct' => $index === (int)$generated['correct_index'],
+                            'source_position' => $index + 1,
+                        ]);
+                    }
+                }
+            });
+
+            return back()->with('status', 'AI-generated items were added as reviewable exam items.');
+        } catch (\Throwable $e) {
+            return back()->with('status', 'AI generation failed: '.$e->getMessage());
+        }
     }
 
     public function destroy(Exam $exam)
