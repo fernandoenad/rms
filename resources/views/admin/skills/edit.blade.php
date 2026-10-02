@@ -1,6 +1,15 @@
 @extends('adminlte::page')
 @section('title','Skills Test')
-@section('content_header')<h1>{{ $skillTest->title }}</h1>@stop
+@section('content_header')<h1>{{ $skillTest->title }}</h1>
+@if($skillTest->access_mode==='selected_applicants')
+<div class="card border-info"><div class="card-header"><strong>Optional Selected-Applicant Access</strong></div><div class="card-body">
+<form method="post" action="{{ route('admin.skills.assign',$skillTest) }}">@csrf
+<textarea name="application_codes" class="form-control" rows="4" placeholder="Paste application codes, one per line or comma-separated" required></textarea>
+<small class="text-muted">Only taken-in applicants for this position are accepted.</small><br>
+<button class="btn btn-info mt-2">Add Assignments</button>
+</form></div></div>
+@endif
+@stop
 @section('content')
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 <div class="row">
