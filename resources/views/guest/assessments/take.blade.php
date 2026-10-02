@@ -5,211 +5,264 @@
 @overwrite
 
 @section('main')
-    <section class="content-header">
-        <div class="container">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0">{{ $exam->title }}</h1>
-                    <p class="mb-0 text-muted">Duration: {{ $exam->duration }} min | Single attempt</p>
+<section class="content assessment-page">
+    <div class="container py-2">
+        <div class="sticky-top bg-white border-bottom py-2 mb-3 assessment-toolbar">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>{{ $exam->title }}</strong>
+                    <div class="small text-muted"><span id="questionCounter"></span></div>
                 </div>
-                <div class="col-sm-6 text-right">
-                    <span class="badge badge-info" id="countdown"></span>
-                </div>
+                <span class="badge badge-info p-2" id="countdown">--:--</span>
+            </div>
+            <div class="small mt-1" id="saveState" aria-live="polite">
+                <span class="text-muted">Select an answer to save it automatically.</span>
             </div>
         </div>
-    </section>
 
-    <section class="content">
-        <div class="container">
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Please answer all items</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-9">
-                                    <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <span id="questionCounter"></span>
-                                        <div>
-                                            <button type="button" class="btn btn-sm btn-secondary" id="prevBtn">Previous</button>
-                                            <button type="button" class="btn btn-sm btn-secondary" id="nextBtn">Next</button>
-                                        </div>
-                                    </div>
-                                    @foreach($items as $index => $item)
-                                        @php
-                                            $answer = $attempt->answers->firstWhere('written_exam_id', $item->id);
-                                        @endphp
-                                        <div class="mb-4 exam-item" data-index="{{ $index }}" style="display: none;">
-                                            <p><strong>Q{{ $index + 1 }}.</strong> {{ $item->question }}</p>
-                                            @foreach(['A' => $item->option_a, 'B' => $item->option_b, 'C' => $item->option_c, 'D' => $item->option_d] as $letter => $text)
-                                                <div class="form-check">
-                                                    <input class="form-check-input answer-radio" type="radio" name="item_{{ $item->id }}" id="item_{{ $item->id }}_{{ $letter }}"
-                                                        value="{{ $letter }}" data-item="{{ $item->id }}" {{ ($answer && $answer->selected_option == $letter) ? 'checked' : '' }}>
-                                                    <label class="form-check-label" for="item_{{ $item->id }}_{{ $letter }}">{{ $text }}</label>
-                                                </div>
-                                            @endforeach
-                                        </div>
-                                    @endforeach
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="card card-outline card-info position-sticky" style="top: 1rem;">
-                                        <div class="card-header p-2">
-                                            <h3 class="card-title">Navigate</h3>
-                                        </div>
-                                        <div class="card-body p-2">
-                                            <div class="d-flex flex-wrap" id="questionNav">
-                                                @foreach($items as $index => $item)
-                                                    <button type="button" class="btn btn-outline-secondary btn-sm nav-btn m-1" style="min-width: 48px;" data-index="{{ $index }}">{{ $index + 1 }}</button>
-                                                @endforeach
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-footer">
-                            <form method="post" action="{{ route('guest.assessments.attempts.submit', $attempt) }}">
-                                @csrf
-                                <input type="hidden" name="auto_submit_reason" id="manual_reason" value="">
-                                <button type="submit" class="btn btn-primary" onclick="return confirm('Submit your answers now?');">Submit answers</button>
-                                <a href="{{ route('guest.applications.show', $attempt->application_id) }}" class="btn btn-default float-right">Back</a>
-                            </form>
-                        </div>
-                    </div>
+        <div class="alert alert-light border small">
+            Your answers save automatically. Refreshing, changing tabs, locking your phone, or temporarily losing connection will not submit the exam.
+            The assessment submits only when the allotted time ends.
+        </div>
+
+        @foreach($items as $index => $item)
+            @php
+                $answer = $attempt->answers->firstWhere('written_exam_id', $item->id);
+                $displayOptions = $item->getRelation('displayOptions');
+            @endphp
+            <article class="card shadow-sm exam-item" data-index="{{ $index }}" style="display:none">
+                <div class="card-body">
+                    <p class="mb-3 exam-question"><strong>{{ $index + 1 }}.</strong> {{ $item->question }}</p>
+
+                    @foreach($displayOptions as $optionIndex => $option)
+                        @php $letter = chr(65 + $optionIndex); @endphp
+                        <label class="option-card d-flex align-items-start border rounded p-3 mb-2 w-100"
+                               for="item_{{ $item->id }}_{{ $option->id }}">
+                            <input class="answer-radio mt-1 mr-3"
+                                   type="radio"
+                                   name="item_{{ $item->id }}"
+                                   id="item_{{ $item->id }}_{{ $option->id }}"
+                                   value="{{ $option->id }}"
+                                   data-item="{{ $item->id }}"
+                                   {{ ($answer && (int)$answer->selected_option_id === (int)$option->id) ? 'checked' : '' }}>
+                            <span><strong>{{ $letter }}.</strong> {{ $option->option_text }}</span>
+                        </label>
+                    @endforeach
                 </div>
+            </article>
+        @endforeach
+
+        <div class="d-flex justify-content-between align-items-center my-3">
+            <button type="button" class="btn btn-outline-secondary btn-lg" id="prevBtn">Previous</button>
+            <button type="button" class="btn btn-outline-primary btn-lg" id="questionsBtn" data-toggle="modal" data-target="#questionModal">Questions</button>
+            <button type="button" class="btn btn-primary btn-lg" id="nextBtn">Next</button>
+        </div>
+
+        <div class="text-center text-muted small mb-5">
+            There is no early-submit button. Your saved responses will be finalized automatically when time expires.
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="questionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Questions</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex flex-wrap" id="questionNav">
+                    @foreach($items as $index => $item)
+                        @php $answer = $attempt->answers->firstWhere('written_exam_id', $item->id); @endphp
+                        <button type="button"
+                                class="btn btn-sm m-1 nav-btn {{ $answer ? 'btn-success' : 'btn-outline-secondary' }}"
+                                style="min-width:48px;min-height:44px"
+                                data-index="{{ $index }}">
+                            {{ $index + 1 }}
+                        </button>
+                    @endforeach
+                </div>
+                <hr>
+                <div class="small text-muted">Green = saved answer. Outline = unanswered.</div>
             </div>
         </div>
-        <br><br><br><br>
-    </section>
+    </div>
+</div>
+@overwrite
 
-    <form id="autoSubmitForm" method="post" action="{{ route('guest.assessments.attempts.submit', $attempt) }}">
-        @csrf
-        <input type="hidden" name="auto_submit_reason" id="auto_reason" value="">
-    </form>
+@section('css')
+<style>
+    .assessment-page { background:#f8f9fa; min-height:100vh; }
+    .assessment-toolbar { z-index:1020; }
+    .exam-question { font-size:1.08rem; line-height:1.55; }
+    .option-card { cursor:pointer; background:#fff; min-height:56px; font-size:1rem; line-height:1.45; }
+    .option-card:has(input:checked) { border-color:#007bff !important; background:#f0f7ff; }
+    .answer-radio { transform:scale(1.25); }
+    @media (max-width:576px) {
+        .container { padding-left:12px; padding-right:12px; }
+        .btn-lg { padding:.65rem .8rem; font-size:.95rem; }
+        .exam-question { font-size:1rem; }
+        .option-card { padding:14px !important; }
+    }
+</style>
 @overwrite
 
 @section('js')
 <script>
-    const remainingSeconds = {{ $remainingSeconds }};
-    let countdown = remainingSeconds;
-    const countdownEl = document.getElementById('countdown');
-    let submitted = false;
+(() => {
+    const attemptId = {{ $attempt->id }};
+    const storageKey = 'rms_exam_' + attemptId + '_question';
+    const answerUrl = @json(route('guest.assessments.attempts.answer', $attempt));
+    const submitUrl = @json(route('guest.assessments.attempts.submit', $attempt));
+    const eventUrl = @json(route('guest.assessments.attempts.event', $attempt));
+    const csrf = @json(csrf_token());
+
+    let countdown = {{ (int)$remainingSeconds }};
+    let finishing = false;
     const items = Array.from(document.querySelectorAll('.exam-item'));
-    const totalItems = items.length;
-    let currentIndex = 0;
+    const navButtons = Array.from(document.querySelectorAll('.nav-btn'));
+    let currentIndex = Math.min(parseInt(sessionStorage.getItem(storageKey) || '0', 10), Math.max(items.length - 1, 0));
+
+    const countdownEl = document.getElementById('countdown');
+    const counterEl = document.getElementById('questionCounter');
+    const saveState = document.getElementById('saveState');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
-    const questionCounter = document.getElementById('questionCounter');
-    const navButtons = Array.from(document.querySelectorAll('.nav-btn'));
 
-    function submitAssessment(reason = '') {
-        if (!submitted) {
-            submitted = true;
-            if (reason) {
-                document.getElementById('auto_reason').value = reason;
-            }
-            document.getElementById('autoSubmitForm').submit();
-        }
+    function setSaveState(text, css='text-muted') {
+        saveState.innerHTML = '<span class="' + css + '">' + text + '</span>';
     }
 
     function showItem(index) {
-        items.forEach((el, idx) => {
-            el.style.display = idx === index ? 'block' : 'none';
-        });
-        prevBtn.disabled = index === 0;
-        nextBtn.disabled = index === totalItems - 1;
-        questionCounter.textContent = `Question ${index + 1} of ${totalItems}`;
-        navButtons.forEach((btn, idx) => {
-            const isActive = idx === index;
-            btn.classList.toggle('btn-info', isActive);
-            btn.classList.toggle('btn-outline-secondary', !isActive && !btn.classList.contains('btn-success'));
-            btn.classList.toggle('text-white', isActive);
+        if (!items.length) return;
+        currentIndex = Math.max(0, Math.min(index, items.length - 1));
+        sessionStorage.setItem(storageKey, currentIndex);
+        items.forEach((el, i) => el.style.display = i === currentIndex ? 'block' : 'none');
+        counterEl.textContent = 'Question ' + (currentIndex + 1) + ' of ' + items.length;
+        prevBtn.disabled = currentIndex === 0;
+        nextBtn.disabled = currentIndex === items.length - 1;
+        navButtons.forEach((btn, i) => {
+            btn.classList.toggle('border-primary', i === currentIndex);
         });
     }
 
-    function updateNavAnsweredStates() {
-        items.forEach((itemEl, idx) => {
-            const checked = itemEl.querySelector('.answer-radio:checked');
-            const navBtn = navButtons[idx];
-            if (!navBtn) return;
-            if (checked) {
-                navBtn.classList.add('btn-success', 'text-white');
-                navBtn.classList.remove('btn-outline-secondary');
+    async function logEvent(eventType) {
+        try {
+            await fetch(eventUrl, {
+                method:'POST',
+                headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
+                body:JSON.stringify({event_type:eventType}),
+                keepalive:true
+            });
+        } catch (_) {}
+    }
+
+    async function finalizeAtTimeout() {
+        if (finishing) return;
+        finishing = true;
+        setSaveState('Time is up. Finalizing your saved answers…', 'text-info font-weight-bold');
+
+        try {
+            const response = await fetch(submitUrl, {
+                method:'POST',
+                headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json'},
+            });
+
+            if (response.status === 409) {
+                finishing = false;
+                setTimeout(finalizeAtTimeout, 1200);
+                return;
             }
-        });
+
+            if (response.redirected) {
+                window.location.href = response.url;
+                return;
+            }
+
+            window.location.reload();
+        } catch (_) {
+            finishing = false;
+            setSaveState('Time is up. Reconnecting to finalize…', 'text-warning font-weight-bold');
+            setTimeout(finalizeAtTimeout, 2500);
+        }
     }
 
-    function updateCountdown() {
-        const minutes = Math.floor(countdown / 60);
-        const seconds = countdown % 60;
-        countdownEl.textContent = `Time left: ${minutes.toString().padStart(2,'0')}:${seconds.toString().padStart(2,'0')}`;
+    function tick() {
+        const mins = Math.floor(Math.max(countdown,0) / 60);
+        const secs = Math.max(countdown,0) % 60;
+        countdownEl.textContent = mins.toString().padStart(2,'0') + ':' + secs.toString().padStart(2,'0');
+
         if (countdown <= 0) {
-            submitAssessment('timeout');
-        } else {
-            countdown--;
-            setTimeout(updateCountdown, 1000);
+            finalizeAtTimeout();
+            return;
+        }
+        countdown--;
+        setTimeout(tick, 1000);
+    }
+
+    async function saveAnswer(radio) {
+        const itemId = radio.dataset.item;
+        const optionId = radio.value;
+        const navBtn = navButtons[currentIndex];
+
+        setSaveState('Saving…', 'text-warning');
+
+        try {
+            const response = await fetch(answerUrl, {
+                method:'POST',
+                headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
+                body:JSON.stringify({written_exam_id:itemId, selected_option_id:optionId})
+            });
+
+            if (response.status === 409) {
+                await finalizeAtTimeout();
+                return;
+            }
+            if (!response.ok) throw new Error('save failed');
+
+            navBtn.classList.remove('btn-outline-secondary');
+            navBtn.classList.add('btn-success');
+            setSaveState('✓ Saved', 'text-success font-weight-bold');
+        } catch (_) {
+            setSaveState('! Not saved. Check your connection and tap the option again.', 'text-danger font-weight-bold');
         }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        updateCountdown();
+        showItem(currentIndex);
+        tick();
 
-        if (items.length > 0) {
-            showItem(currentIndex);
-            updateNavAnsweredStates();
-            prevBtn.addEventListener('click', () => {
-                if (currentIndex > 0) {
-                    currentIndex--;
-                    showItem(currentIndex);
-                }
-            });
-            nextBtn.addEventListener('click', () => {
-                if (currentIndex < totalItems - 1) {
-                    currentIndex++;
-                    showItem(currentIndex);
-                }
-            });
-            navButtons.forEach((btn) => {
-                btn.addEventListener('click', () => {
-                    const target = parseInt(btn.dataset.index, 10);
-                    currentIndex = target;
-                    showItem(currentIndex);
-                });
-            });
-        }
+        prevBtn.addEventListener('click', () => showItem(currentIndex - 1));
+        nextBtn.addEventListener('click', () => showItem(currentIndex + 1));
 
-        document.querySelectorAll('.answer-radio').forEach((radio) => {
-            radio.addEventListener('change', (e) => {
-                const itemId = e.target.dataset.item;
-                const selected = e.target.value;
-                fetch("{{ route('guest.assessments.attempts.answer', $attempt) }}", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({
-                        written_exam_id: itemId,
-                        selected_option: selected
-                    })
-                }).catch((err) => console.error(err));
+        navButtons.forEach(btn => btn.addEventListener('click', () => {
+            showItem(parseInt(btn.dataset.index,10));
+            $('#questionModal').modal('hide');
+        }));
 
-                // mark nav button as answered
-                const navBtn = navButtons.find(btn => parseInt(btn.dataset.index, 10) === currentIndex);
-                if (navBtn) {
-                    navBtn.classList.add('btn-success', 'text-white');
-                    navBtn.classList.remove('btn-outline-secondary');
-                }
-            });
+        document.querySelectorAll('.answer-radio').forEach(radio => {
+            radio.addEventListener('change', () => saveAnswer(radio));
         });
 
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden) {
-                submitAssessment('visibilitychange');
-            }
+            logEvent(document.hidden ? 'tab_hidden' : 'tab_visible');
         });
+
+        window.addEventListener('offline', () => {
+            setSaveState('Offline. Previously confirmed answers remain safe.', 'text-warning font-weight-bold');
+            logEvent('connection_lost');
+        });
+
+        window.addEventListener('online', () => {
+            setSaveState('Connection restored.', 'text-success');
+            logEvent('connection_restored');
+        });
+
+        if (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]?.type === 'reload') {
+            logEvent('page_refreshed');
+        }
     });
+})();
 </script>
 @overwrite
