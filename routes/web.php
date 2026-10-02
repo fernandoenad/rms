@@ -89,6 +89,12 @@ Route::post('/applications/{application}/assessment/{exam}/start', [\App\Http\Co
 Route::get('/assessments/attempts/{attempt}', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'take'])->name('guest.assessments.attempts.take');
 Route::post('/assessments/attempts/{attempt}/answer', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'saveAnswer'])->name('guest.assessments.attempts.answer');
 Route::post('/assessments/attempts/{attempt}/submit', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'submit'])->name('guest.assessments.attempts.submit');
+Route::post('/assessments/attempts/{attempt}/event', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'eventLog'])->name('guest.assessments.attempts.event');
+Route::post('/applications/{application}/skills/{skillTest}/start', [GuestSkillTestAttempt::class, 'start'])->name('guest.skills.start');
+Route::get('/skills/attempts/{attempt}', [GuestSkillTestAttempt::class, 'take'])->name('guest.skills.attempts.take');
+Route::post('/skills/attempts/{attempt}/inline', [GuestSkillTestAttempt::class, 'saveInline'])->name('guest.skills.attempts.inline');
+Route::post('/skills/attempts/{attempt}/upload', [GuestSkillTestAttempt::class, 'upload'])->name('guest.skills.attempts.upload');
+Route::post('/skills/attempts/{attempt}/submit', [GuestSkillTestAttempt::class, 'submit'])->name('guest.skills.attempts.submit');
 
 
 // auth routes
@@ -151,7 +157,8 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/assessment/{exam}/edit', [AdminWrittenExam::class, 'edit'])->name('admin.assessments.edit');
     Route::put('/admin/assessment/{exam}', [AdminWrittenExam::class, 'update'])->name('admin.assessments.update');
     Route::put('/admin/assessment/{exam}/toggle', [AdminWrittenExam::class, 'toggleStatus'])->name('admin.assessments.toggle');
-    Route::put('/admin/assessment/{exam}/regenerate-key', [AdminWrittenExam::class, 'regenerateKey'])->name('admin.assessments.regenerate_key');\n    Route::post('/admin/assessment/{exam}/duplicate', [AdminWrittenExam::class, 'duplicate'])->name('admin.assessments.duplicate');
+    Route::put('/admin/assessment/{exam}/regenerate-key', [AdminWrittenExam::class, 'regenerateKey'])->name('admin.assessments.regenerate_key');
+    Route::post('/admin/assessment/{exam}/duplicate', [AdminWrittenExam::class, 'duplicate'])->name('admin.assessments.duplicate');
     Route::post('/admin/assessment/{exam}/ai-generate', [AdminWrittenExam::class, 'generateAi'])->name('admin.assessments.ai_generate');
     Route::post('/admin/assessment/{exam}/assign', [AdminWrittenExam::class, 'assignApplicants'])->name('admin.assessments.assign');
     Route::delete('/admin/assessment/{exam}', [AdminWrittenExam::class, 'destroy'])->name('admin.assessments.destroy');
