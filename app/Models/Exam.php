@@ -12,33 +12,27 @@ class Exam extends Model
     use HasFactory;
 
     protected $fillable = [
-        'vacancy_id',
-        'title',
-        'enrollment_key',
-        'start_date',
-        'end_date',
-        'duration',
-        'shuffle_items',
-        'status',
+        'vacancy_id', 'title', 'code', 'enrollment_key',
+        'start_date', 'end_date', 'duration', 'access_mode',
+        'shuffle_items', 'shuffle_options', 'status',
     ];
 
-    public function vacancy(): BelongsTo
-    {
-        return $this->belongsTo(Vacancy::class);
-    }
+    protected $casts = [
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
+        'shuffle_items' => 'boolean',
+        'shuffle_options' => 'boolean',
+    ];
 
-    public function writtenExams(): HasMany
-    {
-        return $this->hasMany(WrittenExam::class);
-    }
-
-    public function attempts(): HasMany
-    {
-        return $this->hasMany(ExamAttempt::class);
-    }
+    public function vacancy(): BelongsTo { return $this->belongsTo(Vacancy::class); }
+    public function writtenExams(): HasMany { return $this->hasMany(WrittenExam::class); }
+    public function attempts(): HasMany { return $this->hasMany(ExamAttempt::class); }
 
     public function getStatus(): string
     {
-        return $this->status === 1 ? 'Published' : 'Draft';
+        if ($this->status !== 1) return 'Draft';
+        if ($this->start_date && now()->lt($this->start_date)) return 'Scheduled';
+        if ($this->end_date && now()->gt($this->end_date)) return 'Closed';
+        return 'Open';
     }
 }
