@@ -82,7 +82,9 @@ class SkillTestAttemptController extends Controller
 
     protected function finalize(SkillTestAttempt $attempt): void
     {
-        DB::transaction(function () use ($attempt) {
+        $queueAi = false;
+
+        DB::transaction(function () use ($attempt, &$queueAi) {
             $locked = SkillTestAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
             if ((int)$locked->status === 2) return;
 
@@ -92,11 +94,13 @@ class SkillTestAttemptController extends Controller
             );
             $submission->update(['is_final'=>true,'submitted_at'=>now()]);
             $locked->update(['status'=>2,'submitted_at'=>now()]);
-
-            if ($locked->skillTest->ai_scoring) {
-                ScoreSkillTestSubmission::dispatch($locked->id);
-            }
+            $queueAi = (bool) $locked->skillTest->ai_scoring;
         });
+
+        // Never call the AI provider inside the database transaction.
+        if ($queueAi) {
+            ScoreSkillTestSubmission::dispatch($attempt->id);
+        }
     }
 
     public function take(Request $request, SkillTestAttempt $attempt)
