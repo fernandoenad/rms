@@ -145,6 +145,20 @@ class SkillTestController extends Controller
         return back()->with('status',$applications->count().' taken-in applicant(s) assigned.');
     }
 
+
+    public function toggleStatus(SkillTest $skillTest)
+    {
+        if (!$skillTest->status) {
+            $total = (float) $skillTest->rubricCriteria()->sum('max_points');
+            if (abs($total - 100) > 0.01) {
+                return back()->with('status','Cannot publish: rubric must total exactly 100 points.');
+            }
+        }
+
+        $skillTest->update(['status' => $skillTest->status ? 0 : 1]);
+        return back()->with('status',$skillTest->status ? 'Skills test published.' : 'Skills test returned to draft.');
+    }
+
     public function results(SkillTest $skillTest)
     {
         $attempts = $skillTest->attempts()->with(['application','submissions','aiEvaluations'])
