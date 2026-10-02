@@ -12,6 +12,12 @@
 </form></div></div>
 @endif
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
+
+<form method="post" action="{{ route('admin.skills.toggle',$skillTest) }}" class="mb-3">@csrf
+<button class="btn {{ $skillTest->status ? 'btn-outline-warning':'btn-success' }}">
+{{ $skillTest->status ? 'Return to Draft':'Publish Skills Test' }}
+</button>
+</form>
 <div class="row">
 <div class="col-lg-5">
 <div class="card"><div class="card-header"><strong>Task</strong></div><div class="card-body">
