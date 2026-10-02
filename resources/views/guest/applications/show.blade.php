@@ -264,19 +264,8 @@
                                                         <td>{{ $exam->duration }} min</td>
                                                         <td>
                                                             @if(isset($attempt) && $attempt->status == 2)
-                                                                @php
-                                                                    $total = $exam->writtenExams->where('status',1)->count();
-                                                                    $answers = $attempt->answers;
-                                                                    $correct = 0;
-                                                                    foreach($exam->writtenExams as $item){
-                                                                        $a = $answers->firstWhere('written_exam_id', $item->id);
-                                                                        if($a && strtoupper($a->selected_option) == strtoupper($item->answer_key)){
-                                                                            $correct++;
-                                                                        }
-                                                                    }
-                                                                    $scorePct = $total > 0 ? round(($correct / $total) * 100, 2) : 0;
-                                                                @endphp
-                                                                {{ $correct }} / {{ $total }} ({{ $scorePct }}%)
+                                                                {{ $attempt->correct_answers ?? '-' }} / {{ $attempt->total_items ?? '-' }}
+                                                                @if($attempt->percentage !== null) ({{ $attempt->percentage }}%) @endif
                                                             @else
                                                                 -
                                                             @endif
@@ -326,6 +315,53 @@
                                                 @endforelse
                                             </tbody>
                                         </table>
+                                        <div class="mt-4">
+                                            <h5>Skills Tests</h5>
+                                            <div class="row">
+                                                @forelse($skillTests as $skillTest)
+                                                    @php
+                                                        $skillAttempt = $skillTest->attempts->first();
+                                                        $skillSubmitted = $skillAttempt && $skillAttempt->status == 2;
+                                                        $skillOpen = now()->gte($skillTest->start_date) && now()->lt($skillTest->end_date);
+                                                    @endphp
+                                                    <div class="col-12 col-md-6 mb-3">
+                                                        <div class="card h-100 border">
+                                                            <div class="card-body">
+                                                                <h6 class="mb-1">{{ $skillTest->title }}</h6>
+                                                                <div class="small text-muted mb-2">{{ $skillTest->duration }} min · {{ $skillTest->start_date->format('M d, Y h:i A') }}</div>
+                                                                <div class="mb-2">
+                                                                    @if($skillSubmitted)
+                                                                        <span class="badge badge-success">Submitted</span>
+                                                                    @elseif($skillAttempt)
+                                                                        <span class="badge badge-warning">In progress</span>
+                                                                    @elseif($skillOpen)
+                                                                        <span class="badge badge-info">Available</span>
+                                                                    @else
+                                                                        <span class="badge badge-secondary">Scheduled/Closed</span>
+                                                                    @endif
+                                                                </div>
+                                                                @if(!$hasAssessmentRel)
+                                                                    <button class="btn btn-sm btn-secondary btn-block" disabled>Not eligible</button>
+                                                                @elseif($skillSubmitted)
+                                                                    <button class="btn btn-sm btn-success btn-block" disabled>Completed</button>
+                                                                @elseif($skillAttempt)
+                                                                    <a href="{{ route('guest.skills.attempts.take',$skillAttempt) }}" class="btn btn-sm btn-primary btn-block">Continue</a>
+                                                                @elseif($skillOpen)
+                                                                    <form method="post" action="{{ route('guest.skills.start',[$application,$skillTest]) }}">@csrf
+                                                                        <button class="btn btn-sm btn-primary btn-block" onclick="return confirm('Start this skills test? The timer begins immediately.');">Start Skills Test</button>
+                                                                    </form>
+                                                                @else
+                                                                    <button class="btn btn-sm btn-secondary btn-block" disabled>Unavailable</button>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @empty
+                                                    <div class="col-12 text-muted">No skills tests for this position.</div>
+                                                @endforelse
+                                            </div>
+                                        </div>
+
                                         @foreach($exams as $exam)
                                             @php $attempt = $exam->attempts->first(); @endphp
                                             @if($attempt && $attempt->auto_submitted)
