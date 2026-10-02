@@ -95,12 +95,18 @@ class SkillTestController extends Controller
     {
         if ($skillTest->attempts()->exists()) return back()->with('status','Rubric is locked after attempts exist.');
 
-        $data = $request->validate([
+        $criteria = collect($request->input('criteria', []))
+            ->filter(fn($row) => trim((string)($row['criterion'] ?? '')) !== '')
+            ->values()
+            ->all();
+
+        $validator = validator(['criteria'=>$criteria], [
             'criteria'=>'required|array|min:1',
             'criteria.*.criterion'=>'required|string|max:255',
             'criteria.*.description'=>'nullable|string',
             'criteria.*.max_points'=>'required|numeric|min:0.01|max:100',
         ]);
+        $data = $validator->validate();
 
         $total = collect($data['criteria'])->sum('max_points');
         if (abs($total - 100) > 0.01) return back()->with('status','Rubric must total exactly 100 points.');
