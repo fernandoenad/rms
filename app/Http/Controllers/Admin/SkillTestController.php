@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\SkillTest;
 use App\Models\SkillTestAttempt;
+use App\Models\SkillTestAssignment;
+use App\Models\Application;
 use App\Models\Vacancy;
 use App\Services\AssessmentAiService;
 use Illuminate\Http\Request;
@@ -119,6 +121,28 @@ class SkillTestController extends Controller
         });
 
         return back()->with('status','Rubric saved.');
+    }
+
+
+    public function assignApplicants(Request $request, SkillTest $skillTest)
+    {
+        $data = $request->validate(['application_codes'=>'required|string']);
+        $codes = collect(preg_split('/[\s,;]+/', $data['application_codes']))
+            ->map(fn($x)=>trim($x))->filter()->unique()->values();
+
+        $applications = Application::where('vacancy_id',$skillTest->vacancy_id)
+            ->whereIn('application_code',$codes)
+            ->whereHas('assessment')
+            ->get(['id','application_code']);
+
+        foreach ($applications as $application) {
+            SkillTestAssignment::firstOrCreate([
+                'skill_test_id'=>$skillTest->id,
+                'application_id'=>$application->id,
+            ]);
+        }
+
+        return back()->with('status',$applications->count().' taken-in applicant(s) assigned.');
     }
 
     public function results(SkillTest $skillTest)
