@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Vacancy;
-use App\Models\WrittenExam;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
+use App\Models\Vacancy;
+use App\Models\WrittenExam;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class WrittenExamController extends Controller
 {
@@ -22,7 +22,7 @@ class WrittenExamController extends Controller
     public function index()
     {
         $exams = Exam::with('vacancy:id,position_title')
-            ->withCount('writtenExams')
+            ->withCount(['writtenExams', 'attempts'])
             ->orderByDesc('id')
             ->get();
 
@@ -47,30 +47,29 @@ class WrittenExamController extends Controller
         return view('admin.assessments.edit', compact('exam', 'vacancies'));
     }
 
-    public function store(Request $request)
+    protected function validated(Request $request): array
     {
-        $data = $request->validate([
+        return $request->validate([
             'vacancy_id' => 'required|exists:vacancies,id',
             'title' => 'required|string|max:255',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
+            'code' => 'nullable|string|max:100',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
             'duration' => 'required|integer|min:1',
+            'access_mode' => 'required|in:all_taken_in,selected_applicants',
             'shuffle_items' => 'required|boolean',
+            'shuffle_options' => 'required|boolean',
             'status' => 'required|integer|in:0,1',
         ]);
+    }
 
-        $enrollmentKey = strtoupper(Str::random(8));
+    public function store(Request $request)
+    {
+        $data = $this->validated($request);
+        $data['enrollment_key'] = strtoupper(Str::random(8));
+        $data['code'] = $data['code'] ?: 'WE-' . now()->format('Ymd-His');
 
-        $exam = Exam::create([
-            'vacancy_id' => $data['vacancy_id'],
-            'title' => $data['title'],
-            'enrollment_key' => $enrollmentKey,
-            'start_date' => $data['start_date'] ?? null,
-            'end_date' => $data['end_date'] ?? null,
-            'duration' => $data['duration'],
-            'shuffle_items' => $data['shuffle_items'],
-            'status' => $data['status'],
-        ]);
+        Exam::create($data);
 
         return redirect()->route('admin.assessments.index')
             ->with('status', 'Written exam was successfully saved.');
@@ -78,28 +77,54 @@ class WrittenExamController extends Controller
 
     public function update(Request $request, Exam $exam)
     {
-        $data = $request->validate([
-            'vacancy_id' => 'required|exists:vacancies,id',
-            'title' => 'required|string|max:255',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after_or_equal:start_date',
-            'duration' => 'required|integer|min:1',
-            'shuffle_items' => 'required|boolean',
-            'status' => 'required|integer|in:0,1',
-        ]);
+        if ($exam->attempts()->exists()) {
+            return back()->with('status', 'Exam settings are locked after an attempt has started. Create/duplicate a new set instead.');
+        }
 
-        $exam->update($data);
+        $exam->update($this->validated($request));
 
         return redirect()->route('admin.assessments.index')
             ->with('status', 'Written exam was successfully updated.');
     }
 
+    public function duplicate(Exam $exam)
+    {
+        $exam->load('writtenExams.options');
+
+        $copy = DB::transaction(function () use ($exam) {
+            $copy = $exam->replicate();
+            $copy->title = $exam->title . ' - Copy';
+            $copy->code = ($exam->code ?: 'WE-' . $exam->id) . '-COPY-' . now()->format('His');
+            $copy->enrollment_key = strtoupper(Str::random(8));
+            $copy->status = 0;
+            $copy->start_date = null;
+            $copy->end_date = null;
+            $copy->save();
+
+            foreach ($exam->writtenExams as $item) {
+                $newItem = $item->replicate();
+                $newItem->exam_id = $copy->id;
+                $newItem->enrollment_key = $copy->enrollment_key;
+                $newItem->save();
+
+                foreach ($item->options as $option) {
+                    $newOption = $option->replicate();
+                    $newOption->written_exam_id = $newItem->id;
+                    $newOption->save();
+                }
+            }
+
+            return $copy;
+        });
+
+        return redirect()->route('admin.assessments.edit', $copy)
+            ->with('status', 'Exam duplicated as a draft. Set its schedule before publishing.');
+    }
+
     public function destroy(Exam $exam)
     {
-        $exam->loadCount('writtenExams');
-        if ($exam->written_exams_count > 0) {
-            return redirect()->route('admin.assessments.index')
-                ->with('status', 'Cannot delete exam with existing items.');
+        if ($exam->attempts()->exists()) {
+            return back()->with('status', 'Cannot delete an exam with attempts. Archive it instead.');
         }
 
         $exam->delete();
@@ -119,36 +144,31 @@ class WrittenExamController extends Controller
 
     public function results(Exam $exam)
     {
-        $exam->load(['writtenExams' => function($q){ $q->where('status',1); }]);
+        $exam->load(['writtenExams.options']);
         $attempts = $exam->attempts()
-            ->with(['application', 'answers', 'answers.item'])
+            ->with(['application', 'answers.selectedOption', 'answers.item', 'itemOrders', 'events'])
             ->where('status', 2)
             ->paginate(25)
             ->withQueryString();
 
-        return view('admin.assessments.results', [
-            'exam' => $exam,
-            'attempts' => $attempts,
-        ]);
+        return view('admin.assessments.results', compact('exam', 'attempts'));
     }
 
     public function destroyAttempt(Exam $exam, ExamAttempt $attempt)
     {
-        if ($attempt->exam_id !== $exam->id) {
-            abort(404);
-        }
-        $user = auth()->user();
-        Log::info('Exam attempt deleted', [
+        if ((int) $attempt->exam_id !== (int) $exam->id) abort(404);
+
+        Log::warning('Exam attempt hard-deleted', [
             'exam_id' => $exam->id,
             'attempt_id' => $attempt->id,
-            'deleted_by_id' => $user?->id,
-            'deleted_by_email' => $user?->email,
+            'deleted_by_id' => auth()->id(),
+            'deleted_by_email' => optional(auth()->user())->email,
         ]);
 
         $attempt->delete();
 
         return redirect()->route('admin.assessments.results', $exam)
-            ->with('status', 'Attempt deleted.');
+            ->with('status', 'Attempt deleted. Consider using void/retake workflow for operational use.');
     }
 
     public function regenerateKey(Exam $exam)
