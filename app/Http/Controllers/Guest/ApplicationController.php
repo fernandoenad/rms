@@ -48,6 +48,29 @@ class ApplicationController extends Controller
         $applicationInquiries = $application->inquiries;
         $exams = \App\Models\Exam::where('vacancy_id', $application->vacancy_id)
             ->where('status', 1)
+            ->where(function ($q) use ($application) {
+                $q->where('access_mode', 'all_taken_in')
+                  ->orWhereExists(function ($sub) use ($application) {
+                      $sub->selectRaw('1')->from('exam_assignments')
+                          ->whereColumn('exam_assignments.exam_id', 'exams.id')
+                          ->where('exam_assignments.application_id', $application->id);
+                  });
+            })
+            ->with(['attempts' => function($q) use ($application) {
+                $q->where('application_id', $application->id);
+            }])
+            ->get();
+
+        $skillTests = \App\Models\SkillTest::where('vacancy_id', $application->vacancy_id)
+            ->where('status', 1)
+            ->where(function ($q) use ($application) {
+                $q->where('access_mode', 'all_taken_in')
+                  ->orWhereExists(function ($sub) use ($application) {
+                      $sub->selectRaw('1')->from('skill_test_assignments')
+                          ->whereColumn('skill_test_assignments.skill_test_id', 'skill_tests.id')
+                          ->where('skill_test_assignments.application_id', $application->id);
+                  });
+            })
             ->with(['attempts' => function($q) use ($application) {
                 $q->where('application_id', $application->id);
             }])
@@ -58,7 +81,7 @@ class ApplicationController extends Controller
             $nowDate = Carbon::parse(date('Y-m-d h:i:s'));
             $diffInDays =  $oldDate->diffInDays($nowDate);
         
-            return view('guest.applications.show', ['application' => $application, 'applicationInquiries' => $applicationInquiries, 'diffInDays' => $diffInDays, 'exams' => $exams]);
+            return view('guest.applications.show', ['application' => $application, 'applicationInquiries' => $applicationInquiries, 'diffInDays' => $diffInDays, 'exams' => $exams, 'skillTests' => $skillTests]);
         } else {
             abort(401);
         }   
