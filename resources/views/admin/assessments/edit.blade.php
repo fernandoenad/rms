@@ -1,6 +1,8 @@
 @extends('adminlte::page')
 @section('title','Edit Written Exam')
 @section('content_header')<h1>Edit Written Exam</h1>
+@stop
+@section('content')
 @if($exam->access_mode==='selected_applicants')
 <div class="card border-info"><div class="card-header"><strong>Optional Selected-Applicant Access</strong></div><div class="card-body">
 <form method="post" action="{{ route('admin.assessments.assign',$exam) }}">@csrf
@@ -10,8 +12,6 @@
 <button class="btn btn-info mt-2">Add Assignments</button>
 </form></div></div>
 @endif
-@stop
-@section('content')
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
 <form method="post" action="{{ route('admin.assessments.update',$exam) }}">@csrf @method('put')
