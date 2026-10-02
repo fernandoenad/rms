@@ -14,7 +14,7 @@ class WrittenExam extends Model
     protected $fillable = [
         'exam_id', 'enrollment_key', 'question',
         'option_a', 'option_b', 'option_c', 'option_d',
-        'answer_key', 'attempts', 'status',
+        'answer_key', 'rationale', 'ai_generated', 'solo_level', 'difficulty', 'competency_basis', 'attempts', 'status',
     ];
 
     public function exam(): BelongsTo { return $this->belongsTo(Exam::class); }
