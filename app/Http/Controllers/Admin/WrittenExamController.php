@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
+use App\Models\ExamAssignment;
+use App\Models\Application;
 use App\Models\Vacancy;
 use App\Models\WrittenExam;
 use App\Models\WrittenExamOption;
@@ -195,6 +197,28 @@ class WrittenExamController extends Controller
         } catch (\Throwable $e) {
             return back()->with('status', 'AI generation failed: '.$e->getMessage());
         }
+    }
+
+
+    public function assignApplicants(Request $request, Exam $exam)
+    {
+        $data = $request->validate(['application_codes' => 'required|string']);
+        $codes = collect(preg_split('/[\s,;]+/', $data['application_codes']))
+            ->map(fn($x) => trim($x))->filter()->unique()->values();
+
+        $applications = Application::where('vacancy_id', $exam->vacancy_id)
+            ->whereIn('application_code', $codes)
+            ->whereHas('assessment')
+            ->get(['id','application_code']);
+
+        foreach ($applications as $application) {
+            ExamAssignment::firstOrCreate([
+                'exam_id' => $exam->id,
+                'application_id' => $application->id,
+            ]);
+        }
+
+        return back()->with('status', $applications->count().' taken-in applicant(s) assigned.');
     }
 
     public function destroy(Exam $exam)
