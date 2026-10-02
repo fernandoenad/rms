@@ -115,4 +115,50 @@ PROMPT;
 
         return $decoded;
     }
+
+    public function scoreSkillsSubmission(\App\Models\SkillTest $test, string $submissionText): array
+    {
+        $criteria = $test->rubricCriteria->map(function ($criterion) {
+            return [
+                'id' => $criterion->id,
+                'criterion' => $criterion->criterion,
+                'description' => $criterion->description,
+                'max_points' => (float) $criterion->max_points,
+            ];
+        })->values()->all();
+
+        $system = <<<'PROMPT'
+You are an employment skills-test evaluator. Score ONLY against the supplied analytic rubric. Use evidence from the submission. Do not infer missing work. Return one score per rubric criterion, concise evidence, concise reason, confidence, flags, and a proposed total. Output VALID JSON ONLY.
+
+Shape:
+{"criterion_scores":[{"criterion_id":1,"score":20,"evidence":"...","reason":"...","confidence":"high"}],"proposed_total":80,"flags":[]}
+PROMPT;
+
+        $response = $this->client()->chat()->create([
+            'model' => $this->model(),
+            'temperature' => 0.1,
+            'messages' => [
+                ['role' => 'system', 'content' => $system],
+                ['role' => 'user', 'content' =>
+                    "TASK:\n{$test->instructions}\n\nEXPECTED OUTPUT:\n{$test->expected_output}\n\nRUBRIC:\n"
+                    . json_encode($criteria)
+                    . "\n\nSUBMISSION:\n"
+                    . $submissionText
+                ],
+            ],
+        ]);
+
+        $decoded = $this->decodeJson($response['choices'][0]['message']['content'] ?? '');
+        if (!isset($decoded['criterion_scores']) || !isset($decoded['proposed_total'])) {
+            throw new RuntimeException('AI returned an invalid skills-score payload.');
+        }
+
+        return [
+            'model' => $this->model(),
+            'criterion_scores' => $decoded['criterion_scores'],
+            'proposed_total' => (float) $decoded['proposed_total'],
+            'flags' => $decoded['flags'] ?? [],
+            'raw_response' => $response['choices'][0]['message']['content'] ?? '',
+        ];
+    }
 }
