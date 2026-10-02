@@ -17,6 +17,8 @@ use App\Http\Controllers\Guest\OpenAIController;
 use App\Http\Controllers\Admin\DiscrepancyController as AdminDiscrepancy;
 use App\Http\Controllers\Admin\WrittenExamController as AdminWrittenExam;
 use App\Http\Controllers\Admin\WrittenExamItemController as AdminWrittenExamItem;
+use App\Http\Controllers\Admin\SkillTestController as AdminSkillTest;
+use App\Http\Controllers\Guest\SkillTestAttemptController as GuestSkillTestAttempt;
 
 
 use Laravel\Socialite\Facades\Socialite;
@@ -150,6 +152,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::put('/admin/assessment/{exam}', [AdminWrittenExam::class, 'update'])->name('admin.assessments.update');
     Route::put('/admin/assessment/{exam}/toggle', [AdminWrittenExam::class, 'toggleStatus'])->name('admin.assessments.toggle');
     Route::put('/admin/assessment/{exam}/regenerate-key', [AdminWrittenExam::class, 'regenerateKey'])->name('admin.assessments.regenerate_key');\n    Route::post('/admin/assessment/{exam}/duplicate', [AdminWrittenExam::class, 'duplicate'])->name('admin.assessments.duplicate');
+    Route::post('/admin/assessment/{exam}/ai-generate', [AdminWrittenExam::class, 'generateAi'])->name('admin.assessments.ai_generate');
     Route::delete('/admin/assessment/{exam}', [AdminWrittenExam::class, 'destroy'])->name('admin.assessments.destroy');
     Route::get('/admin/assessment/{exam}/results', [AdminWrittenExam::class, 'results'])->name('admin.assessments.results');
     Route::delete('/admin/assessment/{exam}/attempts/{attempt}', [AdminWrittenExam::class, 'destroyAttempt'])->name('admin.assessments.attempts.destroy');
@@ -165,6 +168,15 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/assessments/attempts/{attempt}', [\App\Http\Controllers\Admin\ExamAttemptController::class, 'take'])->name('admin.assessments.attempts.take');
     Route::post('/admin/assessments/attempts/{attempt}/answer', [\App\Http\Controllers\Admin\ExamAttemptController::class, 'saveAnswer'])->name('admin.assessments.attempts.answer');
     Route::post('/admin/assessments/attempts/{attempt}/submit', [\App\Http\Controllers\Admin\ExamAttemptController::class, 'submit'])->name('admin.assessments.attempts.submit');
+
+    Route::get('/admin/skills', [AdminSkillTest::class, 'index'])->name('admin.skills.index');
+    Route::get('/admin/skills/create', [AdminSkillTest::class, 'create'])->name('admin.skills.create');
+    Route::post('/admin/skills', [AdminSkillTest::class, 'store'])->name('admin.skills.store');
+    Route::get('/admin/skills/{skillTest}/edit', [AdminSkillTest::class, 'edit'])->name('admin.skills.edit');
+    Route::post('/admin/skills/{skillTest}/ai-generate', [AdminSkillTest::class, 'generateAi'])->name('admin.skills.ai_generate');
+    Route::post('/admin/skills/{skillTest}/rubric', [AdminSkillTest::class, 'saveRubric'])->name('admin.skills.rubric');
+    Route::get('/admin/skills/{skillTest}/results', [AdminSkillTest::class, 'results'])->name('admin.skills.results');
+    Route::post('/admin/skills/{skillTest}/attempts/{attempt}/final-score', [AdminSkillTest::class, 'finalizeScore'])->name('admin.skills.final_score');
 
     Route::get('/admin/inquiries', [AdminInquiry::class, 'index'])->name('admin.inquiries.index');
 });
