@@ -177,6 +177,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::post('/admin/skills/{skillTest}/ai-generate', [AdminSkillTest::class, 'generateAi'])->name('admin.skills.ai_generate');
     Route::post('/admin/skills/{skillTest}/rubric', [AdminSkillTest::class, 'saveRubric'])->name('admin.skills.rubric');
     Route::post('/admin/skills/{skillTest}/assign', [AdminSkillTest::class, 'assignApplicants'])->name('admin.skills.assign');
+    Route::post('/admin/skills/{skillTest}/toggle', [AdminSkillTest::class, 'toggleStatus'])->name('admin.skills.toggle');
     Route::get('/admin/skills/{skillTest}/results', [AdminSkillTest::class, 'results'])->name('admin.skills.results');
     Route::post('/admin/skills/{skillTest}/attempts/{attempt}/final-score', [AdminSkillTest::class, 'finalizeScore'])->name('admin.skills.final_score');
 
