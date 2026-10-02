@@ -149,7 +149,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/assessment/{exam}/edit', [AdminWrittenExam::class, 'edit'])->name('admin.assessments.edit');
     Route::put('/admin/assessment/{exam}', [AdminWrittenExam::class, 'update'])->name('admin.assessments.update');
     Route::put('/admin/assessment/{exam}/toggle', [AdminWrittenExam::class, 'toggleStatus'])->name('admin.assessments.toggle');
-    Route::put('/admin/assessment/{exam}/regenerate-key', [AdminWrittenExam::class, 'regenerateKey'])->name('admin.assessments.regenerate_key');
+    Route::put('/admin/assessment/{exam}/regenerate-key', [AdminWrittenExam::class, 'regenerateKey'])->name('admin.assessments.regenerate_key');\n    Route::post('/admin/assessment/{exam}/duplicate', [AdminWrittenExam::class, 'duplicate'])->name('admin.assessments.duplicate');
     Route::delete('/admin/assessment/{exam}', [AdminWrittenExam::class, 'destroy'])->name('admin.assessments.destroy');
     Route::get('/admin/assessment/{exam}/results', [AdminWrittenExam::class, 'results'])->name('admin.assessments.results');
     Route::delete('/admin/assessment/{exam}/attempts/{attempt}', [AdminWrittenExam::class, 'destroyAttempt'])->name('admin.assessments.attempts.destroy');
