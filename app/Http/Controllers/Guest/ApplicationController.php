@@ -61,7 +61,7 @@ class ApplicationController extends Controller
                   ->orWhereHas('attempts', fn ($attempts) => $attempts->where('application_id', $application->id));
             })
             ->with([
-                'assessmentGroup:id,title,status',
+                'assessmentGroup:id,title,status,score_release_policy,scores_released_at',
                 'attempts' => function($q) use ($application) {
                     $q->where('application_id', $application->id);
                 },
@@ -87,7 +87,7 @@ class ApplicationController extends Controller
 
                 if (!$lockedSet) {
                     $lockedSet = \App\Models\Exam::with([
-                            'assessmentGroup:id,title,status',
+                            'assessmentGroup:id,title,status,score_release_policy,scores_released_at',
                             'attempts' => fn ($q) => $q->where('application_id', $application->id),
                         ])
                         ->whereKey($lock->exam_id)
