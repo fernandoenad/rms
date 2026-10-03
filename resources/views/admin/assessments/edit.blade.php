@@ -15,6 +15,29 @@
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
 
+<div class="card card-outline {{ $exam->is_paused ? 'card-warning' : 'card-secondary' }}">
+    <div class="card-header"><strong>Operational Control</strong></div>
+    <div class="card-body">
+        @if($exam->archived_at)
+            <div class="alert alert-secondary mb-0">This written test is archived and frozen.</div>
+        @elseif($exam->is_paused)
+            <div class="alert alert-warning">New starts are paused. Existing in-progress attempts may continue.<br><small>{{ $exam->pause_reason }}</small></div>
+            <form method="post" action="{{ route('admin.assessments.resume',$exam) }}" class="d-inline">@csrf
+                <button class="btn btn-success btn-sm">Resume New Starts</button>
+            </form>
+        @else
+            <form method="post" action="{{ route('admin.assessments.pause',$exam) }}" class="form-inline mb-2">@csrf
+                <input name="reason" class="form-control form-control-sm mr-2" style="min-width:320px" placeholder="Reason for pausing new starts" required>
+                <button class="btn btn-warning btn-sm">Pause New Starts</button>
+            </form>
+            <form method="post" action="{{ route('admin.assessments.archive',$exam) }}"
+                  onsubmit="return confirm('Archive and freeze this written test? This is blocked while attempts are in progress.');">@csrf
+                <button class="btn btn-outline-secondary btn-sm">Archive / Freeze</button>
+            </form>
+        @endif
+    </div>
+</div>
+
 <div class="card card-outline {{ $exam->approval_status==='approved' ? 'card-success' : 'card-warning' }}">
     <div class="card-header"><strong>Assessment Approval</strong></div>
     <div class="card-body">
