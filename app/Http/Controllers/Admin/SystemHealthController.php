@@ -71,7 +71,7 @@ class SystemHealthController extends Controller
                 ? 'Queue connection: '.$queueConnection.'.'
                 : number_format($queuedTotal).' queued job(s) on '.$queueConnection.'.';
             if ($oldestQueuedAt) {
-                $queueDetail .= ' Oldest queued job: '.now()->createFromTimestamp((int) $oldestQueuedAt)->diffForHumans().'.';
+                $queueDetail .= ' Oldest queued job: '.\Carbon\Carbon::createFromTimestamp((int) $oldestQueuedAt)->diffForHumans().'.';
             }
             $checks[] = $this->check('Queue', ($failedTotal ?? 0) > 0 ? 'WARNING' : 'HEALTHY', $queueDetail);
         }
@@ -212,7 +212,16 @@ class SystemHealthController extends Controller
         $path = storage_path('logs/laravel.log');
 
         if (!File::exists($path)) {
-            return ['path' => $path, 'size' => 0, 'errors' => [], 'available' => false];
+            $dailyLogs = collect(File::glob(storage_path('logs/laravel-*.log')))
+                ->filter(fn ($candidate) => File::isFile($candidate))
+                ->sortByDesc(fn ($candidate) => File::lastModified($candidate))
+                ->values();
+
+            $path = $dailyLogs->first();
+        }
+
+        if (!$path || !File::exists($path)) {
+            return ['path' => storage_path('logs'), 'size' => 0, 'errors' => [], 'available' => false];
         }
 
         $size = File::size($path);
