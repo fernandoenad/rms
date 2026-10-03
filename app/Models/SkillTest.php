@@ -8,23 +8,26 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class SkillTest extends Model
 {
     protected $fillable = [
-        'vacancy_id','title','code','task_version','supersedes_skill_test_id',
+        'vacancy_id','created_by','title','code','task_version','supersedes_skill_test_id',
         'review_status','reviewed_by','reviewed_at','review_notes',
         'instructions','expected_output','start_date','end_date',
         'duration','access_mode','submission_modes','allowed_extensions','max_file_size_kb',
         'ai_scoring','score_release_policy','scores_released_at',
         'ai_context','ai_generation_focus','ai_use_qualifications','ai_use_job_description',
-        'status'
+        'status','approval_status','approved_by','approved_at','approval_notes'
     ];
 
     protected $casts = [
         'start_date'=>'datetime','end_date'=>'datetime','submission_modes'=>'array',
         'allowed_extensions'=>'array','ai_scoring'=>'boolean',
         'reviewed_at'=>'datetime','scores_released_at'=>'datetime',
-        'ai_use_qualifications'=>'boolean','ai_use_job_description'=>'boolean'
+        'ai_use_qualifications'=>'boolean','ai_use_job_description'=>'boolean',
+        'approved_at'=>'datetime'
     ];
 
     public function vacancy(): BelongsTo { return $this->belongsTo(Vacancy::class); }
+    public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
+    public function approver(): BelongsTo { return $this->belongsTo(User::class, 'approved_by'); }
     public function rubricCriteria(): HasMany {
         return $this->hasMany(SkillTestRubricCriterion::class)
             ->where('is_active', true)
