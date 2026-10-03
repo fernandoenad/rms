@@ -10,12 +10,14 @@ use App\Models\SkillTest;
 use App\Models\SkillTestAssignment;
 use App\Models\SkillTestAttempt;
 use App\Models\SkillTestHumanScore;
+use App\Models\SkillTestSubmission;
 use App\Models\Vacancy;
 use App\Services\AssessmentAiService;
 use App\Services\AssessmentGovernanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class SkillTestController extends Controller
@@ -767,6 +769,25 @@ class SkillTestController extends Controller
         });
 
         return back()->with('status', 'Original skills attempt retained as voided; retake authorized on the selected published task.');
+    }
+
+    public function downloadSubmission(
+        SkillTest $skillTest,
+        SkillTestSubmission $submission
+    ) {
+        $submission->loadMissing('attempt');
+
+        abort_unless(
+            $submission->attempt
+            && (int) $submission->attempt->skill_test_id === (int) $skillTest->id,
+            404
+        );
+
+        abort_unless($submission->file_path && Storage::disk('local')->exists($submission->file_path), 404);
+
+        $filename = $submission->original_filename ?: basename($submission->file_path);
+
+        return Storage::disk('local')->download($submission->file_path, $filename);
     }
 
     public function exportCsv(SkillTest $skillTest)
