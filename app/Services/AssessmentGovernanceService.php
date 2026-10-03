@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Models\AssessmentAuditLog;
+use App\Models\AssessmentContentBank;
 use App\Models\AssessmentGroup;
 use App\Models\Exam;
 use App\Models\SkillTest;
+use App\Models\WrittenExam;
 use Illuminate\Support\Collection;
 
 class AssessmentGovernanceService
@@ -22,6 +24,124 @@ class AssessmentGovernanceService
             'action' => $action,
             'metadata' => $metadata ?: null,
         ]);
+    }
+
+    public function normalizeContent(string $text): string
+    {
+        $text = mb_strtolower(trim(preg_replace('/\s+/u', ' ', strip_tags($text))));
+        return preg_replace('/[^\pL\pN\s]+/u', '', $text) ?: '';
+    }
+
+    public function fingerprint(string $text): string
+    {
+        return hash('sha256', $this->normalizeContent($text));
+    }
+
+    public function syncWrittenItemToBank(WrittenExam $item): ?AssessmentContentBank
+    {
+        $item->loadMissing('exam');
+
+        if ($item->review_status !== 'approved' || !$item->exam) {
+            return null;
+        }
+
+        $fingerprint = $this->fingerprint((string)$item->question);
+
+        return AssessmentContentBank::updateOrCreate(
+            [
+                'content_type'=>'written_item',
+                'fingerprint'=>$fingerprint,
+            ],
+            [
+                'vacancy_id'=>$item->exam->vacancy_id,
+                'written_exam_id'=>$item->id,
+                'title'=>'Written Item #'.$item->id,
+                'content'=>$item->question,
+                'metadata'=>[
+                    'solo_level'=>$item->solo_level,
+                    'difficulty'=>$item->difficulty,
+                    'competency_basis'=>$item->competency_basis,
+                ],
+                'review_status'=>'approved',
+                'created_by'=>auth()->id(),
+            ]
+        );
+    }
+
+    public function syncSkillTaskToBank(SkillTest $test): ?AssessmentContentBank
+    {
+        if ($test->review_status !== 'approved') {
+            return null;
+        }
+
+        $fingerprint = $this->fingerprint((string)$test->instructions);
+
+        return AssessmentContentBank::updateOrCreate(
+            [
+                'content_type'=>'skill_task',
+                'fingerprint'=>$fingerprint,
+            ],
+            [
+                'vacancy_id'=>$test->vacancy_id,
+                'skill_test_id'=>$test->id,
+                'title'=>$test->title,
+                'content'=>$test->instructions,
+                'metadata'=>[
+                    'expected_output'=>$test->expected_output,
+                    'task_version'=>$test->task_version,
+                ],
+                'review_status'=>'approved',
+                'created_by'=>auth()->id(),
+            ]
+        );
+    }
+
+    public function recordWrittenExposure(Exam $exam): void
+    {
+        $exam->loadMissing('writtenExams');
+
+        foreach ($exam->writtenExams->where('status',1)->where('review_status','approved') as $item) {
+            $bank = $this->syncWrittenItemToBank($item);
+            $bank?->increment('usage_count');
+        }
+    }
+
+    public function recordSkillExposure(SkillTest $test): void
+    {
+        $bank = $this->syncSkillTaskToBank($test);
+        $bank?->increment('usage_count');
+    }
+
+    protected function similarityIssuesForWritten(Exam $exam, Collection $items): array
+    {
+        $bank = AssessmentContentBank::where('content_type','written_item')
+            ->where('vacancy_id',$exam->vacancy_id)
+            ->whereNull('retired_at')
+            ->orderByDesc('id')
+            ->limit(250)
+            ->get(['id','written_exam_id','content','usage_count']);
+
+        $issues = [];
+
+        foreach ($items as $item) {
+            $normalized = $this->normalizeContent((string)$item->question);
+            if ($normalized === '') continue;
+
+            foreach ($bank as $bankItem) {
+                if ((int)$bankItem->written_exam_id === (int)$item->id) continue;
+
+                $other = $this->normalizeContent((string)$bankItem->content);
+                if ($other === '') continue;
+
+                similar_text($normalized, $other, $percent);
+                if ($percent >= 92) {
+                    $issues[] = "Item {$item->id} is highly similar (".round($percent,1)."%) to bank item {$bankItem->id}.";
+                    break;
+                }
+            }
+        }
+
+        return $issues;
     }
 
     public function readiness(Exam $exam): array
@@ -105,6 +225,10 @@ class AssessmentGovernanceService
                     $issues[] = "Blueprint competency '{$name}' requires {$target} item(s); {$actual} matched.";
                 }
             }
+        }
+
+        foreach ($this->similarityIssuesForWritten($exam, $items) as $similarityIssue) {
+            $issues[] = $similarityIssue;
         }
 
         if ($exam->access_mode === 'selected_applicants'
@@ -191,6 +315,29 @@ class AssessmentGovernanceService
             foreach ($rubric as $criterion) {
                 if ($criterion->review_status !== 'approved') {
                     $issues[] = "Rubric criterion {$criterion->id} has not been approved.";
+                }
+            }
+        }
+
+        if ($test->review_status === 'approved') {
+            $normalizedTask = $this->normalizeContent((string)$test->instructions);
+            $bankTasks = AssessmentContentBank::where('content_type','skill_task')
+                ->where('vacancy_id',$test->vacancy_id)
+                ->whereNull('retired_at')
+                ->where(function ($q) use ($test) {
+                    $q->whereNull('skill_test_id')->orWhere('skill_test_id','!=',$test->id);
+                })
+                ->orderByDesc('id')
+                ->limit(100)
+                ->get(['id','content']);
+
+            foreach ($bankTasks as $bankTask) {
+                $other = $this->normalizeContent((string)$bankTask->content);
+                if ($normalizedTask === '' || $other === '') continue;
+                similar_text($normalizedTask,$other,$percent);
+                if ($percent >= 92) {
+                    $issues[] = "Skills task is highly similar (".round($percent,1)."%) to bank task {$bankTask->id}.";
+                    break;
                 }
             }
         }
