@@ -258,9 +258,17 @@
                                                     @php
                                                         $attempt = $exam->attempts->first();
                                                         $submitted = $attempt && $attempt->status == 2;
+                                                        $examOpen = (!$exam->start_date || now()->gte($exam->start_date))
+                                                            && (!$exam->end_date || now()->lt($exam->end_date));
+                                                        $examUpcoming = $exam->start_date && now()->lt($exam->start_date);
                                                     @endphp
                                                     <tr>
-                                                        <td>{{ $exam->title }}</td>
+                                                        <td>
+                                                            <strong>{{ $exam->assessmentGroup?->title ?: $exam->title }}</strong>
+                                                            @if($exam->assessmentGroup && $exam->set_code)
+                                                                <div class="small text-muted">Assigned set: {{ $exam->set_code }}</div>
+                                                            @endif
+                                                        </td>
                                                         <td>{{ $exam->duration }} min</td>
                                                         <td>
                                                             @if(isset($attempt) && $attempt->status == 2)
@@ -275,8 +283,12 @@
                                                                 Submitted
                                                             @elseif($attempt && $attempt->status == 1)
                                                                 In progress
+                                                            @elseif($examUpcoming)
+                                                                Scheduled
+                                                            @elseif($examOpen)
+                                                                Available
                                                             @else
-                                                                Not started
+                                                                Closed
                                                             @endif
                                                         </td>
                                                         <td>
@@ -293,6 +305,20 @@
                                                                 <button class="btn btn-sm btn-secondary" disabled>Not eligible</button>
                                                             @elseif($submitted)
                                                                 <button class="btn btn-sm btn-success" disabled>Completed</button>
+                                                            @elseif($attempt && $attempt->status == 1)
+                                                                <form method="post" action="{{ route('guest.assessments.attempts.start', [$application, $exam]) }}" class="d-inline">
+                                                                    @csrf
+                                                                    <div class="input-group input-group-sm">
+                                                                        <input type="text" name="enrollment_key" class="form-control" placeholder="Enrollment key" required>
+                                                                        <div class="input-group-append">
+                                                                            <button type="submit" class="btn btn-primary">Continue</button>
+                                                                        </div>
+                                                                    </div>
+                                                                </form>
+                                                            @elseif(!$examOpen)
+                                                                <button class="btn btn-sm btn-secondary" disabled>
+                                                                    {{ $examUpcoming ? 'Not open yet' : 'Closed' }}
+                                                                </button>
                                                             @else
                                                                 <form method="post" action="{{ route('guest.assessments.attempts.start', [$application, $exam]) }}" class="d-inline">
                                                                     @csrf
@@ -300,7 +326,7 @@
                                                                         <input type="text" name="enrollment_key" class="form-control" placeholder="Enrollment key" required>
                                                                         <div class="input-group-append">
                                                                             <button type="submit" class="btn btn-primary" onclick="return confirm('This is a single-attempt test. Countdown starts after OK. Proceed?');">
-                                                                                {{ $attempt ? 'Continue' : 'Take test' }}
+                                                                                Take test
                                                                             </button>
                                                                         </div>
                                                                     </div>
