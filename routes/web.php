@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\WrittenExamController as AdminWrittenExam;
 use App\Http\Controllers\Admin\AssessmentGroupController as AdminAssessmentGroup;
 use App\Http\Controllers\Admin\WrittenExamItemController as AdminWrittenExamItem;
 use App\Http\Controllers\Admin\SkillTestController as AdminSkillTest;
+use App\Http\Controllers\Admin\AssessmentCenterController as AdminAssessmentCenter;
 use App\Http\Controllers\Guest\SkillTestAttemptController as GuestSkillTestAttempt;
 
 
@@ -163,6 +164,8 @@ Route::group(['middleware' => ['active']], function () {
     Route::put('/admin/vacancies/{vacancy}', [AdminVacancy::class, 'update'])->name('admin.vacancies.update');
     Route::get('/admin/vacancies/{vacancy}/delete', [AdminVacancy::class, 'delete'])->name('admin.vacancies.delete');
     Route::get('/admin/vacancies/{vacancy}/apply', [AdminVacancy::class, 'apply'])->name('admin.vacancies.apply');
+
+    Route::get('/admin/assessment-center', [AdminAssessmentCenter::class, 'index'])->name('admin.assessment_center.index');
 
     Route::get('/admin/assessment-groups', [AdminAssessmentGroup::class, 'index'])->name('admin.assessment_groups.index');
     Route::get('/admin/assessment-groups/create', [AdminAssessmentGroup::class, 'create'])->name('admin.assessment_groups.create');
