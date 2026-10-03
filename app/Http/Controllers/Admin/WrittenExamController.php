@@ -49,8 +49,7 @@ class WrittenExamController extends Controller
 
     public function create(Request $request)
     {
-        $vacancies = Vacancy::orderByDesc('cycle')
-            ->orderBy('position_title')
+        $vacancies = Vacancy::orderByDesc('id')
             ->get(['id', 'position_title', 'cycle']);
 
         $groups = AssessmentGroup::with('vacancy:id,position_title')
@@ -68,8 +67,7 @@ class WrittenExamController extends Controller
 
     public function edit(Exam $exam)
     {
-        $vacancies = Vacancy::orderByDesc('cycle')
-            ->orderBy('position_title')
+        $vacancies = Vacancy::orderByDesc('id')
             ->get(['id', 'position_title', 'cycle']);
 
         $groups = AssessmentGroup::with('vacancy:id,position_title')
