@@ -17,8 +17,20 @@
 <form method="post" action="{{ route('admin.assessments.update',$exam) }}">@csrf @method('put')
 <div class="card"><div class="card-body">
 <div class="form-group"><label>Position</label><select name="vacancy_id" class="form-control" required>
-@foreach($vacancies as $v)<option value="{{ $v->id }}" {{ $exam->vacancy_id==$v->id?'selected':'' }}>{{ $v->position_title }} ({{ $v->cycle }})</option>@endforeach
+@foreach($vacancies as $v)<option value="{{ $v->id }}" {{ old('vacancy_id',$exam->vacancy_id)==$v->id?'selected':'' }}>{{ $v->position_title }} ({{ $v->cycle }})</option>@endforeach
 </select></div>
+<div class="form-row">
+<div class="form-group col-md-8"><label>Equivalent Assessment Group <span class="text-muted font-weight-normal">(optional)</span></label>
+<select name="assessment_group_id" class="form-control">
+<option value="">Standalone written exam</option>
+@foreach($groups as $group)
+<option value="{{ $group->id }}" {{ old('assessment_group_id',$exam->assessment_group_id)==$group->id?'selected':'' }}>
+{{ $group->title }} — {{ optional($group->vacancy)->position_title }}
+</option>
+@endforeach
+</select></div>
+<div class="form-group col-md-4"><label>Set code</label><input name="set_code" value="{{ old('set_code',$exam->set_code) }}" class="form-control" placeholder="e.g. A, B, C"></div>
+</div>
 <div class="form-row">
 <div class="form-group col-md-8"><label>Exam title</label><input name="title" value="{{ old('title',$exam->title) }}" class="form-control" required></div>
 <div class="form-group col-md-4"><label>Exam code</label><input name="code" value="{{ old('code',$exam->code) }}" class="form-control"></div>
