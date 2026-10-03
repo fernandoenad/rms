@@ -4,7 +4,10 @@
 <div class="d-flex justify-content-between align-items-center flex-wrap">
     <div>
         <h1 class="mb-0">{{ $skillTest->title }}</h1>
-        <small class="text-muted">Task v{{ $skillTest->task_version }} · {{ optional($skillTest->vacancy)->position_title }}</small>
+        <small class="text-muted">
+            Task v{{ $skillTest->task_version }} · {{ optional($skillTest->vacancy)->position_title }}
+            @if($skillTest->skill_test_group_id) · Set {{ $skillTest->set_code }} @endif
+        </small>
     </div>
     <div class="mt-2 mt-md-0">
         <a href="{{ route('admin.skills.preview',$skillTest) }}" class="btn btn-outline-primary mr-2"><i class="fas fa-eye"></i> Preview & Dry Run</a>
@@ -120,11 +123,21 @@
 
 @php $locked = $skillTest->status || $hasStartedAttempts; @endphp
 
+@if($skillTest->skill_test_group_id)
+<div class="alert alert-primary">
+    <strong>Equivalent Set {{ $skillTest->set_code }}</strong> in
+    <a href="{{ route('admin.skill_groups.edit',$skillTest->skill_test_group_id) }}">{{ optional($skillTest->skillTestGroup)->title }}</a>.
+    Shared schedule/access/release settings are managed from the Skills Test Group. This page is for this set's task, rubric, review, assignments, and results.
+</div>
+@endif
+
 <div class="card">
     <div class="card-header"><strong>Task & Settings</strong></div>
     <div class="card-body">
         <form method="post" action="{{ route('admin.skills.update',$skillTest) }}">@csrf @method('put')
             <input type="hidden" name="vacancy_id" value="{{ $skillTest->vacancy_id }}">
+            <input type="hidden" name="skill_test_group_id" value="{{ $skillTest->skill_test_group_id }}">
+            <input type="hidden" name="set_code" value="{{ $skillTest->set_code }}">
 
             <div class="form-row">
                 <div class="form-group col-md-8">
