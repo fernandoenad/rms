@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Models\AssessmentAccommodation;
 use App\Models\AssessmentAuditLog;
 use App\Models\AssessmentIncident;
 use App\Models\AssessmentScoreChange;
@@ -1126,6 +1127,55 @@ class SkillTestController extends Controller
         });
 
         return back()->with('status', 'Original skills attempt retained as voided; retake authorized on the selected published task.');
+    }
+
+    public function saveAccommodation(
+        Request $request,
+        SkillTest $skillTest,
+        AssessmentGovernanceService $governance
+    ) {
+        $this->ensureNotArchived($skillTest);
+
+        $data = $request->validate([
+            'application_code'=>'required|string|max:100',
+            'extra_minutes'=>'required|integer|min:0|max:240',
+            'large_text'=>'nullable|boolean',
+            'notes'=>'nullable|string|max:3000',
+        ]);
+
+        $application = Application::where('vacancy_id',$skillTest->vacancy_id)
+            ->where('application_code',$data['application_code'])
+            ->whereHas('assessment')
+            ->first();
+
+        if (!$application) {
+            return back()->with('status','No taken-in applicant with that application code was found for this position.');
+        }
+
+        AssessmentAccommodation::updateOrCreate(
+            [
+                'application_id'=>$application->id,
+                'skill_test_id'=>$skillTest->id,
+            ],
+            [
+                'assessment_group_id'=>null,
+                'exam_id'=>null,
+                'extra_minutes'=>(int)$data['extra_minutes'],
+                'large_text'=>$request->boolean('large_text'),
+                'notes'=>$data['notes'] ?? null,
+                'approved_by'=>auth()->id(),
+            ]
+        );
+
+        $governance->log('skill_accommodation_saved', [
+            'skill_test_id'=>$skillTest->id,
+        ], [
+            'application_id'=>$application->id,
+            'extra_minutes'=>(int)$data['extra_minutes'],
+            'large_text'=>$request->boolean('large_text'),
+        ]);
+
+        return back()->with('status','Applicant accommodation saved for this skills test.');
     }
 
     public function pause(
