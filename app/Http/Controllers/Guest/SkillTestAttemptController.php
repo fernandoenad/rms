@@ -8,6 +8,7 @@ use App\Models\Application;
 use App\Models\AssessmentAccommodation;
 use App\Models\AssessmentPerformanceSample;
 use App\Models\SkillTest;
+use App\Models\SkillTestGroupAttemptLock;
 use App\Models\SkillTestAssignment;
 use App\Models\SkillTestAttempt;
 use App\Models\SkillTestAttemptEvent;
@@ -37,6 +38,13 @@ class SkillTestAttemptController extends Controller
         if ($application->assessment === null) abort(403, 'Only taken-in applicants may take assessments.');
         if ((int)$test->vacancy_id !== (int)$application->vacancy_id || (int)$test->status !== 1) abort(403);
 
+        if ($test->skill_test_group_id) {
+            $test->loadMissing('skillTestGroup');
+            if (!$test->skillTestGroup || !$test->skillTestGroup->status || $test->skillTestGroup->archived_at) {
+                abort(403, 'This Skills Test group is not active.');
+            }
+        }
+
         if ($test->access_mode === 'selected_applicants') {
             $assigned = SkillTestAssignment::where('skill_test_id',$test->id)
                 ->where('application_id',$application->id)->exists();
@@ -60,7 +68,10 @@ class SkillTestAttemptController extends Controller
     {
         $this->authorizeAccess($request,$application,$skillTest);
 
-        if ($skillTest->archived_at || $skillTest->is_paused) {
+        $skillTest->loadMissing('skillTestGroup');
+        if ($skillTest->archived_at || $skillTest->is_paused
+            || $skillTest->skillTestGroup?->archived_at
+            || $skillTest->skillTestGroup?->is_paused) {
             return back()->with('status_assessment','New starts are temporarily unavailable for this skills test.');
         }
 
@@ -74,6 +85,41 @@ class SkillTestAttemptController extends Controller
             ->first();
         $extraMinutes = (int) optional($accommodation)->extra_minutes;
 
+        if ($skillTest->skill_test_group_id) {
+            $existingLock = SkillTestGroupAttemptLock::where('skill_test_group_id',$skillTest->skill_test_group_id)
+                ->where('application_id',$application->id)
+                ->first();
+
+            if ($existingLock && (int)$existingLock->skill_test_id !== (int)$skillTest->id) {
+                $lockedSet = SkillTest::find($existingLock->skill_test_id);
+
+                return back()->with(
+                    'status_assessment',
+                    'You already started another equivalent Skills Test set'
+                    .($lockedSet?->set_code ? ' (Set '.$lockedSet->set_code.')' : '.')
+                    .' You cannot start a second equivalent set.'
+                );
+            }
+
+            if (!$existingLock) {
+                try {
+                    SkillTestGroupAttemptLock::create([
+                        'skill_test_group_id'=>$skillTest->skill_test_group_id,
+                        'application_id'=>$application->id,
+                        'skill_test_id'=>$skillTest->id,
+                    ]);
+                } catch (\Illuminate\Database\QueryException $e) {
+                    $existingLock = SkillTestGroupAttemptLock::where('skill_test_group_id',$skillTest->skill_test_group_id)
+                        ->where('application_id',$application->id)
+                        ->first();
+
+                    if ($existingLock && (int)$existingLock->skill_test_id !== (int)$skillTest->id) {
+                        return back()->with('status_assessment','Another equivalent Skills Test set has already been locked to this application.');
+                    }
+                }
+            }
+        }
+
         try {
             $attempt = SkillTestAttempt::firstOrCreate(
                 ['skill_test_id'=>$skillTest->id,'application_id'=>$application->id],
@@ -83,6 +129,13 @@ class SkillTestAttemptController extends Controller
             $attempt = SkillTestAttempt::where('skill_test_id',$skillTest->id)
                 ->where('application_id',$application->id)
                 ->firstOrFail();
+        }
+
+        if ($skillTest->skill_test_group_id) {
+            SkillTestGroupAttemptLock::where('skill_test_group_id',$skillTest->skill_test_group_id)
+                ->where('application_id',$application->id)
+                ->where('skill_test_id',$skillTest->id)
+                ->update(['skill_test_attempt_id'=>$attempt->id]);
         }
 
         if ((int)$attempt->status === 3) {
