@@ -1,7 +1,7 @@
 @extends('layouts.guest')
 @section('title'){{ config('app.name') }} | Skills Test@overwrite
 @section('main')
-<section class="content bg-light min-vh-100"><div class="container py-3">
+<section class="content bg-light min-vh-100 {{ !empty($largeText) ? 'assessment-large-text' : '' }}"><div class="container py-3">
 <div class="sticky-top bg-white border rounded p-2 mb-3 d-flex justify-content-between align-items-center">
 <div><strong>{{ $attempt->skillTest->title }}</strong><div class="small text-muted">Skills Test</div></div>
 <span id="skillTimer" class="badge badge-info p-2">--:--</span>
@@ -39,7 +39,11 @@
 </div></section>
 @overwrite
 @section('css')
-<style>@media(max-width:576px){textarea.form-control{font-size:16px}.container{padding-left:12px;padding-right:12px}}</style>
+<style>
+.assessment-large-text{font-size:1.18rem}
+.assessment-large-text textarea.form-control{font-size:1.2rem}
+@media(max-width:576px){textarea.form-control{font-size:16px}.assessment-large-text textarea.form-control{font-size:19px}.container{padding-left:12px;padding-right:12px}}
+</style>
 @overwrite
 @section('js')
 <script>
