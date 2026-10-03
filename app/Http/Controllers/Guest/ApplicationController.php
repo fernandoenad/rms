@@ -114,7 +114,7 @@ class ApplicationController extends Controller
                 return $set->status == 1 && $set->start_date && now()->lt($set->start_date);
             });
 
-            $selectedSet = $openSet ?: $upcomingSet ?: $sets->first();
+            $selectedSet = $openSet ?: $upcomingSet;
 
             if ($selectedSet) {
                 $visibleExams->push($selectedSet);
