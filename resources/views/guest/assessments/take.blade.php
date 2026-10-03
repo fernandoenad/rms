@@ -237,6 +237,36 @@
         }
     }
 
+    function retryPendingAnswers() {
+        if (finishing || !navigator.onLine) return;
+
+        const pending = loadPendingAnswers();
+        let delay = 0;
+
+        Object.entries(pending).forEach(([itemId, optionId]) => {
+            const radio = document.querySelector(
+                '.answer-radio[data-item="' + itemId + '"][value="' + optionId + '"]'
+            );
+
+            if (!radio) {
+                clearPendingAnswer(itemId, optionId);
+                return;
+            }
+
+            radio.checked = true;
+
+            // Stagger retries slightly so a reconnect with many unsaved answers
+            // does not create a sudden request burst.
+            setTimeout(() => {
+                if (!finishing && navigator.onLine) {
+                    queueAnswerSave(radio);
+                }
+            }, delay);
+
+            delay += 120;
+        });
+    }
+
     function showItem(index) {
         if (!items.length) return;
         currentIndex = Math.max(0, Math.min(index, items.length - 1));
@@ -529,18 +559,7 @@
             radio.addEventListener('change', () => queueAnswerSave(radio));
         });
 
-        const pending = loadPendingAnswers();
-        Object.entries(pending).forEach(([itemId, optionId]) => {
-            const radio = document.querySelector(
-                '.answer-radio[data-item="' + itemId + '"][value="' + optionId + '"]'
-            );
-            if (radio) {
-                radio.checked = true;
-                queueAnswerSave(radio);
-            } else {
-                clearPendingAnswer(itemId, optionId);
-            }
-        });
+        retryPendingAnswers();
 
         document.addEventListener('visibilitychange', () => {
             logEvent(document.hidden ? 'tab_hidden' : 'tab_visible');
@@ -552,8 +571,9 @@
         });
 
         window.addEventListener('online', () => {
-            setSaveState('Connection restored.', 'text-success');
+            setSaveState('Connection restored. Retrying unsaved answers…', 'text-success');
             logEvent('connection_restored');
+            retryPendingAnswers();
         });
 
         if (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]?.type === 'reload') {
