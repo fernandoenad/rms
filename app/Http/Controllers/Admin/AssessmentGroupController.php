@@ -26,6 +26,11 @@ class AssessmentGroupController extends Controller
         $this->middleware('auth');
     }
 
+    protected function currentUserIsAdmin(): bool
+    {
+        return (int) optional(optional(auth()->user())->role)->level === 1;
+    }
+
     public function index()
     {
         $groups = AssessmentGroup::with('vacancy:id,position_title')
@@ -140,6 +145,13 @@ class AssessmentGroupController extends Controller
             $setCode = $governance->nextSetCode($group->fresh());
             $exam = Exam::create([
                 'vacancy_id' => $group->vacancy_id,
+                'created_by' => auth()->id(),
+                'approval_status' => $this->currentUserIsAdmin() ? 'approved' : 'pending',
+                'approved_by' => $this->currentUserIsAdmin() ? auth()->id() : null,
+                'approved_at' => $this->currentUserIsAdmin() ? now() : null,
+                'approval_notes' => $this->currentUserIsAdmin()
+                    ? 'Auto-approved because the creator is an administrator.'
+                    : null,
                 'assessment_group_id' => $group->id,
                 'title' => $group->title . ' - Set ' . $setCode,
                 'code' => ($group->code ?: 'WG-'.$group->id) . '-' . $setCode,
@@ -341,6 +353,13 @@ class AssessmentGroupController extends Controller
             $exam->shuffle_options = true;
         }
 
+        $exam->created_by = auth()->id();
+        $exam->approval_status = $this->currentUserIsAdmin() ? 'approved' : 'pending';
+        $exam->approved_by = $this->currentUserIsAdmin() ? auth()->id() : null;
+        $exam->approved_at = $this->currentUserIsAdmin() ? now() : null;
+        $exam->approval_notes = $this->currentUserIsAdmin()
+            ? 'Auto-approved because the creator is an administrator.'
+            : null;
         $exam->assessment_group_id = $assessmentGroup->id;
         $exam->set_code = $setCode;
         $exam->title = $assessmentGroup->title . ' - Set ' . $setCode;
