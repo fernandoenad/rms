@@ -7,6 +7,7 @@ use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\ExamAssignment;
 use App\Models\Application;
+use App\Models\AssessmentGroup;
 use App\Models\Vacancy;
 use App\Models\WrittenExam;
 use App\Models\WrittenExamOption;
@@ -33,13 +34,23 @@ class WrittenExamController extends Controller
         return view('admin.assessments.index', compact('exams'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $vacancies = Vacancy::orderByDesc('cycle')
             ->orderBy('position_title')
             ->get(['id', 'position_title', 'cycle']);
 
-        return view('admin.assessments.create', compact('vacancies'));
+        $groups = AssessmentGroup::with('vacancy:id,position_title')
+            ->where('status', 1)
+            ->orderBy('title')
+            ->get();
+
+        $selectedGroup = null;
+        if ($request->filled('assessment_group_id')) {
+            $selectedGroup = $groups->firstWhere('id', (int) $request->assessment_group_id);
+        }
+
+        return view('admin.assessments.create', compact('vacancies', 'groups', 'selectedGroup'));
     }
 
     public function edit(Exam $exam)
@@ -48,13 +59,21 @@ class WrittenExamController extends Controller
             ->orderBy('position_title')
             ->get(['id', 'position_title', 'cycle']);
 
-        return view('admin.assessments.edit', compact('exam', 'vacancies'));
+        $groups = AssessmentGroup::with('vacancy:id,position_title')
+            ->where('status', 1)
+            ->orWhere('id', $exam->assessment_group_id)
+            ->orderBy('title')
+            ->get();
+
+        return view('admin.assessments.edit', compact('exam', 'vacancies', 'groups'));
     }
 
     protected function validated(Request $request): array
     {
         return $request->validate([
             'vacancy_id' => 'required|exists:vacancies,id',
+            'assessment_group_id' => 'nullable|exists:assessment_groups,id',
+            'set_code' => 'nullable|string|max:50',
             'title' => 'required|string|max:255',
             'code' => 'nullable|string|max:100',
             'start_date' => 'required|date',
@@ -67,9 +86,45 @@ class WrittenExamController extends Controller
         ]);
     }
 
+    protected function validateGroupSelection(Request $request, array $data, ?Exam $exam = null): array
+    {
+        if (empty($data['assessment_group_id'])) {
+            $data['assessment_group_id'] = null;
+            $data['set_code'] = null;
+            return $data;
+        }
+
+        $group = AssessmentGroup::findOrFail($data['assessment_group_id']);
+
+        if ((int) $group->vacancy_id !== (int) $data['vacancy_id']) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'assessment_group_id' => 'The assessment group must belong to the selected position.',
+            ]);
+        }
+
+        if (blank($data['set_code'])) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'set_code' => 'A set code is required for exams inside an assessment group.',
+            ]);
+        }
+
+        $duplicate = Exam::where('assessment_group_id', $group->id)
+            ->where('set_code', $data['set_code'])
+            ->when($exam, fn ($q) => $q->whereKeyNot($exam->id))
+            ->exists();
+
+        if ($duplicate) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'set_code' => 'This set code is already used in the selected assessment group.',
+            ]);
+        }
+
+        return $data;
+    }
+
     public function store(Request $request)
     {
-        $data = $this->validated($request);
+        $data = $this->validateGroupSelection($request, $this->validated($request));
         $data['enrollment_key'] = strtoupper(Str::random(8));
         $data['code'] = $data['code'] ?: 'WE-' . now()->format('Ymd-His');
 
@@ -85,7 +140,8 @@ class WrittenExamController extends Controller
             return back()->with('status', 'Exam settings are locked after an attempt has started. Create/duplicate a new set instead.');
         }
 
-        $exam->update($this->validated($request));
+        $data = $this->validateGroupSelection($request, $this->validated($request), $exam);
+        $exam->update($data);
 
         return redirect()->route('admin.assessments.index')
             ->with('status', 'Written exam was successfully updated.');
@@ -100,6 +156,7 @@ class WrittenExamController extends Controller
             $copy->title = $exam->title . ' - Copy';
             $copy->code = ($exam->code ?: 'WE-' . $exam->id) . '-COPY-' . now()->format('His');
             $copy->enrollment_key = strtoupper(Str::random(8));
+            $copy->set_code = null;
             $copy->status = 0;
             $copy->start_date = null;
             $copy->end_date = null;
@@ -265,14 +322,38 @@ class WrittenExamController extends Controller
             ->whereHas('assessment')
             ->get(['id','application_code']);
 
+        $assigned = 0;
+        $conflicts = 0;
+
         foreach ($applications as $application) {
+            if ($exam->assessment_group_id) {
+                $siblingExamIds = Exam::where('assessment_group_id', $exam->assessment_group_id)
+                    ->whereKeyNot($exam->id)
+                    ->pluck('id');
+
+                $alreadyAssignedElsewhere = ExamAssignment::where('application_id', $application->id)
+                    ->whereIn('exam_id', $siblingExamIds)
+                    ->exists();
+
+                if ($alreadyAssignedElsewhere) {
+                    $conflicts++;
+                    continue;
+                }
+            }
+
             ExamAssignment::firstOrCreate([
                 'exam_id' => $exam->id,
                 'application_id' => $application->id,
             ]);
+            $assigned++;
         }
 
-        return back()->with('status', $applications->count().' taken-in applicant(s) assigned.');
+        $message = "{$assigned} taken-in applicant(s) assigned.";
+        if ($conflicts) {
+            $message .= " {$conflicts} skipped because they are already assigned to another set in this assessment group.";
+        }
+
+        return back()->with('status', $message);
     }
 
     public function destroy(Exam $exam)
