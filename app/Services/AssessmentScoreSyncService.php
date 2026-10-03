@@ -7,6 +7,7 @@ use App\Models\Assessment;
 use App\Models\AssessmentGroup;
 use App\Models\ExamAttempt;
 use App\Models\SkillTest;
+use App\Models\SkillTestGroup;
 use App\Models\SkillTestAttempt;
 use App\Models\Template;
 use App\Models\Vacancy;
@@ -117,8 +118,46 @@ class AssessmentScoreSyncService
         );
     }
 
+    public function syncSkillGroup(SkillTestGroup $group): array
+    {
+        if (!$group->assessment_score_key || !$group->scoresAreReleased()) {
+            return ['synced'=>0,'skipped'=>0];
+        }
+
+        $setIds = $group->skillTests()->pluck('id');
+        $synced = 0;
+        $skipped = 0;
+
+        SkillTestAttempt::query()
+            ->whereIn('skill_test_id',$setIds)
+            ->where('status',2)
+            ->whereNotNull('final_score')
+            ->orderBy('id')
+            ->chunkById(250, function ($attempts) use ($group,&$synced,&$skipped) {
+                foreach ($attempts as $attempt) {
+                    $ok = $this->syncApplicationCriterion(
+                        (int)$attempt->application_id,
+                        (int)$group->vacancy_id,
+                        (string)$group->assessment_score_key,
+                        (float)$attempt->final_score
+                    );
+                    $ok ? $synced++ : $skipped++;
+                }
+            });
+
+        $group->forceFill(['scores_synced_at'=>$skipped === 0 ? now() : null])->save();
+
+        return compact('synced','skipped');
+    }
+
     public function syncSkillTest(SkillTest $test): array
     {
+        $test->loadMissing('skillTestGroup');
+
+        if ($test->skillTestGroup) {
+            return $this->syncSkillGroup($test->skillTestGroup);
+        }
+
         if (!$test->assessment_score_key || !$test->scoresAreReleased()) {
             return ['synced'=>0, 'skipped'=>0];
         }
@@ -155,17 +194,23 @@ class AssessmentScoreSyncService
             return false;
         }
 
-        $attempt->loadMissing('skillTest');
+        $attempt->loadMissing('skillTest.skillTestGroup');
         $test = $attempt->skillTest;
+        if (!$test || !$test->scoresAreReleased()) {
+            return false;
+        }
 
-        if (!$test || !$test->assessment_score_key || !$test->scoresAreReleased()) {
+        $criterion = $test->skillTestGroup?->assessment_score_key ?: $test->assessment_score_key;
+        $vacancyId = $test->skillTestGroup?->vacancy_id ?: $test->vacancy_id;
+
+        if (!$criterion) {
             return false;
         }
 
         return $this->syncApplicationCriterion(
             (int) $attempt->application_id,
-            (int) $test->vacancy_id,
-            (string) $test->assessment_score_key,
+            (int) $vacancyId,
+            (string) $criterion,
             (float) $attempt->final_score
         );
     }
