@@ -22,9 +22,11 @@
 <div class="form-group col-md-2"><label>No. of sets</label><input type="number" min="1" max="26" name="expected_sets" value="{{ old('expected_sets',3) }}" class="form-control" required></div>
 </div>
 <div class="form-row">
-<div class="form-group col-md-4"><label>Opens</label><input type="datetime-local" name="start_date" value="{{ old('start_date') }}" class="form-control" required></div>
-<div class="form-group col-md-4"><label>Closes</label><input type="datetime-local" name="end_date" value="{{ old('end_date') }}" class="form-control" required></div>
-<div class="form-group col-md-4"><label>Duration</label><input type="number" min="1" max="480" name="duration" value="{{ old('duration',60) }}" class="form-control" required></div>
+<div class="form-group col-md-4">
+<label>Default duration (minutes)</label>
+<input type="number" min="1" max="480" name="duration" value="{{ old('duration',60) }}" class="form-control" required>
+<small class="text-muted">Applied to new draft sets. Each set gets its own opening and closing schedule later.</small>
+</div>
 </div>
 <div class="form-row">
 <div class="form-group col-md-4"><label>Access</label><select name="access_mode" class="form-control"><option value="all_taken_in">All taken-in</option><option value="selected_applicants">Selected applicants</option></select></div>
@@ -42,7 +44,7 @@
 <select name="assessment_score_key" id="skillGroupScoreKey" class="form-control"><option value="">Do not sync to applicant scores</option></select>
 </div>
 <div class="alert alert-light border small mb-0">
-All sets share the schedule, access, submission rules, score-release policy, and applicant-score mapping. Each set has its own task and rubric and must pass review/readiness independently.
+The group controls shared governance such as access, submission rules, score release, and applicant-score mapping. Each set has its own opening/closing schedule, task, and rubric, and must pass review/readiness independently.
 </div>
 </div>
 <div class="card-footer"><button class="btn btn-primary">Create Group & Draft Sets</button></div>
