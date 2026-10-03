@@ -60,6 +60,22 @@ class RouteServiceProvider extends ServiceProvider
             Limit::perMinute(60)->by($assessmentKey($request))
         );
 
+        RateLimiter::for('skill-start', fn (Request $request) =>
+            Limit::perMinute(30)->by($assessmentKey($request))
+        );
+        RateLimiter::for('skill-take', fn (Request $request) =>
+            Limit::perMinute(120)->by($assessmentKey($request))
+        );
+        RateLimiter::for('skill-save', fn (Request $request) =>
+            Limit::perMinute(90)->by($assessmentKey($request))
+        );
+        RateLimiter::for('skill-upload', fn (Request $request) =>
+            Limit::perMinute(20)->by($assessmentKey($request))
+        );
+        RateLimiter::for('skill-submit', fn (Request $request) =>
+            Limit::perMinute(20)->by($assessmentKey($request))
+        );
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')
