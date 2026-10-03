@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AssessmentAuditLog;
 use App\Models\AssessmentGroup;
 use App\Models\Exam;
+use App\Models\SkillTest;
 use Illuminate\Support\Collection;
 
 class AssessmentGovernanceService
@@ -15,6 +16,8 @@ class AssessmentGovernanceService
             'assessment_group_id' => $context['assessment_group_id'] ?? null,
             'exam_id' => $context['exam_id'] ?? null,
             'written_exam_id' => $context['written_exam_id'] ?? null,
+            'skill_test_id' => $context['skill_test_id'] ?? null,
+            'skill_test_rubric_criterion_id' => $context['skill_test_rubric_criterion_id'] ?? null,
             'user_id' => auth()->id(),
             'action' => $action,
             'metadata' => $metadata ?: null,
@@ -133,6 +136,67 @@ class AssessmentGovernanceService
                 $issues[] = "{$label} distribution mismatch for {$key}: expected about {$expected}, found {$actual}.";
             }
         }
+    }
+
+    public function skillReadiness(SkillTest $test): array
+    {
+        $test->loadMissing(['rubricCriteria']);
+
+        $issues = [];
+        $rubric = $test->rubricCriteria;
+
+        if (!$test->start_date || !$test->end_date) {
+            $issues[] = 'Schedule is incomplete.';
+        } elseif ($test->end_date->lte($test->start_date)) {
+            $issues[] = 'End date must be after the start date.';
+        }
+
+        if (!$test->duration || (int) $test->duration < 1) {
+            $issues[] = 'Duration must be at least one minute.';
+        }
+
+        if (blank($test->instructions)) {
+            $issues[] = 'Task instructions are required.';
+        }
+
+        if (!is_array($test->submission_modes) || empty($test->submission_modes)) {
+            $issues[] = 'At least one submission mode is required.';
+        }
+
+        if (in_array('file', $test->submission_modes ?: [], true)
+            && empty($test->allowed_extensions)) {
+            $issues[] = 'File submission is enabled but no allowed extensions are configured.';
+        }
+
+        if ($test->review_status !== 'approved') {
+            $issues[] = 'The skills task has not been approved.';
+        }
+
+        if ($rubric->isEmpty()) {
+            $issues[] = 'No rubric criteria are defined.';
+        } else {
+            $total = (float) $rubric->sum('max_points');
+            if (abs($total - 100) > 0.01) {
+                $issues[] = 'Rubric must total exactly 100 points.';
+            }
+
+            foreach ($rubric as $criterion) {
+                if ($criterion->review_status !== 'approved') {
+                    $issues[] = "Rubric criterion {$criterion->id} has not been approved.";
+                }
+            }
+        }
+
+        if ($test->access_mode === 'selected_applicants'
+            && !$test->assignments()->exists()) {
+            $issues[] = 'Selected-applicant mode is enabled but no applicants are assigned.';
+        }
+
+        return [
+            'ready' => empty($issues),
+            'issues' => array_values(array_unique($issues)),
+            'rubric_total' => (float) $rubric->sum('max_points'),
+        ];
     }
 
     public function nextSetCode(AssessmentGroup $group): string
