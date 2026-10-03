@@ -46,6 +46,7 @@ class SkillTestController extends Controller
     {
         $tests = SkillTest::with([
                 'vacancy:id,position_title',
+                'skillTestGroup:id,title',
                 'rubricCriteria',
                 'assignments:id,skill_test_id',
             ])
