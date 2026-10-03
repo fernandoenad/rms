@@ -24,6 +24,16 @@
             </select>
         </div>
 
+        <div class="form-group">
+            <label>Applicant score criterion</label>
+            <select name="assessment_score_key" id="skillScoreKey" class="form-control">
+                <option value="">Do not write this test into applicant scores</option>
+            </select>
+            <small class="text-muted">
+                When the final Skills Test score becomes official, RMS scales the 100-point rubric result to this recruitment-template criterion and updates the applicant's score automatically.
+            </small>
+        </div>
+
         <div class="card card-outline card-info">
             <div class="card-header d-flex align-items-center">
                 <strong><i class="fas fa-magic mr-1"></i> AI Task Generator</strong>
@@ -214,6 +224,9 @@
     const generateButton = document.getElementById('generateAiTask');
     const status = document.getElementById('aiGeneratorStatus');
     const vacancy = document.getElementById('vacancyId');
+    const scoreKey = document.getElementById('skillScoreKey');
+    const scoreCriteria = @json($scoreCriteriaByVacancy);
+    const oldScoreKey = @json(old('assessment_score_key'));
     const duration = document.getElementById('skillDuration');
     const title = document.getElementById('skillTitle');
     const instructions = document.getElementById('skillInstructions');
@@ -270,6 +283,23 @@
         status.textContent = 'AI source settings changed. Generate again to attach a matching rubric.';
         status.className = 'small ml-2 text-warning';
     }
+
+    function refreshScoreCriteria() {
+        const rows = scoreCriteria[String(vacancy.value)] || scoreCriteria[Number(vacancy.value)] || {};
+        const selected = scoreKey.value || oldScoreKey || '';
+        scoreKey.innerHTML = '<option value="">Do not write this test into applicant scores</option>';
+
+        Object.entries(rows).forEach(([key,max]) => {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = key + ' (' + Number(max).toLocaleString() + ' pts)';
+            option.selected = key === selected;
+            scoreKey.appendChild(option);
+        });
+    }
+
+    vacancy.addEventListener('change', refreshScoreCriteria);
+    refreshScoreCriteria();
 
     [vacancy, duration, focus, additionalContext, useQualifications, useJobDescription]
         .forEach(element => element.addEventListener('change', invalidateGeneratedDraft));
