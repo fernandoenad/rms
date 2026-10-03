@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\AssessmentCenterController as AdminAssessmentCent
 use App\Http\Controllers\Admin\AssessmentContentBankController as AdminAssessmentContentBank;
 use App\Http\Controllers\Admin\AssessmentPermissionController as AdminAssessmentPermission;
 use App\Http\Controllers\Admin\AssessmentSnapshotController as AdminAssessmentSnapshot;
+use App\Http\Controllers\Admin\SystemHealthController as AdminSystemHealth;
 use App\Http\Controllers\Guest\SkillTestAttemptController as GuestSkillTestAttempt;
 
 
@@ -294,6 +295,11 @@ Route::group(['middleware' => ['active']], function () {
 Route::group(['middleware' => ['admin']], function () {
     Route::delete('/admin/applications/{application}', [AdminApplication::class, 'destroy'])->name('admin.applications.destroy');
     Route::delete('/admin/vacancies/{vacancy}', [AdminVacancy::class, 'destroy'])->name('admin.vacancies.destroy');
+
+    Route::get('/admin/system-health', [AdminSystemHealth::class, 'index'])->name('admin.system_health.index');
+    Route::get('/admin/system-health/status', [AdminSystemHealth::class, 'status'])->name('admin.system_health.status');
+    Route::post('/admin/system-health/failed-jobs/{uuid}/retry', [AdminSystemHealth::class, 'retryFailedJob'])->name('admin.system_health.failed_jobs.retry');
+    Route::delete('/admin/system-health/failed-jobs/{uuid}', [AdminSystemHealth::class, 'forgetFailedJob'])->name('admin.system_health.failed_jobs.forget');
 
     Route::get('/admin/users', [AdminUser::class, 'index'])->name('admin.users.index');
     Route::get('/admin/users/create', [AdminUser::class, 'create'])->name('admin.users.create');
