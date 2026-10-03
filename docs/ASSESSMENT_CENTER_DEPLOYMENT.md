@@ -83,3 +83,19 @@ The combined group results page treats the completed attempt percentage from the
 Applicants no longer enter an enrollment key. Written-test access is controlled by applicant eligibility, set assignment when applicable, assessment-group locking, exam publication status, and the configured start/end schedule.
 
 The legacy enrollment_key database columns are intentionally retained for backward compatibility with older records and schema constraints, but the value is no longer shown to applicants or administrators and is not used to authorize applicant starts.
+
+
+## High-volume answer autosave
+
+Written responses still save immediately after an applicant selects an option.
+
+The autosave path is intentionally optimized for high concurrent use:
+- applicant/exam/assignment/group authorization is checked through one lightweight query;
+- item and option membership are validated in one joined query;
+- the answer is persisted with the existing unique (exam_attempt_id, written_exam_id) upsert;
+- per-answer audit-event rows are not written because the answer record and updated_at timestamp are already the authoritative persistence record;
+- the browser serializes changes per question and coalesces rapid A/B/C/D changes so the newest selection is persisted last;
+- final submission is disabled while a response save is still in flight;
+- the attempt row is locked only for that applicant during the save, preventing a race between answer persistence and final submission without creating a cross-applicant lock.
+
+Operational audit events such as attempt start, page load/refresh, tab visibility changes, connection changes, timeout, and manual submission remain available.
