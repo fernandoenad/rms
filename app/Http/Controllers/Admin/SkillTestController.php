@@ -11,6 +11,7 @@ use App\Models\AssessmentScoreChange;
 use App\Models\AssessmentTimeExtension;
 use App\Models\SkillTest;
 use App\Models\SkillTestGroup;
+use App\Models\SkillTestGroupAttemptLock;
 use App\Models\SkillTestAssignment;
 use App\Models\SkillTestAttempt;
 use App\Models\SkillTestHumanScore;
@@ -1451,6 +1452,16 @@ class SkillTestController extends Controller
                 ], [
                     'authorized_application_id'=>$locked->application_id,
                 ]);
+            }
+
+            if ($skillTest->skill_test_group_id
+                && (int)$skillTest->skill_test_group_id === (int)$retakeLocked->skill_test_group_id) {
+                SkillTestGroupAttemptLock::where('skill_test_group_id',$skillTest->skill_test_group_id)
+                    ->where('application_id',$locked->application_id)
+                    ->update([
+                        'skill_test_id'=>$retakeLocked->id,
+                        'skill_test_attempt_id'=>null,
+                    ]);
             }
 
             $locked->update([
