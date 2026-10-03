@@ -210,6 +210,9 @@ class SkillTestController extends Controller
             $copy->reviewed_at = null;
             $copy->review_notes = null;
             $copy->scores_released_at = null;
+            // Draft revisions default to selected-applicant access so they cannot
+            // accidentally appear to every taken-in applicant before review.
+            $copy->access_mode = 'selected_applicants';
             $copy->status = 0;
             $copy->start_date = now()->addDay();
             $copy->end_date = now()->addDay()->addHours(2);
@@ -513,6 +516,7 @@ class SkillTestController extends Controller
 
         $retakeTests = SkillTest::where('vacancy_id', $skillTest->vacancy_id)
             ->where('status',1)
+            ->where('end_date','>',now())
             ->whereKeyNot($skillTest->id)
             ->orderBy('start_date')
             ->get(['id','title','code','start_date','end_date']);
