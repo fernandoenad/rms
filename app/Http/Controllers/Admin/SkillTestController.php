@@ -29,7 +29,11 @@ class SkillTestController extends Controller
 
     public function index(AssessmentGovernanceService $governance)
     {
-        $tests = SkillTest::with('vacancy:id,position_title')
+        $tests = SkillTest::with([
+                'vacancy:id,position_title',
+                'rubricCriteria',
+                'assignments:id,skill_test_id',
+            ])
             ->withCount('attempts')
             ->orderByDesc('id')
             ->get();
