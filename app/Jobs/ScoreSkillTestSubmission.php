@@ -82,9 +82,14 @@ class ScoreSkillTestSubmission implements ShouldQueue
             }
 
             if (trim($text) === '') {
-                throw new \RuntimeException(
-                    'No machine-readable response was available for AI scoring. Human rubric evaluation remains available.'
-                );
+                $evaluation->update([
+                    'status' => 'skipped',
+                    'flags' => array_values(array_unique($flags)),
+                    'error_message' => 'No machine-readable response was available for AI scoring. Human rubric evaluation remains available.',
+                    'completed_at' => now(),
+                ]);
+
+                return;
             }
 
             $result = $ai->scoreSkillsSubmission($attempt->skillTest, $text);
