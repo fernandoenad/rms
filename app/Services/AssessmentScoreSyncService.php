@@ -33,6 +33,20 @@ class AssessmentScoreSyncService
             ->all();
     }
 
+    public function criterionExistsForVacancy(int $vacancyId, ?string $key): bool
+    {
+        if (!$key) {
+            return true;
+        }
+
+        $vacancy = Vacancy::find($vacancyId);
+        if (!$vacancy) {
+            return false;
+        }
+
+        return array_key_exists($key, $this->criteriaForVacancy($vacancy));
+    }
+
     public function syncWrittenGroup(AssessmentGroup $group): array
     {
         if (!$group->assessment_score_key || !$group->scoresAreReleased()) {
