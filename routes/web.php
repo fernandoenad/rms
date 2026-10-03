@@ -202,6 +202,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::put('/admin/assessment-groups/{assessmentGroup}/incidents/{incident}/resolve', [AdminAssessmentGroup::class, 'resolveIncident'])->name('admin.assessment_groups.incidents.resolve');
     Route::post('/admin/assessment-groups/{assessmentGroup}/attempts/{attempt}/void-retake', [AdminAssessmentGroup::class, 'voidAndRetake'])->name('admin.assessment_groups.attempts.void_retake');
     Route::put('/admin/assessment-groups/{assessmentGroup}', [AdminAssessmentGroup::class, 'update'])->middleware('assessment.capability:author')->name('admin.assessment_groups.update');
+    Route::delete('/admin/assessment-groups/{assessmentGroup}', [AdminAssessmentGroup::class, 'destroy'])->name('admin.assessment_groups.destroy');
 
     Route::get('/admin/assessment', [AdminWrittenExam::class, 'index'])->name('admin.assessments.index');
     Route::get('/admin/assessment/create', [AdminWrittenExam::class, 'create'])->name('admin.assessments.create');
@@ -240,6 +241,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::post('/admin/skill-groups', [AdminSkillTestGroup::class, 'store'])->middleware('assessment.capability:author')->name('admin.skill_groups.store');
     Route::get('/admin/skill-groups/{skillTestGroup}/edit', [AdminSkillTestGroup::class, 'edit'])->name('admin.skill_groups.edit');
     Route::put('/admin/skill-groups/{skillTestGroup}', [AdminSkillTestGroup::class, 'update'])->middleware('assessment.capability:author')->name('admin.skill_groups.update');
+    Route::delete('/admin/skill-groups/{skillTestGroup}', [AdminSkillTestGroup::class, 'destroy'])->name('admin.skill_groups.destroy');
     Route::post('/admin/skill-groups/{skillTestGroup}/equivalent-set', [AdminSkillTestGroup::class, 'addEquivalentSet'])->middleware('assessment.capability:author')->name('admin.skill_groups.equivalent_set');
     Route::post('/admin/skill-groups/{skillTestGroup}/generate-all-sets', [AdminSkillTestGroup::class, 'generateAllSets'])->middleware('assessment.capability:author')->name('admin.skill_groups.generate_all_sets');
     Route::post('/admin/skill-groups/{skillTestGroup}/release-scores', [AdminSkillTestGroup::class, 'releaseScores'])->middleware('assessment.capability:release')->name('admin.skill_groups.release_scores');
@@ -255,6 +257,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/skills/{skillTest}/edit', [AdminSkillTest::class, 'edit'])->name('admin.skills.edit');
     Route::get('/admin/skills/{skillTest}/preview', [AdminSkillTest::class, 'preview'])->name('admin.skills.preview');
     Route::put('/admin/skills/{skillTest}', [AdminSkillTest::class, 'update'])->middleware('assessment.capability:author')->name('admin.skills.update');
+    Route::delete('/admin/skills/{skillTest}', [AdminSkillTest::class, 'destroy'])->name('admin.skills.destroy');
     Route::post('/admin/skills/{skillTest}/revision', [AdminSkillTest::class, 'createRevision'])->name('admin.skills.revision');
     Route::post('/admin/skills/{skillTest}/ai-generate', [AdminSkillTest::class, 'generateAi'])->middleware('assessment.capability:author')->name('admin.skills.ai_generate');
     Route::put('/admin/skills/{skillTest}/review-task', [AdminSkillTest::class, 'reviewTask'])->middleware('assessment.capability:reviewer')->name('admin.skills.review_task');
