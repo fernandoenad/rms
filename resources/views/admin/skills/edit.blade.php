@@ -7,6 +7,7 @@
         <small class="text-muted">Task v{{ $skillTest->task_version }} · {{ optional($skillTest->vacancy)->position_title }}</small>
     </div>
     <div class="mt-2 mt-md-0">
+        <a href="{{ route('admin.skills.preview',$skillTest) }}" class="btn btn-outline-primary mr-2"><i class="fas fa-eye"></i> Preview & Dry Run</a>
         <a href="{{ route('admin.skills.results',$skillTest) }}" class="btn btn-outline-info mr-2"><i class="fas fa-chart-bar"></i> Live Results</a>
         <a href="{{ route('admin.skills.export',$skillTest) }}" class="btn btn-outline-success"><i class="fas fa-file-csv"></i> Export CSV</a>
     </div>
