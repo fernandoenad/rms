@@ -186,8 +186,10 @@
 (() => {
     const attemptId = {{ $attempt->id }};
     const storageKey = 'rms_exam_' + attemptId + '_question';
+    const pendingStorageKey = 'rms_exam_' + attemptId + '_pending_answers';
     const answerUrl = @json(route('guest.assessments.attempts.answer', $attempt));
     const submitUrl = @json(route('guest.assessments.attempts.submit', $attempt));
+    const reviewUrl = @json(route('guest.assessments.attempts.review', $attempt));
     const eventUrl = @json(route('guest.assessments.attempts.event', $attempt));
     const csrf = @json(csrf_token());
 
@@ -214,6 +216,25 @@
 
     function updateSubmitAvailability() {
         submitReviewBtn.disabled = activeSaves > 0;
+    }
+
+    function loadPendingAnswers() {
+        try { return JSON.parse(localStorage.getItem(pendingStorageKey) || '{}') || {}; }
+        catch (_) { return {}; }
+    }
+
+    function savePendingAnswer(itemId, optionId) {
+        const pending = loadPendingAnswers();
+        pending[String(itemId)] = String(optionId);
+        localStorage.setItem(pendingStorageKey, JSON.stringify(pending));
+    }
+
+    function clearPendingAnswer(itemId, optionId) {
+        const pending = loadPendingAnswers();
+        if (String(pending[String(itemId)] || '') === String(optionId)) {
+            delete pending[String(itemId)];
+            localStorage.setItem(pendingStorageKey, JSON.stringify(pending));
+        }
     }
 
     function showItem(index) {
@@ -301,6 +322,8 @@
             saveQueues.set(itemId, state);
         }
 
+        savePendingAnswer(itemId, optionId);
+
         state.sequence++;
         state.pending = {
             itemId,
@@ -362,6 +385,7 @@
                             current.navBtn.classList.remove('btn-outline-secondary');
                             current.navBtn.classList.add('btn-success');
                         }
+                        clearPendingAnswer(current.itemId, current.optionId);
                         setSaveState('✓ Saved', 'text-success font-weight-bold');
                     }
                 } catch (_) {
@@ -389,30 +413,50 @@
         }
     }
 
-    function buildSubmissionReview() {
-        const answered = [];
-        const unanswered = [];
+    async function buildSubmissionReview() {
+        continueFinalConfirmBtn.disabled = true;
+        document.getElementById('answeredCount').textContent = '…';
+        document.getElementById('unansweredCount').textContent = '…';
 
-        items.forEach((item, index) => {
-            const checked = item.querySelector('.answer-radio:checked');
-            (checked ? answered : unanswered).push(index + 1);
-        });
+        try {
+            const response = await fetch(reviewUrl, {
+                headers:{'Accept':'application/json'}
+            });
 
-        document.getElementById('answeredCount').textContent = answered.length;
-        document.getElementById('unansweredCount').textContent = unanswered.length;
+            if (response.status === 409) {
+                await finalizeAtTimeout();
+                return;
+            }
+            if (!response.ok) throw new Error('review failed');
 
-        const answeredItems = document.getElementById('answeredItems');
-        const unansweredItems = document.getElementById('unansweredItems');
+            const data = await response.json();
+            const savedIds = new Set((data.answered_item_ids || []).map(String));
+            const answered = [];
+            const unanswered = [];
 
-        answeredItems.innerHTML = answered.length
-            ? answered.map(n => '<span class="badge badge-success p-2 m-1">Q' + n + '</span>').join('')
-            : '<span class="text-muted small">None</span>';
+            items.forEach((item, index) => {
+                const itemId = String(item.querySelector('.answer-radio')?.dataset.item || '');
+                (savedIds.has(itemId) ? answered : unanswered).push(index + 1);
+            });
 
-        unansweredItems.innerHTML = unanswered.length
-            ? unanswered.map(n => '<span class="badge badge-danger p-2 m-1">Q' + n + '</span>').join('')
-            : '<span class="text-success small">All items are answered.</span>';
+            document.getElementById('answeredCount').textContent = data.answered;
+            document.getElementById('unansweredCount').textContent = data.unanswered;
 
-        document.getElementById('unansweredWarning').style.display = unanswered.length ? 'block' : 'none';
+            document.getElementById('answeredItems').innerHTML = answered.length
+                ? answered.map(n => '<span class="badge badge-success p-2 m-1">Q' + n + '</span>').join('')
+                : '<span class="text-muted small">None</span>';
+
+            document.getElementById('unansweredItems').innerHTML = unanswered.length
+                ? unanswered.map(n => '<span class="badge badge-danger p-2 m-1">Q' + n + '</span>').join('')
+                : '<span class="text-success small">All items are saved.</span>';
+
+            document.getElementById('unansweredWarning').style.display = unanswered.length ? 'block' : 'none';
+            continueFinalConfirmBtn.disabled = activeSaves > 0;
+        } catch (_) {
+            document.getElementById('answeredItems').innerHTML =
+                '<span class="text-danger small">Could not verify saved responses with the server. Return to the exam and try again.</span>';
+            continueFinalConfirmBtn.disabled = true;
+        }
     }
 
     async function submitManually() {
@@ -483,6 +527,19 @@
 
         document.querySelectorAll('.answer-radio').forEach(radio => {
             radio.addEventListener('change', () => queueAnswerSave(radio));
+        });
+
+        const pending = loadPendingAnswers();
+        Object.entries(pending).forEach(([itemId, optionId]) => {
+            const radio = document.querySelector(
+                '.answer-radio[data-item="' + itemId + '"][value="' + optionId + '"]'
+            );
+            if (radio) {
+                radio.checked = true;
+                queueAnswerSave(radio);
+            } else {
+                clearPendingAnswer(itemId, optionId);
+            }
         });
 
         document.addEventListener('visibilitychange', () => {
