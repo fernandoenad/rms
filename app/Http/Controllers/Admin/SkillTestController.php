@@ -60,8 +60,7 @@ class SkillTestController extends Controller
 
     public function create()
     {
-        $vacancies = Vacancy::orderByDesc('cycle')
-            ->orderBy('position_title')
+        $vacancies = Vacancy::orderByDesc('id')
             ->get(['id','position_title','cycle']);
 
         return view('admin.skills.create', compact('vacancies'));
