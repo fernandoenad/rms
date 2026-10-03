@@ -51,6 +51,7 @@
     const saveUrl=@json(route('guest.skills.attempts.inline',$attempt));
     const csrf=@json(csrf_token());
     const pendingKey='rms_skill_{{ $attempt->id }}_pending_inline';
+    const eventUrl=@json(route('guest.skills.attempts.event',$attempt));
     let debounceTimer=null;
     let saving=false;
     let pendingValue=null;
@@ -133,6 +134,31 @@
             }
         }
     }
+
+    async function logEvent(type){
+        try {
+            await fetch(eventUrl,{
+                method:'POST',
+                headers:{
+                    'Content-Type':'application/json',
+                    'X-CSRF-TOKEN':csrf,
+                    'Accept':'application/json'
+                },
+                body:JSON.stringify({event_type:type})
+            });
+        } catch(e) {
+            // Audit events must never block the assessment UI.
+        }
+    }
+
+    document.addEventListener('visibilitychange',()=>{
+        logEvent(document.hidden ? 'tab_hidden' : 'tab_visible');
+    });
+    window.addEventListener('offline',()=>logEvent('connection_lost'));
+    window.addEventListener('online',()=>logEvent('connection_restored'));
+    window.addEventListener('pageshow',(event)=>{
+        if(event.persisted) logEvent('page_refreshed');
+    });
 
     tick();
 
