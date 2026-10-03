@@ -9,7 +9,10 @@
     <div class="mt-2 mt-md-0">
         <a href="{{ route('admin.assessment_groups.index') }}" class="btn btn-outline-primary mr-2">Written Assessments</a>
         <a href="{{ route('admin.skills.index') }}" class="btn btn-outline-info mr-2">Skills Tests</a>
-        <a href="{{ route('admin.assessment_bank.index') }}" class="btn btn-outline-secondary">Content Bank</a>
+        <a href="{{ route('admin.assessment_bank.index') }}" class="btn btn-outline-secondary mr-2">Content Bank</a>
+        @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1)
+            <a href="{{ route('admin.assessment_permissions.index') }}" class="btn btn-outline-dark">Access Roles</a>
+        @endif
     </div>
 </div>
 @stop
