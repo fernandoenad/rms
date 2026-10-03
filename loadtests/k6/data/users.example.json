@@ -1,0 +1,10 @@
+[
+  {
+    "email": "loadtest001@example.test",
+    "application_id": 10001
+  },
+  {
+    "email": "loadtest002@example.test",
+    "application_id": 10002
+  }
+]
