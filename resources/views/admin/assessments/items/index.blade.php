@@ -132,9 +132,29 @@
 
 <div class="card"><div class="card-body">
 <div class="mb-3">
-<form method="post" action="{{ route('admin.assessments.items.import',$exam) }}" enctype="multipart/form-data" class="form-inline">@csrf
-<input type="file" name="file" accept=".csv,.txt" class="form-control-file mr-2" {{ $locked?'disabled':'' }} required>
-<button class="btn btn-sm btn-outline-info" {{ $locked?'disabled':'' }}>Import CSV</button>
+<form method="post" action="{{ route('admin.assessments.items.import',$exam) }}" enctype="multipart/form-data">
+    @csrf
+    <div class="form-row align-items-end">
+        <div class="form-group col-md-8 col-lg-6 mb-2">
+            <label class="small font-weight-bold mb-1">Import items from CSV</label>
+            <div class="custom-file">
+                <input type="file"
+                       name="file"
+                       id="writtenItemsCsv"
+                       accept=".csv,.txt"
+                       class="custom-file-input"
+                       {{ $locked?'disabled':'' }}
+                       required>
+                <label class="custom-file-label" for="writtenItemsCsv">Choose CSV or TXT file</label>
+            </div>
+            <small class="form-text text-muted">Select a prepared item file, then import it into this draft set.</small>
+        </div>
+        <div class="form-group col-md-4 col-lg-2 mb-2">
+            <button class="btn btn-outline-info btn-block" {{ $locked?'disabled':'' }}>
+                <i class="fas fa-file-import mr-1"></i> Import CSV
+            </button>
+        </div>
+    </div>
 </form>
 </div>
 <div class="table-responsive"><table class="table table-hover">
@@ -201,6 +221,14 @@
 @section('js')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const csvInput = document.getElementById('writtenItemsCsv');
+    csvInput?.addEventListener('change', function () {
+        const label = this.nextElementSibling;
+        if (label) {
+            label.textContent = this.files?.[0]?.name || 'Choose CSV or TXT file';
+        }
+    });
+
     const fields = Array.from(document.querySelectorAll('.solo-percent'));
     const total = document.getElementById('soloTotal');
     const form = document.getElementById('generateAiBtn')?.closest('form');
