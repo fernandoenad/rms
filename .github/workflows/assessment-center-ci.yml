@@ -6,9 +6,6 @@ on:
       - feature/assessment-center-upgrade
   pull_request:
 
-permissions:
-  contents: write
-
 jobs:
   php-validation:
     runs-on: ubuntu-latest
@@ -17,33 +14,31 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: feature/assessment-center-upgrade
 
-      - name: Setup PHP 8.2
+      - name: Setup production PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: '8.2.14'
           extensions: mbstring, xml, ctype, json, tokenizer, zip, pdo_sqlite, curl
           coverage: none
+
+      - name: Show runtime versions
+        run: |
+          php -v
+          composer --version
 
       - name: Validate Composer files
         run: composer validate --no-check-publish
 
-      - name: Resolve dependencies for production PHP 8.2.14
-        run: composer update --with-all-dependencies --no-interaction --prefer-dist --no-progress
-
-      - name: Commit PHP 8.2-compatible lock if changed
+      - name: Verify production platform pin
         run: |
-          if git diff --quiet composer.lock; then
-            echo "composer.lock already compatible."
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add composer.lock
-            git commit -m "Regenerate Composer lock for PHP 8.2.14"
-            git push origin HEAD:feature/assessment-center-upgrade
-          fi
+          php -r '$j=json_decode(file_get_contents("composer.json"), true); if (($j["config"]["platform"]["php"] ?? null) !== "8.2.14") { fwrite(STDERR, "composer.json is not pinned to PHP 8.2.14\n"); exit(1); }'
+
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Check PHP and extension requirements
+        run: composer check-platform-reqs
 
       - name: Prepare environment
         run: |
