@@ -76,8 +76,6 @@ class SkillTestGroupController extends Controller
             'title'=>'required|string|max:255',
             'code'=>['nullable','string','max:100',$codeRule],
             'expected_sets'=>'required|integer|min:1|max:26',
-            'start_date'=>'required|date',
-            'end_date'=>'required|date|after:start_date',
             'duration'=>'required|integer|min:1|max:480',
             'access_mode'=>'required|in:all_taken_in,selected_applicants',
             'submission_modes'=>'required|array|min:1',
@@ -101,8 +99,8 @@ class SkillTestGroupController extends Controller
             'vacancy_id'=>$group->vacancy_id,
             'skill_test_group_id'=>$group->id,
             'created_by'=>auth()->id(),
-            'start_date'=>$data['start_date'],
-            'end_date'=>$data['end_date'],
+            'start_date'=>null,
+            'end_date'=>null,
             'duration'=>$data['duration'],
             'access_mode'=>$data['access_mode'],
             'submission_modes'=>$data['submission_modes'],
@@ -176,7 +174,7 @@ class SkillTestGroupController extends Controller
         });
 
         return redirect()->route('admin.skill_groups.edit',$group)
-            ->with('status','Skills Test group created with '.(int)$data['expected_sets'].' draft equivalent set(s). Configure each task/rubric, review, then publish.');
+            ->with('status','Skills Test group created with '.(int)$data['expected_sets'].' draft equivalent set(s). Set the schedule for each set, configure its task/rubric, review, then publish.');
     }
 
     public function edit(
@@ -257,8 +255,6 @@ class SkillTestGroupController extends Controller
             $skillTestGroup->skillTests()
                 ->whereDoesntHave('attempts',fn($q)=>$q->whereNotNull('started_at'))
                 ->update([
-                    'start_date'=>$data['start_date'],
-                    'end_date'=>$data['end_date'],
                     'duration'=>$data['duration'],
                     'access_mode'=>$data['access_mode'],
                     'submission_modes'=>json_encode(array_values($data['submission_modes'])),
@@ -464,6 +460,8 @@ class SkillTestGroupController extends Controller
                 $copy->title = preg_replace('/\s+-\s+Set\s+\S+$/i','',$skillTestGroup->title).' - Set '.$setCode;
                 $copy->code = ($skillTestGroup->code ?: 'SG-'.$skillTestGroup->id).'-'.$setCode;
                 $copy->status = 0;
+                $copy->start_date = null;
+                $copy->end_date = null;
                 $copy->created_by = auth()->id();
                 $copy->approval_status = $this->currentUserIsAdmin() ? 'approved' : 'pending';
                 $copy->approved_by = $this->currentUserIsAdmin() ? auth()->id() : null;
@@ -503,6 +501,8 @@ class SkillTestGroupController extends Controller
             $copy->code = ($skillTestGroup->code ?: 'SG-'.$skillTestGroup->id).'-'.$setCode;
             $copy->instructions = 'Draft placeholder. Generate or enter an equivalent skills task before publishing.';
             $copy->expected_output = null;
+            $copy->start_date = null;
+            $copy->end_date = null;
             $copy->status = 0;
             $copy->review_status = 'pending_review';
             $copy->reviewed_by = null;
