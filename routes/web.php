@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\SkillTestController as AdminSkillTest;
 use App\Http\Controllers\Admin\AssessmentCenterController as AdminAssessmentCenter;
 use App\Http\Controllers\Admin\AssessmentContentBankController as AdminAssessmentContentBank;
 use App\Http\Controllers\Admin\AssessmentPermissionController as AdminAssessmentPermission;
+use App\Http\Controllers\Admin\AssessmentSnapshotController as AdminAssessmentSnapshot;
 use App\Http\Controllers\Guest\SkillTestAttemptController as GuestSkillTestAttempt;
 
 
@@ -170,6 +171,9 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/vacancies/{vacancy}/apply', [AdminVacancy::class, 'apply'])->name('admin.vacancies.apply');
 
     Route::get('/admin/assessment-center', [AdminAssessmentCenter::class, 'index'])->name('admin.assessment_center.index');
+    Route::get('/admin/assessment-snapshots', [AdminAssessmentSnapshot::class, 'index'])->name('admin.assessment_snapshots.index');
+    Route::get('/admin/assessment-snapshots/{snapshot}/download', [AdminAssessmentSnapshot::class, 'download'])->name('admin.assessment_snapshots.download');
+
     Route::get('/admin/assessment-permissions', [AdminAssessmentPermission::class, 'index'])->name('admin.assessment_permissions.index');
     Route::put('/admin/assessment-permissions/{user}', [AdminAssessmentPermission::class, 'update'])->name('admin.assessment_permissions.update');
 
