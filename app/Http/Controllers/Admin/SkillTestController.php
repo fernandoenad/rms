@@ -153,6 +153,10 @@ class SkillTestController extends Controller
         $requestedPublish = (int) ($data['status'] ?? 0) === 1;
         $data['status'] = 0;
 
+        if (($data['score_release_policy'] ?? $skillTest->score_release_policy) !== $skillTest->score_release_policy) {
+            $data['scores_released_at'] = null;
+        }
+
         $taskChanged =
             $skillTest->title !== $data['title']
             || $skillTest->instructions !== $data['instructions']
@@ -529,13 +533,37 @@ class SkillTestController extends Controller
 
         $skillTest->load('rubricCriteria');
 
+        $rubricAnalytics = DB::table('skill_test_rubric_criteria as c')
+            ->leftJoin('skill_test_human_scores as hs', 'hs.skill_test_rubric_criterion_id', '=', 'c.id')
+            ->leftJoin('skill_test_attempts as a', function ($join) {
+                $join->on('a.id', '=', 'hs.skill_test_attempt_id')
+                    ->where('a.status', '=', 2);
+            })
+            ->where('c.skill_test_id', $skillTest->id)
+            ->where('c.is_active', true)
+            ->groupBy('c.id', 'c.criterion', 'c.max_points', 'c.sort_order')
+            ->orderBy('c.sort_order')
+            ->select('c.id','c.criterion','c.max_points')
+            ->selectRaw('COUNT(a.id) as scored_count')
+            ->selectRaw('AVG(CASE WHEN a.id IS NOT NULL THEN hs.score END) as mean_score')
+            ->get();
+
+        $aiHumanGap = $skillTest->attempts()
+            ->where('status',2)
+            ->whereNotNull('ai_proposed_score')
+            ->whereNotNull('final_score')
+            ->selectRaw('AVG(ABS(ai_proposed_score - final_score)) as mean_abs_gap')
+            ->value('mean_abs_gap');
+
         return view('admin.skills.results', compact(
             'skillTest',
             'attempts',
             'dashboard',
             'incidents',
             'retakeTests',
-            'health'
+            'health',
+            'rubricAnalytics',
+            'aiHumanGap'
         ));
     }
 
@@ -744,21 +772,30 @@ class SkillTestController extends Controller
     public function exportCsv(SkillTest $skillTest)
     {
         $filename = Str::slug($skillTest->title).'-skills-results.csv';
+        $criteria = $skillTest->rubricCriteria()->get();
 
-        return response()->streamDownload(function () use ($skillTest) {
+        return response()->streamDownload(function () use ($skillTest, $criteria) {
             $handle = fopen('php://output','w');
-            fputcsv($handle, [
-                'Application Code','Applicant','Status','Started','Submitted',
-                'AI Proposed','Human Final','Evaluated','Void Reason'
-            ]);
+
+            $headers = [
+                'Application Code','Applicant','Status','Started','Submitted','AI Proposed'
+            ];
+
+            foreach ($criteria as $criterion) {
+                $headers[] = $criterion->criterion.' Score';
+                $headers[] = $criterion->criterion.' Note';
+            }
+
+            $headers = array_merge($headers, ['Human Final','Evaluated','Void Reason']);
+            fputcsv($handle, $headers);
 
             $skillTest->attempts()
-                ->with('application')
+                ->with(['application','humanScores'])
                 ->whereNotNull('started_at')
                 ->orderBy('id')
-                ->chunkById(500, function ($attempts) use ($handle) {
+                ->chunkById(500, function ($attempts) use ($handle, $criteria) {
                     foreach ($attempts as $attempt) {
-                        fputcsv($handle, [
+                        $row = [
                             optional($attempt->application)->application_code,
                             optional($attempt->application)->getFullname(),
                             match ((int) $attempt->status) {
@@ -770,10 +807,20 @@ class SkillTestController extends Controller
                             $attempt->started_at?->toIso8601String(),
                             $attempt->submitted_at?->toIso8601String(),
                             $attempt->ai_proposed_score,
-                            $attempt->final_score,
-                            $attempt->evaluated_at?->toIso8601String(),
-                            $attempt->void_reason,
-                        ]);
+                        ];
+
+                        $human = $attempt->humanScores->keyBy('skill_test_rubric_criterion_id');
+                        foreach ($criteria as $criterion) {
+                            $score = $human->get($criterion->id);
+                            $row[] = optional($score)->score;
+                            $row[] = optional($score)->notes;
+                        }
+
+                        $row[] = $attempt->final_score;
+                        $row[] = $attempt->evaluated_at?->toIso8601String();
+                        $row[] = $attempt->void_reason;
+
+                        fputcsv($handle, $row);
                     }
                 });
 
