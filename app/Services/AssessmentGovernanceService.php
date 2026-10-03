@@ -248,7 +248,7 @@ class AssessmentGovernanceService
         ];
     }
 
-    public function readiness(Exam $exam): array
+    public function readiness(Exam $exam, bool $includeSimilarityReview = true): array
     {
         $exam->loadMissing(['writtenExams.options', 'assessmentGroup']);
 
@@ -331,8 +331,10 @@ class AssessmentGovernanceService
             }
         }
 
-        foreach ($this->similarityIssuesForWritten($exam, $items) as $similarityIssue) {
-            $issues[] = $similarityIssue;
+        if ($includeSimilarityReview) {
+            foreach ($this->similarityIssuesForWritten($exam, $items) as $similarityIssue) {
+                $issues[] = $similarityIssue;
+            }
         }
 
         if ($exam->access_mode === 'selected_applicants'
