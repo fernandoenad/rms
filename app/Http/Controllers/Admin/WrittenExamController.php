@@ -208,6 +208,7 @@ class WrittenExamController extends Controller
 
             $exam->update(['status' => 1]);
             $governance->recordWrittenExposure($exam->fresh());
+            $governance->snapshotExam($exam->fresh(),'published');
             $governance->log('exam_published', [
                 'assessment_group_id' => $exam->assessment_group_id,
                 'exam_id' => $exam->id,
@@ -610,6 +611,7 @@ class WrittenExamController extends Controller
 
         if ((int)$exam->status === 1) {
             $governance->recordWrittenExposure($exam->fresh());
+            $governance->snapshotExam($exam->fresh(),'published');
         }
 
         $governance->log(
@@ -685,6 +687,8 @@ class WrittenExamController extends Controller
             'archived_at'=>now(),
             'archived_by'=>auth()->id(),
         ]);
+
+        $governance->snapshotExam($exam->fresh(),'archived');
 
         $governance->log('exam_archived', [
             'assessment_group_id'=>$exam->assessment_group_id,
