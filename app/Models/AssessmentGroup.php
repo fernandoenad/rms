@@ -10,13 +10,14 @@ class AssessmentGroup extends Model
 {
     protected $fillable = [
         'vacancy_id', 'title', 'code', 'expected_sets', 'blueprint', 'blueprint_version',
-        'status', 'score_release_policy', 'assessment_score_key', 'scores_released_at'
+        'status', 'score_release_policy', 'assessment_score_key', 'scores_synced_at', 'scores_released_at'
     ];
 
     protected $casts = [
         'status' => 'boolean',
         'blueprint' => 'array',
         'scores_released_at' => 'datetime',
+        'scores_synced_at' => 'datetime',
     ];
 
     public function vacancy(): BelongsTo
