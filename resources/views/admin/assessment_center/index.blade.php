@@ -8,7 +8,8 @@
     </div>
     <div class="mt-2 mt-md-0">
         <a href="{{ route('admin.assessment_groups.index') }}" class="btn btn-outline-primary mr-2">Written Assessments</a>
-        <a href="{{ route('admin.skills.index') }}" class="btn btn-outline-info">Skills Tests</a>
+        <a href="{{ route('admin.skills.index') }}" class="btn btn-outline-info mr-2">Skills Tests</a>
+        <a href="{{ route('admin.assessment_bank.index') }}" class="btn btn-outline-secondary">Content Bank</a>
     </div>
 </div>
 @stop
@@ -51,6 +52,47 @@
             <div class="col-6 col-md-2"><strong>{{ number_format($skills['pending_human']) }}</strong><br><small class="text-muted">skills pending human score</small></div>
             <div class="col-6 col-md-2"><strong>{{ $queue['failed']===null ? 'N/A' : number_format($queue['failed']) }}</strong><br><small class="text-muted">failed jobs</small></div>
             <div class="col-6 col-md-2"><strong>{{ $heartbeat ? $heartbeat->diffForHumans() : 'Never' }}</strong><br><small class="text-muted">scheduler heartbeat</small></div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card card-outline card-info">
+            <div class="card-header"><strong>Autosave Performance · Last 15 Minutes</strong></div>
+            <div class="card-body">
+                <div class="row text-center">
+                    @php $wp=$performance['written_answer_save']; $sp=$performance['skill_inline_save']; @endphp
+                    <div class="col-6">
+                        <strong>Written</strong><br>
+                        Avg: {{ $wp['avg_ms']===null ? 'N/A' : number_format($wp['avg_ms']).' ms' }}<br>
+                        P95: {{ $wp['p95_ms']===null ? 'N/A' : number_format($wp['p95_ms']).' ms' }}<br>
+                        <small class="text-muted">{{ $wp['samples'] }} sampled saves</small>
+                    </div>
+                    <div class="col-6">
+                        <strong>Skills</strong><br>
+                        Avg: {{ $sp['avg_ms']===null ? 'N/A' : number_format($sp['avg_ms']).' ms' }}<br>
+                        P95: {{ $sp['p95_ms']===null ? 'N/A' : number_format($sp['p95_ms']).' ms' }}<br>
+                        <small class="text-muted">{{ $sp['samples'] }} sampled saves</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card card-outline card-secondary">
+            <div class="card-header"><strong>Content Bank Health</strong></div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4"><strong>{{ number_format($bank['active']) }}</strong><br><small class="text-muted">active</small></div>
+                    <div class="col-4"><strong>{{ number_format($bank['retired']) }}</strong><br><small class="text-muted">retired</small></div>
+                    <div class="col-4"><strong>{{ number_format($bank['high_exposure']) }}</strong><br><small class="text-muted">used ≥4 times</small></div>
+                </div>
+                @if($bank['high_exposure']>0)
+                    <div class="alert alert-warning py-2 mt-3 mb-0">Some assessment content has high exposure. Review it before another recruitment cycle.</div>
+                @endif
+            </div>
         </div>
     </div>
 </div>
