@@ -365,14 +365,30 @@ return [
         ],
         [
             'text' => 'Assessments',
-            'url'  => 'admin/assessment',
+            'url'  => 'admin/assessment-center',
             'icon' => 'fas fa-fw fa-pen',
             'active' => [
+                'admin/assessment-center',
+                'admin/assessment-bank',
+                'admin/assessment-snapshots',
+                'admin/assessment-permissions',
+                'admin/assessment',
                 'admin/assessment/create',
+                'admin/assessment-groups',
+                'admin/assessment-groups/create',
+                'regex:@^admin/assessment-groups/\\d+/(edit|results|analytics)$@',
+                'regex:@^admin/assessment/\\d+/(edit|preview)$@',
                 'regex:@^admin/assessment/\\d+/items/create$@',
                 'regex:@^admin/assessment/\\d+/items$@',
                 'regex:@^admin/assessment/\\d+/items/\\d+/edit$@',
-                'regex:@^admin/assessment/\\d+/results$@'
+                'regex:@^admin/assessment/\\d+/results$@',
+                'admin/skills',
+                'admin/skills/tests',
+                'admin/skill-groups',
+                'admin/skill-groups/create',
+                'regex:@^admin/skill-groups/\\d+/edit$@',
+                'admin/skills/create',
+                'regex:@^admin/skills/\\d+/(edit|preview|results)$@'
 
             ]
         ],

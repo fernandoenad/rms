@@ -12,7 +12,24 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->command('assessments:health-heartbeat')
+            ->everyMinute()
+            ->withoutOverlapping();
+        $schedule->command('assessments:finalize-expired --limit=1000')
+            ->everyMinute()
+            ->withoutOverlapping();
+
+        $schedule->command('assessments:finalize-expired-skills --limit=1000')
+            ->everyMinute()
+            ->withoutOverlapping();
+
+        $schedule->command('assessments:sync-official-scores')
+            ->everyMinute()
+            ->withoutOverlapping();
+
+        $schedule->command('assessments:prune-telemetry')
+            ->dailyAt('02:30')
+            ->withoutOverlapping();
     }
 
     /**

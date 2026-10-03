@@ -1,0 +1,59 @@
+name: Assessment Center CI
+
+on:
+  push:
+    branches:
+      - feature/assessment-center-upgrade
+  pull_request:
+
+jobs:
+  php-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup production PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2.14'
+          extensions: mbstring, xml, ctype, json, tokenizer, zip, pdo_sqlite, curl
+          coverage: none
+
+      - name: Show runtime versions
+        run: |
+          php -v
+          composer --version
+
+      - name: Validate Composer files
+        run: composer validate --no-check-publish
+
+      - name: Verify production platform pin
+        run: |
+          php -r '$j=json_decode(file_get_contents("composer.json"), true); if (($j["config"]["platform"]["php"] ?? null) !== "8.2.14") { fwrite(STDERR, "composer.json is not pinned to PHP 8.2.14\n"); exit(1); }'
+
+      - name: Install locked dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Check PHP and extension requirements
+        run: composer check-platform-reqs
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan optimize:clear
+
+      - name: PHP syntax check
+        run: find app routes database config -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Validate Laravel route boot
+        run: php artisan route:list > /tmp/routes.txt
+
+      - name: Validate k6 script syntax
+        run: |
+          node --check loadtests/k6/written-assessment.js
+          node --check loadtests/k6/skills-test.js
+          node --check loadtests/k6/operations-dashboard.js

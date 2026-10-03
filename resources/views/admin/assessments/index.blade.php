@@ -1,148 +1,81 @@
 @extends('adminlte::page')
-
-@php
-    $title = "Assessments";
-    $app_name = config('app.name', '') . ' [Admin]';
-@endphp
-
-@section('title', config('app.name', '') . ' | ' . $title)
-
+@section('title','Assessment Center')
 @section('content_header')
-    <div class="row mb-2">
-        <div class="col-sm-6">
-            <h1 class="m-0">{{ $title }}</h1>
-        </div>
-        <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-                <li class="breadcrumb-item"><a href="{{ route('admin.index') }}">Dashboard</a></li>
-                <li class="breadcrumb-item active">{{ $title }}</li>
-            </ol>
-        </div>
+<div class="d-flex justify-content-between align-items-center flex-wrap">
+    <h1>Assessment Center</h1>
+    <div>
+        <a href="{{ route('admin.assessment_groups.index') }}" class="btn btn-outline-secondary mr-2"><i class="fas fa-layer-group"></i> Assessment Groups</a>
+        <a href="{{ route('admin.skills.index') }}" class="btn btn-outline-primary mr-2"><i class="fas fa-tools"></i> Skills Tests</a>
+        <a href="{{ route('admin.assessments.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> New Written Exam</a>
     </div>
+</div>
 @stop
-
 @section('content')
-        @if (session('status'))
-        <div class="alert alert-success alert-dismissible auto-close">
-            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
-            {{ session('status') }}
-        </div>
-    @endif
+@if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">List</h3>
-                        <a type="button" class="btn btn-sm btn-primary float-right" href="{{ route('admin.assessments.create') }}">
-                            <i class="fas fa-plus"></i> Add assessment
-                        </a>
-                    </div>
-                    <div class="card-body">
-                        <table id="written_exams" class="table table-bordered table-striped">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Exam title</th>
-                                    <th>Position</th>
-                                    <th>Enrollment key</th>
-                                    <th>Start</th>
-                                    <th>End</th>
-                                    <th>Duration (min)</th>
-                                    <th>Shuffle</th>
-                                    <th>Items</th>
-                                    <th>Status</th>
-                                    <th width="15%">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if(sizeof($exams) > 0)
-                                    @foreach($exams as $exam)
-                                        <tr>
-                                            <td>{{ $exam->id }}</td>
-                                            <td>{{ $exam->title }}</td>
-                                            <td>{{ $exam->vacancy ? $exam->vacancy->position_title : 'Unassigned' }}</td>
-                                            <td>
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <span>{{ $exam->enrollment_key }}</span>
-                                                    <form method="post" action="{{ route('admin.assessments.regenerate_key', $exam) }}" class="d-inline mb-0">
-                                                        @csrf
-                                                        @method('put')
-                                                        <button type="submit" class="btn btn-link btn-sm" title="Regenerate enrollment key" onclick="return confirm('Generate a new enrollment key?');">
-                                                            <i class="fas fa-recycle"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                            <td>{{ $exam->start_date }}</td>
-                                            <td>{{ $exam->end_date }}</td>
-                                            <td>{{ $exam->duration }}</td>
-                                            <td>{{ $exam->shuffle_items ? 'Yes' : 'No' }}</td>
-                                            <td>{{ $exam->written_exams_count }}</td>
-                                            <td>
-                                                <form method="post" action="{{ route('admin.assessments.toggle', $exam) }}">
-                                                    @csrf
-                                                    @method('put')
-                                                    <button type="submit" class="btn btn-link p-0">
-                                                        @if($exam->status == 1)
-                                                            <i class="fas fa-toggle-on text-success"></i>
-                                                        @else
-                                                            <i class="fas fa-toggle-off text-muted"></i>
-                                                        @endif
-                                                    </button>
-                                                </form>
-                                            </td>
-                                            <td>
-                                                <a href="{{ route('admin.assessments.edit', $exam) }}" class="btn btn-sm btn-warning">
-                                                    <i class="fas fa-edit"></i> 
-                                                </a>
-                                                <form action="{{ route('admin.assessments.destroy', $exam) }}" method="post" class="d-inline">
-                                                    @csrf
-                                                    @method('delete')
-                                                    <button type="submit" class="btn btn-sm btn-danger {{ $exam->written_exams_count > 0 ? 'disabled' : '' }}" onclick="return confirm('Are you sure you want to delete this exam?');">
-                                                        <i class="fas fa-trash"></i> 
-                                                    </button>
-                                                </form>
-                                                <a href="{{ route('admin.assessments.items.index', $exam) }}" class="btn btn-sm btn-info">
-                                                    <i class="fas fa-folder-open"></i> 
-                                                </a>
-                                                <a href="{{ route('admin.assessments.results', $exam) }}" class="btn btn-sm btn-secondary" title="View results">
-                                                    <i class="fas fa-chart-bar"></i>
-                                                </a>                                                
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                @else
-                                    <tr>
-                                        <td colspan="11">0 written exams found.</td>
-                                    </tr>
-                                @endif
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+<div class="card card-outline card-secondary">
+    <div class="card-body py-3">
+        <form method="get" action="{{ route('admin.assessments.index') }}" class="form-row align-items-end">
+            <div class="form-group col-md-6 mb-md-0">
+                <label>Filter by Position</label>
+                <select name="vacancy_id" class="form-control" onchange="this.form.submit()">
+                    <option value="">All positions</option>
+                    @foreach($vacancies as $vacancy)
+                        <option value="{{ $vacancy->id }}" {{ (int)$selectedVacancyId === (int)$vacancy->id ? 'selected' : '' }}>
+                            #{{ $vacancy->id }} — {{ $vacancy->position_title }} ({{ $vacancy->cycle }})
+                        </option>
+                    @endforeach
+                </select>
             </div>
-        </div>
+            <div class="form-group col-md-3 mb-md-0">
+                @if($selectedVacancyId)
+                    <a href="{{ route('admin.assessments.index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Clear Filter
+                    </a>
+                @endif
+            </div>
+        </form>
     </div>
-@stop
+</div>
 
-@section('footer')
-    @include('layouts.footer')
-@stop
-
-@section('css')
-@stop
-
-@section('plugins.Datatables', true)
-
-@section('js')
-    <script>
-        $(function () {
-            $("#written_exams").DataTable({
-                "responsive": true, "lengthChange": false, "autoWidth": false, "pageLength": 10,
-                "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-            }).buttons().container().appendTo('#written_exams_wrapper .col-md-6:eq(0)');
-        });
-    </script>
+<div class="card"><div class="card-body table-responsive p-0">
+<table class="table table-hover">
+<thead><tr><th>Exam</th><th>Group / Set</th><th>Position</th><th>Schedule</th><th>Access</th><th>Shuffle</th><th>Items</th><th>Attempts</th><th>Status</th><th></th></tr></thead>
+<tbody>
+@forelse($exams as $exam)
+<tr>
+<td><strong>{{ $exam->title }}</strong><div class="small text-muted">{{ $exam->code }}</div></td>
+<td>
+@if($exam->assessmentGroup)
+<strong>{{ $exam->assessmentGroup->title }}</strong><br>
+<span class="badge badge-primary">Set {{ $exam->set_code }}</span>
+@else
+<span class="text-muted">Standalone</span>
+@endif
+</td>
+<td>{{ optional($exam->vacancy)->position_title }}</td>
+<td>{{ optional($exam->start_date)->format('M d, Y h:i A') }}<br><small>to {{ optional($exam->end_date)->format('M d, Y h:i A') }} · {{ $exam->duration }} min</small></td>
+<td>{{ $exam->access_mode === 'all_taken_in' ? 'All taken-in' : 'Selected only' }}</td>
+<td>Q: {{ $exam->shuffle_items ? 'Yes':'No' }}<br>Options: {{ $exam->shuffle_options ? 'Yes':'No' }}</td>
+<td>{{ $exam->written_exams_count }}</td>
+<td>{{ $exam->attempts_count }}</td>
+<td>{{ $exam->getStatus() }}</td>
+<td class="text-nowrap">
+<a href="{{ route('admin.assessments.edit',$exam) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+<a href="{{ route('admin.assessments.items.index',$exam) }}" class="btn btn-sm btn-info"><i class="fas fa-list"></i></a>
+<a href="{{ route('admin.assessments.results',$exam) }}" class="btn btn-sm btn-secondary"><i class="fas fa-chart-bar"></i></a>
+<form method="post" action="{{ route('admin.assessments.duplicate',$exam) }}" class="d-inline">@csrf
+<button class="btn btn-sm btn-outline-primary" title="Duplicate as new set"><i class="fas fa-copy"></i></button></form>
+@if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1 && $exam->attempts_count===0)
+<form method="post" action="{{ route('admin.assessments.destroy',$exam) }}" class="d-inline"
+      onsubmit="return confirm('Delete this Written Test permanently? This is allowed only because no applicant has attempted it.');">
+@csrf @method('delete')
+<button class="btn btn-sm btn-outline-danger" title="Delete unattempted Written Test"><i class="fas fa-trash"></i></button>
+</form>
+@endif
+</td>
+</tr>
+@empty<tr><td colspan="10">No written exams yet.</td></tr>@endforelse
+</tbody>
+</table></div></div>
 @stop

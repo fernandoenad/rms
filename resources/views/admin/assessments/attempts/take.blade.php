@@ -11,7 +11,7 @@
     <div class="row mb-2">
         <div class="col-sm-6">
             <h1 class="m-0">{{ $exam->title }}</h1>
-            <p class="mb-0 text-muted">Duration: {{ $exam->duration }} min | Enrollment key: {{ $exam->enrollment_key }}</p>
+            <p class="mb-0 text-muted">Duration: {{ $exam->duration }} min</p>
         </div>
         <div class="col-sm-6 text-right">
             <span class="badge badge-info" id="countdown"></span>

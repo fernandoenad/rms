@@ -254,40 +254,50 @@
                                             </thead>
                                             <tbody>
                                                 @php $hasAssessmentRel = $application->assessment !== null; @endphp
-                                                @forelse($exams as $exam)
+
+                                                @foreach($exams as $exam)
                                                     @php
                                                         $attempt = $exam->attempts->first();
                                                         $submitted = $attempt && $attempt->status == 2;
+                                                        $scoresReleased = !$exam->assessmentGroup || $exam->assessmentGroup->scoresAreReleased();
+                                                        $examOpen = (!$exam->start_date || now()->gte($exam->start_date))
+                                                            && (!$exam->end_date || now()->lt($exam->end_date));
+                                                        $examUpcoming = $exam->start_date && now()->lt($exam->start_date);
                                                     @endphp
                                                     <tr>
-                                                        <td>{{ $exam->title }}</td>
+                                                        <td>
+                                                            <strong>{{ $exam->assessmentGroup?->title ?: $exam->title }}</strong>
+                                                            <div class="small text-muted">
+                                                                Written Exam
+                                                                @if($exam->assessmentGroup && $exam->set_code)
+                                                                    · Assigned set: {{ $exam->set_code }}
+                                                                @endif
+                                                            </div>
+                                                        </td>
                                                         <td>{{ $exam->duration }} min</td>
                                                         <td>
-                                                            @if(isset($attempt) && $attempt->status == 2)
-                                                                @php
-                                                                    $total = $exam->writtenExams->where('status',1)->count();
-                                                                    $answers = $attempt->answers;
-                                                                    $correct = 0;
-                                                                    foreach($exam->writtenExams as $item){
-                                                                        $a = $answers->firstWhere('written_exam_id', $item->id);
-                                                                        if($a && strtoupper($a->selected_option) == strtoupper($item->answer_key)){
-                                                                            $correct++;
-                                                                        }
-                                                                    }
-                                                                    $scorePct = $total > 0 ? round(($correct / $total) * 100, 2) : 0;
-                                                                @endphp
-                                                                {{ $correct }} / {{ $total }} ({{ $scorePct }}%)
+                                                            @if($submitted)
+                                                                @if($scoresReleased)
+                                                                    {{ $attempt->correct_answers ?? '-' }} / {{ $attempt->total_items ?? '-' }}
+                                                                    @if($attempt->percentage !== null) ({{ $attempt->percentage }}%) @endif
+                                                                @else
+                                                                    <span class="text-muted">Pending official release</span>
+                                                                @endif
                                                             @else
                                                                 -
                                                             @endif
                                                         </td>
                                                         <td>
                                                             @if($submitted)
-                                                                Submitted
+                                                                <span class="badge badge-success">Submitted</span>
                                                             @elseif($attempt && $attempt->status == 1)
-                                                                In progress
+                                                                <span class="badge badge-warning">In progress</span>
+                                                            @elseif($examUpcoming)
+                                                                <span class="badge badge-secondary">Scheduled</span>
+                                                            @elseif($examOpen)
+                                                                <span class="badge badge-info">Available</span>
                                                             @else
-                                                                Not started
+                                                                <span class="badge badge-secondary">Closed</span>
                                                             @endif
                                                         </td>
                                                         <td>
@@ -299,31 +309,117 @@
                                                                 -
                                                             @endif
                                                         </td>
-                                                        <td>
+                                                        <td class="text-nowrap">
                                                             @if(!$hasAssessmentRel)
                                                                 <button class="btn btn-sm btn-secondary" disabled>Not eligible</button>
                                                             @elseif($submitted)
                                                                 <button class="btn btn-sm btn-success" disabled>Completed</button>
+                                                            @elseif($attempt && $attempt->status == 1)
+                                                                <form method="post" action="{{ route('guest.assessments.attempts.start', [$application, $exam]) }}" class="d-inline">
+                                                                    @csrf
+                                                                    <button type="submit" class="btn btn-sm btn-primary">Continue</button>
+                                                                </form>
+                                                            @elseif(!$examOpen)
+                                                                <button class="btn btn-sm btn-secondary" disabled>{{ $examUpcoming ? 'Not open yet' : 'Closed' }}</button>
                                                             @else
                                                                 <form method="post" action="{{ route('guest.assessments.attempts.start', [$application, $exam]) }}" class="d-inline">
                                                                     @csrf
-                                                                    <div class="input-group input-group-sm">
-                                                                        <input type="text" name="enrollment_key" class="form-control" placeholder="Enrollment key" required>
-                                                                        <div class="input-group-append">
-                                                                            <button type="submit" class="btn btn-primary" onclick="return confirm('This is a single-attempt test. Countdown starts after OK. Proceed?');">
-                                                                                {{ $attempt ? 'Continue' : 'Take test' }}
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
+                                                                    <button type="submit" class="btn btn-sm btn-primary"
+                                                                        onclick="return confirm('Start this assessment now? Your timer begins immediately and you will be locked to this set.');">
+                                                                        Start
+                                                                    </button>
                                                                 </form>
                                                             @endif
                                                         </td>
                                                     </tr>
-                                                @empty
+                                                @endforeach
+
+                                                @foreach($skillTests as $skillTest)
+                                                    @php
+                                                        $skillAttempt = $skillTest->attempts->first();
+                                                        $skillSubmitted = $skillAttempt && $skillAttempt->status == 2;
+                                                        $skillVoided = $skillAttempt && $skillAttempt->status == 3;
+                                                        $skillScoreReleased = $skillTest->scoresAreReleased();
+                                                        $skillOpen = $skillTest->status
+                                                            && $skillTest->start_date
+                                                            && $skillTest->end_date
+                                                            && now()->gte($skillTest->start_date)
+                                                            && now()->lt($skillTest->end_date);
+                                                        $skillUpcoming = $skillTest->status
+                                                            && $skillTest->start_date
+                                                            && now()->lt($skillTest->start_date);
+                                                    @endphp
                                                     <tr>
-                                                        <td colspan="6">No active assessments for this position.</td>
+                                                        <td>
+                                                            <strong>{{ $skillTest->skillTestGroup?->title ?: $skillTest->title }}</strong>
+                                                            <div class="small text-muted">
+                                                                Skills Test
+                                                                @if($skillTest->skill_test_group_id && $skillTest->set_code)
+                                                                    · Assigned set: {{ $skillTest->set_code }}
+                                                                @endif
+                                                            </div>
+                                                        </td>
+                                                        <td>{{ $skillTest->duration }} min</td>
+                                                        <td>
+                                                            @if($skillSubmitted)
+                                                                @if($skillScoreReleased && $skillAttempt->final_score !== null)
+                                                                    {{ number_format((float)$skillAttempt->final_score, 2) }} / 100
+                                                                @elseif($skillScoreReleased)
+                                                                    <span class="text-muted">Pending human evaluation</span>
+                                                                @else
+                                                                    <span class="text-muted">Pending official release</span>
+                                                                @endif
+                                                            @else
+                                                                -
+                                                            @endif
+                                                        </td>
+                                                        <td>
+                                                            @if($skillVoided)
+                                                                <span class="badge badge-secondary">Voided</span>
+                                                            @elseif($skillSubmitted)
+                                                                <span class="badge badge-success">Submitted</span>
+                                                            @elseif($skillAttempt)
+                                                                <span class="badge badge-warning">In progress</span>
+                                                            @elseif($skillUpcoming)
+                                                                <span class="badge badge-secondary">Scheduled</span>
+                                                            @elseif($skillOpen)
+                                                                <span class="badge badge-info">Available</span>
+                                                            @else
+                                                                <span class="badge badge-secondary">Closed</span>
+                                                            @endif
+                                                        </td>
+                                                        <td>-</td>
+                                                        <td class="text-nowrap">
+                                                            @if(!$hasAssessmentRel)
+                                                                <button class="btn btn-sm btn-secondary" disabled>Not eligible</button>
+                                                            @elseif($skillVoided)
+                                                                <button class="btn btn-sm btn-secondary" disabled>Retake required</button>
+                                                            @elseif($skillSubmitted)
+                                                                <button class="btn btn-sm btn-success" disabled>Completed</button>
+                                                            @elseif($skillAttempt)
+                                                                <a href="{{ route('guest.skills.attempts.take',$skillAttempt) }}" class="btn btn-sm btn-primary">Continue</a>
+                                                            @elseif($skillOpen)
+                                                                <form method="post" action="{{ route('guest.skills.start',[$application,$skillTest]) }}" class="d-inline">
+                                                                    @csrf
+                                                                    <button class="btn btn-sm btn-primary"
+                                                                        onclick="return confirm('{{ $skillTest->skill_test_group_id ? 'Start this Skills Test set? Your timer begins immediately and you will be locked to this equivalent set.' : 'Start this skills test? The timer begins immediately.' }}');">
+                                                                        Start
+                                                                    </button>
+                                                                </form>
+                                                            @else
+                                                                <button class="btn btn-sm btn-secondary" disabled>
+                                                                    {{ $skillUpcoming ? 'Not open yet' : 'Unavailable' }}
+                                                                </button>
+                                                            @endif
+                                                        </td>
                                                     </tr>
-                                                @endforelse
+                                                @endforeach
+
+                                                @if($exams->isEmpty() && $skillTests->isEmpty())
+                                                    <tr>
+                                                        <td colspan="6" class="text-muted">No active assessments for this position.</td>
+                                                    </tr>
+                                                @endif
                                             </tbody>
                                         </table>
                                         @foreach($exams as $exam)

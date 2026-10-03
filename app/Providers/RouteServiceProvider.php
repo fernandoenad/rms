@@ -28,6 +28,54 @@ class RouteServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
+        // Assessment limits are keyed to the applicant session / attempt, not IP.
+        // Large testing venues commonly place many applicants behind one NAT/public IP.
+        $assessmentKey = function (Request $request): string {
+            $email = (string) $request->session()->get('guest_email', 'anonymous');
+            $attempt = $request->route('attempt');
+            $application = $request->route('application');
+
+            $attemptId = is_object($attempt) ? ($attempt->id ?? 'none') : ($attempt ?: 'none');
+            $applicationId = is_object($application) ? ($application->id ?? 'none') : ($application ?: 'none');
+
+            return hash('sha256', $email.'|'.$applicationId.'|'.$attemptId);
+        };
+
+        RateLimiter::for('assessment-start', fn (Request $request) =>
+            Limit::perMinute(30)->by($assessmentKey($request))
+        );
+        RateLimiter::for('assessment-take', fn (Request $request) =>
+            Limit::perMinute(120)->by($assessmentKey($request))
+        );
+        RateLimiter::for('assessment-review', fn (Request $request) =>
+            Limit::perMinute(60)->by($assessmentKey($request))
+        );
+        RateLimiter::for('assessment-answer', fn (Request $request) =>
+            Limit::perMinute(180)->by($assessmentKey($request))
+        );
+        RateLimiter::for('assessment-submit', fn (Request $request) =>
+            Limit::perMinute(20)->by($assessmentKey($request))
+        );
+        RateLimiter::for('assessment-event', fn (Request $request) =>
+            Limit::perMinute(60)->by($assessmentKey($request))
+        );
+
+        RateLimiter::for('skill-start', fn (Request $request) =>
+            Limit::perMinute(30)->by($assessmentKey($request))
+        );
+        RateLimiter::for('skill-take', fn (Request $request) =>
+            Limit::perMinute(120)->by($assessmentKey($request))
+        );
+        RateLimiter::for('skill-save', fn (Request $request) =>
+            Limit::perMinute(90)->by($assessmentKey($request))
+        );
+        RateLimiter::for('skill-upload', fn (Request $request) =>
+            Limit::perMinute(20)->by($assessmentKey($request))
+        );
+        RateLimiter::for('skill-submit', fn (Request $request) =>
+            Limit::perMinute(20)->by($assessmentKey($request))
+        );
+
         $this->routes(function () {
             Route::middleware('api')
                 ->prefix('api')
