@@ -15,6 +15,7 @@ use App\Models\WrittenExamOption;
 use App\Jobs\GenerateWrittenExamItemsBatch;
 use App\Services\AssessmentAiService;
 use App\Services\AssessmentGovernanceService;
+use App\Services\AssessmentScoreSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -47,10 +48,14 @@ class WrittenExamController extends Controller
         return view('admin.assessments.index', compact('exams'));
     }
 
-    public function create(Request $request)
+    public function create(Request $request, AssessmentScoreSyncService $scoreSync)
     {
         $vacancies = Vacancy::orderByDesc('id')
-            ->get(['id', 'position_title', 'cycle']);
+            ->get(['id', 'position_title', 'cycle', 'template_id']);
+
+        $scoreCriteriaByVacancy = $vacancies->mapWithKeys(
+            fn ($vacancy) => [$vacancy->id => $scoreSync->criteriaForVacancy($vacancy)]
+        );
 
         $groups = AssessmentGroup::with('vacancy:id,position_title')
             ->where('status', 1)
@@ -62,10 +67,10 @@ class WrittenExamController extends Controller
             $selectedGroup = $groups->firstWhere('id', (int) $request->assessment_group_id);
         }
 
-        return view('admin.assessments.create', compact('vacancies', 'groups', 'selectedGroup'));
+        return view('admin.assessments.create', compact('vacancies', 'groups', 'selectedGroup', 'scoreCriteriaByVacancy'));
     }
 
-    public function edit(Exam $exam)
+    public function edit(Exam $exam, AssessmentScoreSyncService $scoreSync)
     {
         $vacancies = Vacancy::orderByDesc('id')
             ->get(['id', 'position_title', 'cycle']);
@@ -76,7 +81,9 @@ class WrittenExamController extends Controller
             ->orderBy('title')
             ->get();
 
-        return view('admin.assessments.edit', compact('exam', 'vacancies', 'groups'));
+        $scoreCriteria = $scoreSync->criteriaForVacancy($exam->vacancy);
+
+        return view('admin.assessments.edit', compact('exam', 'vacancies', 'groups', 'scoreCriteria'));
     }
 
     protected function validated(Request $request): array
@@ -94,6 +101,7 @@ class WrittenExamController extends Controller
             'shuffle_items' => 'required|boolean',
             'shuffle_options' => 'required|boolean',
             'status' => 'required|integer|in:0,1',
+            'assessment_score_key' => 'nullable|string|max:255',
         ]);
     }
 
@@ -104,6 +112,8 @@ class WrittenExamController extends Controller
             $data['set_code'] = null;
             return $data;
         }
+
+        $data['assessment_score_key'] = null;
 
         $group = AssessmentGroup::findOrFail($data['assessment_group_id']);
 
@@ -133,9 +143,19 @@ class WrittenExamController extends Controller
         return $data;
     }
 
-    public function store(Request $request, AssessmentGovernanceService $governance)
-    {
+    public function store(
+        Request $request,
+        AssessmentGovernanceService $governance,
+        AssessmentScoreSyncService $scoreSync
+    ) {
         $data = $this->validateGroupSelection($request, $this->validated($request));
+
+        if (!$data['assessment_group_id']
+            && !$scoreSync->criterionExistsForVacancy((int)$data['vacancy_id'], $data['assessment_score_key'] ?? null)) {
+            return back()->withInput()->withErrors([
+                'assessment_score_key'=>'The selected applicant-score criterion does not belong to this vacancy template.',
+            ]);
+        }
         $requestedPublish = (int) $data['status'] === 1;
         $data['status'] = 0;
         $data['created_by'] = auth()->id();
@@ -165,7 +185,8 @@ class WrittenExamController extends Controller
     public function update(
         Request $request,
         Exam $exam,
-        AssessmentGovernanceService $governance
+        AssessmentGovernanceService $governance,
+        AssessmentScoreSyncService $scoreSync
     ) {
         $this->ensureNotArchived($exam);
         if ($exam->attempts()->whereNotNull('started_at')->exists()) {
@@ -177,6 +198,13 @@ class WrittenExamController extends Controller
         }
 
         $data = $this->validateGroupSelection($request, $this->validated($request), $exam);
+
+        if (!$data['assessment_group_id']
+            && !$scoreSync->criterionExistsForVacancy((int)$data['vacancy_id'], $data['assessment_score_key'] ?? null)) {
+            return back()->withInput()->withErrors([
+                'assessment_score_key'=>'The selected applicant-score criterion does not belong to this vacancy template.',
+            ]);
+        }
         $requestedPublish = (int) $data['status'] === 1;
         $data['status'] = 0;
 
