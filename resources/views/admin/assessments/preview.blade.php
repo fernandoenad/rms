@@ -34,7 +34,10 @@
     <div class="card-body">
         @foreach($exam->writtenExams->where('status',1) as $item)
             <div class="border rounded p-3 mb-3">
-                <strong>{{ $loop->iteration }}. {{ $item->question }}</strong>
+                <div class="d-flex align-items-start">
+    <strong class="mr-1">{{ $loop->iteration }}.</strong>
+    <strong class="written-stem">{{ $item->question }}</strong>
+</div>
                 <div class="mt-2">
                     @foreach($item->options as $option)
                         <div class="custom-control custom-radio">
@@ -48,4 +51,10 @@
         @if($exam->writtenExams->where('status',1)->isEmpty())<div class="text-muted">No active items.</div>@endif
     </div>
 </div>
+@stop
+
+@section('css')
+<style>
+.written-stem { white-space: pre-line; display:block; line-height:1.55; }
+</style>
 @stop
