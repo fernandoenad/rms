@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AssessmentAuditLog extends Model
 {
@@ -11,4 +12,10 @@ class AssessmentAuditLog extends Model
     ];
 
     protected $casts = ['metadata' => 'array'];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
 }
+
