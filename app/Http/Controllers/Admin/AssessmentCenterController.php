@@ -12,6 +12,7 @@ use App\Models\SkillTest;
 use App\Models\SkillTestAttempt;
 use App\Models\SkillTestAiEvaluation;
 use App\Models\WrittenExam;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -21,6 +22,55 @@ class AssessmentCenterController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
+    }
+
+    protected function ensureAdmin(): void
+    {
+        abort_unless((int) optional(optional(auth()->user())->role)->level === 1, 403);
+    }
+
+    public function retryFailedJobs()
+    {
+        $this->ensureAdmin();
+
+        if (!Schema::hasTable('failed_jobs')) {
+            return back()->with('status', 'Failed-jobs table is unavailable.');
+        }
+
+        $count = DB::table('failed_jobs')->count();
+
+        if ($count === 0) {
+            return back()->with('status', 'There are no failed jobs to retry.');
+        }
+
+        Artisan::call('queue:retry', ['id' => ['all']]);
+
+        return back()->with(
+            'status',
+            $count.' failed job(s) were returned to the queue for retry.'
+        );
+    }
+
+    public function clearFailedJobs()
+    {
+        $this->ensureAdmin();
+
+        if (!Schema::hasTable('failed_jobs')) {
+            return back()->with('status', 'Failed-jobs table is unavailable.');
+        }
+
+        $count = DB::table('failed_jobs')->count();
+
+        if ($count === 0) {
+            return back()->with('status', 'There are no failed jobs to clear.');
+        }
+
+        Artisan::call('queue:flush');
+
+        return back()->with(
+            'status',
+            $count.' failed job record(s) were cleared. This does not cancel jobs that are currently queued or running.'
+        );
     }
 
     public function index()
