@@ -278,8 +278,15 @@ class SkillTestController extends Controller
         } catch (\Throwable $e) {
             report($e);
 
+            $message = 'AI generation failed. Please try again or enter the task manually.';
+
+            if (config('app.debug')) {
+                $message .= ' '.$e->getMessage();
+            }
+
             return response()->json([
-                'message'=>'AI generation failed. Please try again or enter the task manually.',
+                'message'=>$message,
+                'error_type'=>class_basename($e),
             ], 502);
         }
     }
