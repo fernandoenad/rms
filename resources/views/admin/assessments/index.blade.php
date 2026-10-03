@@ -66,6 +66,13 @@
 <a href="{{ route('admin.assessments.results',$exam) }}" class="btn btn-sm btn-secondary"><i class="fas fa-chart-bar"></i></a>
 <form method="post" action="{{ route('admin.assessments.duplicate',$exam) }}" class="d-inline">@csrf
 <button class="btn btn-sm btn-outline-primary" title="Duplicate as new set"><i class="fas fa-copy"></i></button></form>
+@if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1 && $exam->attempts_count===0)
+<form method="post" action="{{ route('admin.assessments.destroy',$exam) }}" class="d-inline"
+      onsubmit="return confirm('Delete this Written Test permanently? This is allowed only because no applicant has attempted it.');">
+@csrf @method('delete')
+<button class="btn btn-sm btn-outline-danger" title="Delete unattempted Written Test"><i class="fas fa-trash"></i></button>
+</form>
+@endif
 </td>
 </tr>
 @empty<tr><td colspan="10">No written exams yet.</td></tr>@endforelse
