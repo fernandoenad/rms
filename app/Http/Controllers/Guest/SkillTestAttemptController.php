@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Guest;
 use App\Http\Controllers\Controller;
 use App\Jobs\ScoreSkillTestSubmission;
 use App\Models\Application;
+use App\Models\AssessmentAccommodation;
 use App\Models\AssessmentPerformanceSample;
 use App\Models\SkillTest;
 use App\Models\SkillTestAssignment;
@@ -43,11 +44,14 @@ class SkillTestAttemptController extends Controller
         }
     }
 
-    protected function expiry(SkillTest $test, Carbon $started): Carbon
+    protected function expiry(SkillTest $test, Carbon $started, int $extraMinutes = 0): Carbon
     {
         $expiry = $started->copy()->addMinutes((int)$test->duration);
         if ($test->end_date && Carbon::parse($test->end_date)->lt($expiry)) {
             $expiry = Carbon::parse($test->end_date);
+        }
+        if ($extraMinutes > 0) {
+            $expiry = $expiry->copy()->addMinutes($extraMinutes);
         }
         return $expiry;
     }
@@ -63,6 +67,12 @@ class SkillTestAttemptController extends Controller
         if (now()->lt($skillTest->start_date) || now()->gte($skillTest->end_date)) {
             return back()->with('status_assessment','This skills test is not currently open.');
         }
+
+        $accommodation = AssessmentAccommodation::where('application_id',$application->id)
+            ->where('skill_test_id',$skillTest->id)
+            ->latest('id')
+            ->first();
+        $extraMinutes = (int) optional($accommodation)->extra_minutes;
 
         try {
             $attempt = SkillTestAttempt::firstOrCreate(
@@ -83,7 +93,7 @@ class SkillTestAttemptController extends Controller
             $started = now();
             $attempt->update([
                 'started_at'=>$started,
-                'expires_at'=>$this->expiry($skillTest, Carbon::parse($started)),
+                'expires_at'=>$this->expiry($skillTest, Carbon::parse($started), $extraMinutes),
                 'status'=>1,
             ]);
 
@@ -167,9 +177,14 @@ class SkillTestAttemptController extends Controller
 
         $submission = $attempt->submissions->sortByDesc('version')->first();
         $remainingSeconds = max(0, now()->diffInSeconds($attempt->expires_at, false));
+        $accommodation = AssessmentAccommodation::where('application_id',$attempt->application_id)
+            ->where('skill_test_id',$attempt->skill_test_id)
+            ->latest('id')
+            ->first();
+        $largeText = (bool) optional($accommodation)->large_text;
         $this->event($request,$attempt,'page_loaded');
 
-        return view('guest.skills.take', compact('attempt','submission','remainingSeconds'));
+        return view('guest.skills.take', compact('attempt','submission','remainingSeconds','largeText'));
     }
 
     public function saveInline(Request $request, SkillTestAttempt $attempt)
