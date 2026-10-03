@@ -245,7 +245,9 @@ class AssessmentGroupController extends Controller
 
         $assessmentGroup->load([
             'vacancy',
-            'exams' => fn ($q) => $q->orderBy('set_code'),
+            'exams' => fn ($q) => $q
+                ->with(['writtenExams.options', 'assessmentGroup'])
+                ->orderBy('set_code'),
         ]);
 
         // Avoid Laravel's per-parent eager-load limit window query here. Some
@@ -277,8 +279,11 @@ class AssessmentGroupController extends Controller
             $exam->setAttribute('assignments_count', $exam->assignments()->count());
         }
 
+        // Keep the edit screen responsive: structural readiness is enough here.
+        // The expensive content-bank similarity scan remains available in the
+        // dedicated analytics/review flow.
         $readiness = $assessmentGroup->exams
-            ->mapWithKeys(fn ($exam) => [$exam->id => $governance->readiness($exam)]);
+            ->mapWithKeys(fn ($exam) => [$exam->id => $governance->readiness($exam, false)]);
 
         $scoreCriteria = $scoreSync->criteriaForVacancy($assessmentGroup->vacancy);
 
