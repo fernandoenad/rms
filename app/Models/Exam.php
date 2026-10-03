@@ -15,6 +15,8 @@ class Exam extends Model
         'vacancy_id', 'title', 'code', 'enrollment_key',
         'start_date', 'end_date', 'duration', 'access_mode',
         'shuffle_items', 'shuffle_options', 'status',
+        'ai_context', 'ai_generation_focus',
+        'ai_use_qualifications', 'ai_use_job_description',
     ];
 
     protected $casts = [
@@ -22,6 +24,8 @@ class Exam extends Model
         'end_date' => 'datetime',
         'shuffle_items' => 'boolean',
         'shuffle_options' => 'boolean',
+        'ai_use_qualifications' => 'boolean',
+        'ai_use_job_description' => 'boolean',
     ];
 
     public function vacancy(): BelongsTo { return $this->belongsTo(Vacancy::class); }
