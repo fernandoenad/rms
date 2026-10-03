@@ -87,17 +87,17 @@ Route::get('/applications/{application}', [GuestApplication::class, 'show'])->na
 Route::post('/applications/{application}/inquire', [GuestApplication::class, 'inquire'])->name('guest.applications.inquire');
 Route::post('/applications/{application}/inquire2', [OpenAIController::class, 'inquire2'])->name('guest.applications.inquire2');
 Route::post('/applications/{application}/assessment/{exam}/start', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'start'])
-    ->middleware('throttle:30,1')->name('guest.assessments.attempts.start');
+    ->middleware('throttle:assessment-start')->name('guest.assessments.attempts.start');
 Route::get('/assessments/attempts/{attempt}', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'take'])
-    ->middleware('throttle:120,1')->name('guest.assessments.attempts.take');
+    ->middleware('throttle:assessment-take')->name('guest.assessments.attempts.take');
 Route::get('/assessments/attempts/{attempt}/review', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'reviewStatus'])
-    ->middleware('throttle:60,1')->name('guest.assessments.attempts.review');
+    ->middleware('throttle:assessment-review')->name('guest.assessments.attempts.review');
 Route::post('/assessments/attempts/{attempt}/answer', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'saveAnswer'])
-    ->middleware('throttle:180,1')->name('guest.assessments.attempts.answer');
+    ->middleware('throttle:assessment-answer')->name('guest.assessments.attempts.answer');
 Route::post('/assessments/attempts/{attempt}/submit', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'submit'])
-    ->middleware('throttle:20,1')->name('guest.assessments.attempts.submit');
+    ->middleware('throttle:assessment-submit')->name('guest.assessments.attempts.submit');
 Route::post('/assessments/attempts/{attempt}/event', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'eventLog'])
-    ->middleware('throttle:60,1')->name('guest.assessments.attempts.event');
+    ->middleware('throttle:assessment-event')->name('guest.assessments.attempts.event');
 Route::post('/applications/{application}/skills/{skillTest}/start', [GuestSkillTestAttempt::class, 'start'])->name('guest.skills.start');
 Route::get('/skills/attempts/{attempt}', [GuestSkillTestAttempt::class, 'take'])->name('guest.skills.attempts.take');
 Route::post('/skills/attempts/{attempt}/inline', [GuestSkillTestAttempt::class, 'saveInline'])->name('guest.skills.attempts.inline');
