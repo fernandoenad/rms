@@ -40,6 +40,11 @@ class Vacancy extends Model
         return $this->hasMany(Exam::class);
     }
 
+    public function assessmentGroups(): HasMany
+    {
+        return $this->hasMany(AssessmentGroup::class);
+    }
+
     public function getOffice(){
         if($this->office_level == 0){
             $office_level = "SDO";
