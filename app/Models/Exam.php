@@ -12,7 +12,7 @@ class Exam extends Model
     use HasFactory;
 
     protected $fillable = [
-        'vacancy_id', 'title', 'code', 'enrollment_key',
+        'vacancy_id', 'assessment_group_id', 'title', 'code', 'set_code', 'enrollment_key',
         'start_date', 'end_date', 'duration', 'access_mode',
         'shuffle_items', 'shuffle_options', 'status',
         'ai_context', 'ai_generation_focus',
@@ -29,6 +29,7 @@ class Exam extends Model
     ];
 
     public function vacancy(): BelongsTo { return $this->belongsTo(Vacancy::class); }
+    public function assessmentGroup(): BelongsTo { return $this->belongsTo(AssessmentGroup::class); }
     public function writtenExams(): HasMany { return $this->hasMany(WrittenExam::class); }
     public function attempts(): HasMany { return $this->hasMany(ExamAttempt::class); }
 
