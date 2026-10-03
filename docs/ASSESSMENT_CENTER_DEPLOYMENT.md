@@ -428,3 +428,37 @@ Default load-test acceptance thresholds are:
 See `loadtests/k6/README.md` for commands and fixture format.
 
 Do not treat a successful staging load test as a guarantee for materially different production hardware. The final pre-launch test should use infrastructure that matches production PHP-FPM, database, CPU/RAM, and storage characteristics as closely as practical.
+
+
+## Applicant assessment score synchronization
+
+Written and Skills assessments can now be mapped to an existing numeric criterion in the vacancy's recruitment assessment template.
+
+The mapping is configured from the assessment create/edit page using **Applicant score criterion**. RMS does not guess or overwrite unrelated criteria.
+
+Score conversion is proportional to the criterion maximum. Example:
+
+- recruitment template criterion: `Written Examination = 20`
+- applicant Written score: `85%`
+- value written to the applicant assessment record: `17.00`
+
+For Skills Tests, the human-final rubric score is out of 100 and is scaled the same way.
+
+Synchronization rules:
+- **Written Assessment Group / Manual**: bulk sync occurs when scores are released.
+- **Written Assessment Group / Immediate**: each submitted scored attempt syncs immediately.
+- **Written Assessment Group / After close**: the scheduler syncs after all published set schedules close.
+- **Written Assessment Group / Hidden**: no applicant-score synchronization occurs.
+- **Standalone Written Test**: when explicitly mapped, a submitted scored attempt syncs immediately because standalone tests do not have a group score-release policy.
+- **Skills / Manual**: bulk sync occurs when scores are released.
+- **Skills / Immediate**: a human-final score syncs immediately after finalization/approval.
+- **Skills / After close**: released final scores are synchronized by the scheduler once the schedule closes; later human finalizations are synchronized as they occur.
+- **Skills / Hidden**: no applicant-score synchronization occurs.
+
+The synchronizer changes only the selected mapped criterion, preserves all other applicant assessment criteria, recalculates the applicant's assessment total from the recruitment template, and preserves the existing assessment workflow/status.
+
+The scheduler command is:
+
+`php artisan assessments:sync-official-scores`
+
+It is scheduled every minute and also backfills mapped released assessments that have not yet been synchronized.
