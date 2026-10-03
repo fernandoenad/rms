@@ -17,6 +17,29 @@
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
 
+<div class="card card-outline {{ $skillTest->is_paused ? 'card-warning' : 'card-secondary' }}">
+    <div class="card-header"><strong>Operational Control</strong></div>
+    <div class="card-body">
+        @if($skillTest->archived_at)
+            <div class="alert alert-secondary mb-0">This skills test is archived and frozen.</div>
+        @elseif($skillTest->is_paused)
+            <div class="alert alert-warning">New starts are paused. Existing in-progress attempts may continue.<br><small>{{ $skillTest->pause_reason }}</small></div>
+            <form method="post" action="{{ route('admin.skills.resume',$skillTest) }}" class="d-inline">@csrf
+                <button class="btn btn-success btn-sm">Resume New Starts</button>
+            </form>
+        @else
+            <form method="post" action="{{ route('admin.skills.pause',$skillTest) }}" class="form-inline mb-2">@csrf
+                <input name="reason" class="form-control form-control-sm mr-2" style="min-width:320px" placeholder="Reason for pausing new starts" required>
+                <button class="btn btn-warning btn-sm">Pause New Starts</button>
+            </form>
+            <form method="post" action="{{ route('admin.skills.archive',$skillTest) }}"
+                  onsubmit="return confirm('Archive and freeze this skills test? This is blocked while attempts are in progress.');">@csrf
+                <button class="btn btn-outline-secondary btn-sm">Archive / Freeze</button>
+            </form>
+        @endif
+    </div>
+</div>
+
 <div class="card card-outline {{ $skillTest->approval_status==='approved' ? 'card-success' : 'card-warning' }}">
     <div class="card-header"><strong>Assessment Approval</strong></div>
     <div class="card-body">
