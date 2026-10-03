@@ -6,9 +6,12 @@
         <h1 class="mb-0">Edit Assessment Group</h1>
         <small class="text-muted">Equivalent written-test sets</small>
     </div>
-    <a href="{{ route('admin.assessments.create', ['assessment_group_id' => $assessmentGroup->id]) }}" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Add Written Set
-    </a>
+    <div>
+        <a href="{{ route('admin.assessment_groups.results',$assessmentGroup) }}" class="btn btn-outline-secondary mr-2"><i class="fas fa-chart-bar"></i> Combined Results</a>
+        <a href="{{ route('admin.assessments.create', ['assessment_group_id' => $assessmentGroup->id]) }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add Written Set
+        </a>
+    </div>
 </div>
 @stop
 
