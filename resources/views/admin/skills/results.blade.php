@@ -169,6 +169,9 @@
                     <td>
                         {{ optional($attempt->application)->application_code }}<br>
                         <small>{{ optional($attempt->application)->getFullname() }}</small>
+                        @if($attempt->incidents->isNotEmpty())
+                            <div class="mt-1"><span class="badge badge-warning"><i class="fas fa-exclamation-triangle"></i> {{ $attempt->incidents->count() }} open incident(s)</span></div>
+                        @endif
                     </td>
                     <td>
                         @if((int)$attempt->status === 1)
