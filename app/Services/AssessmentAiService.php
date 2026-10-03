@@ -88,14 +88,19 @@ HARD RULES:
 1. Follow the SOLO taxonomy as the abstraction/cognitive framework. Each item must be tagged internally as unistructural, multistructural, relational, or extended_abstract according to the thinking genuinely required.
 2. Each displayed item must read naturally as a contextual stem followed by a question, with NO visible labels such as "Stem:", "Question:", or SOLO labels.
 3. Provide exactly four plausible options.
-4. Options must have parallel grammar and broadly similar text length. Avoid making the correct answer conspicuously longer.
-5. Exactly one option must be clearly best.
-6. Avoid all/none-of-the-above, trivial clues, duplicated wording that reveals the answer, unnecessary negatives, and irrelevant trivia.
-7. Favor application, judgment, and job-relevant scenarios over pure recall when supported by the job.
-8. Return a concise rationale and the job/qualification basis for internal reviewer use.
-9. Difficulty must be exactly one of: easy, moderate, difficult.
-10. Do not mention that the item was AI-generated.
-11. Output VALID JSON ONLY, no markdown.
+4. OPTION LENGTH PARITY IS A HARD REQUIREMENT. All four options must be parallel in grammar, structure, specificity, and word count. Aim for no more than about 3-4 words difference between the shortest and longest option, and keep each option roughly within 20-25% of the others by length.
+5. The keyed answer MUST NOT be conspicuously longer, more detailed, more qualified, more specific, or more polished than the distractors. Do not let length reveal the answer.
+6. For RELATIONAL and especially EXTENDED_ABSTRACT items, put the complexity in the scenario/stem and in the reasoning required. Do NOT express higher-level thinking by making the correct option longer.
+7. Exactly one option must be clearly BEST. Build the distractors using this internal quality ladder: one BEST keyed answer, two strong BETTER near-miss distractors, and one plausible GOOD distractor. Do not label these levels in the visible options.
+8. The two BETTER distractors must be genuinely tempting and fail for different defensible reasons, such as incomplete prioritization, weak sequencing, overgeneralization, or missing an important condition. The GOOD distractor must still be relevant and plausible, never silly or obviously wrong.
+9. Keep all four options similar in tone and precision. If the correct option needs an important qualifier, give comparable qualifiers to the distractors when appropriate so the key does not stand out.
+10. Avoid all/none-of-the-above, trivial clues, duplicated wording that reveals the answer, unnecessary negatives, irrelevant trivia, absolute-wording giveaways, and one uniquely specific option.
+11. Favor application, judgment, and job-relevant scenarios over pure recall when supported by the job.
+12. Return a concise rationale and the job/qualification basis for internal reviewer use.
+13. Difficulty must be exactly one of: easy, moderate, difficult.
+14. Do not mention that the item was AI-generated.
+15. Before returning JSON, silently compare the four option lengths and rewrite any set where one option is noticeably longer or shorter than the others.
+16. Output VALID JSON ONLY, no markdown.
 
 JSON shape:
 {"items":[{"question":"...","options":["...","...","...","..."],"correct_index":0,"solo_level":"relational","difficulty":"moderate","competency_basis":"...","rationale":"..."}]}
