@@ -34,7 +34,6 @@ jobs:
         run: composer update --with-all-dependencies --no-interaction --prefer-dist --no-progress
 
       - name: Commit PHP 8.2-compatible lock if changed
-        if: github.event_name == 'push'
         run: |
           if git diff --quiet composer.lock; then
             echo "composer.lock already compatible."
