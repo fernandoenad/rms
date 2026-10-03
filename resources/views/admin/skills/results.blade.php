@@ -68,9 +68,40 @@
 @if($dashboard->mean_final_score !== null)
 <div class="alert alert-light border">
     Mean finalized human score: <strong>{{ number_format((float)$dashboard->mean_final_score,2) }}/100</strong>.
+    @if($aiHumanGap !== null)
+        Mean absolute AI-to-human difference: <strong>{{ number_format((float)$aiHumanGap,2) }} points</strong>.
+    @endif
     AI values shown below are proposals only; the rubric-level human evaluation remains authoritative.
 </div>
 @endif
+
+<div class="card">
+    <div class="card-header"><strong>Rubric Analytics</strong></div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-sm table-hover mb-0">
+            <thead><tr><th>Criterion</th><th>Max Points</th><th>Human Ratings</th><th>Mean Score</th><th>Mean % of Criterion</th></tr></thead>
+            <tbody>
+            @forelse($rubricAnalytics as $row)
+                <tr>
+                    <td>{{ $row->criterion }}</td>
+                    <td>{{ number_format((float)$row->max_points,2) }}</td>
+                    <td>{{ number_format((int)$row->scored_count) }}</td>
+                    <td>{{ $row->mean_score !== null ? number_format((float)$row->mean_score,2) : '-' }}</td>
+                    <td>
+                        @if($row->mean_score !== null && (float)$row->max_points > 0)
+                            {{ number_format(((float)$row->mean_score/(float)$row->max_points)*100,1) }}%
+                        @else
+                            -
+                        @endif
+                    </td>
+                </tr>
+            @empty
+                <tr><td colspan="5" class="text-muted">No human rubric scores yet.</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
 
 <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
     <div class="small text-muted">Applicants appear as soon as they start. Submitted attempts remain available for rubric-level human evaluation.</div>
