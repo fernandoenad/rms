@@ -25,7 +25,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['content_type','vacancy_id','retired_at'], 'assessment_bank_lookup_idx');
-            $table->unique(['content_type','fingerprint'], 'assessment_bank_fingerprint_unique');
+            $table->unique(['content_type','vacancy_id','fingerprint'], 'assessment_bank_fingerprint_unique');
         });
 
         Schema::create('assessment_permissions', function (Blueprint $table) {
