@@ -17,6 +17,7 @@ return new class extends Migration
                 ->constrained('users')->nullOnDelete();
             $table->dateTime('reviewed_at')->nullable()->after('reviewed_by');
             $table->text('review_notes')->nullable()->after('reviewed_at');
+            $table->boolean('is_active')->default(true)->after('review_notes');
             $table->string('score_release_policy', 32)->default('manual')->after('ai_scoring');
             $table->dateTime('scores_released_at')->nullable()->after('score_release_policy');
         });
@@ -90,6 +91,7 @@ return new class extends Migration
                 'review_status',
                 'reviewed_at',
                 'review_notes',
+                'is_active',
             ]);
         });
 
