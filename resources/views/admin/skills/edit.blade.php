@@ -162,6 +162,23 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label>Applicant score criterion</label>
+                <select name="assessment_score_key" class="form-control" {{ $locked?'disabled':'' }}>
+                    <option value="">Do not write this test into applicant scores</option>
+                    @foreach($scoreCriteria as $key=>$max)
+                        <option value="{{ $key }}" {{ old('assessment_score_key',$skillTest->assessment_score_key)===$key?'selected':'' }}>
+                            {{ $key }} ({{ number_format($max,2) }} pts)
+                        </option>
+                    @endforeach
+                </select>
+                @if($locked)<input type="hidden" name="assessment_score_key" value="{{ $skillTest->assessment_score_key }}">@endif
+                <small class="text-muted">Official 100-point rubric scores are scaled to the selected recruitment-template criterion. Other applicant-score criteria are preserved.</small>
+                @if($skillTest->scores_synced_at)
+                    <div class="small text-success mt-1">Last applicant-score sync: {{ $skillTest->scores_synced_at->format('M d, Y h:i A') }}</div>
+                @endif
+            </div>
+
             <div class="form-row">
                 <div class="form-group col-md-4">
                     <label>Access</label>
