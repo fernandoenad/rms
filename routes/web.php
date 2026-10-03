@@ -185,6 +185,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/assessment-groups/{assessmentGroup}/analytics', [AdminAssessmentGroup::class, 'analytics'])->name('admin.assessment_groups.analytics');
     Route::get('/admin/assessment-groups/{assessmentGroup}/export', [AdminAssessmentGroup::class, 'exportCsv'])->name('admin.assessment_groups.export');
     Route::post('/admin/assessment-groups/{assessmentGroup}/equivalent-set', [AdminAssessmentGroup::class, 'createEquivalentSet'])->middleware('assessment.capability:author')->name('admin.assessment_groups.equivalent_set');
+    Route::post('/admin/assessment-groups/{assessmentGroup}/accommodations', [AdminAssessmentGroup::class, 'saveAccommodation'])->middleware('assessment.capability:monitor')->name('admin.assessment_groups.accommodations');
     Route::post('/admin/assessment-groups/{assessmentGroup}/pause', [AdminAssessmentGroup::class, 'pause'])->middleware('assessment.capability:monitor')->name('admin.assessment_groups.pause');
     Route::post('/admin/assessment-groups/{assessmentGroup}/resume', [AdminAssessmentGroup::class, 'resume'])->middleware('assessment.capability:monitor')->name('admin.assessment_groups.resume');
     Route::post('/admin/assessment-groups/{assessmentGroup}/archive', [AdminAssessmentGroup::class, 'archive'])->middleware('assessment.capability:release')->name('admin.assessment_groups.archive');
@@ -241,6 +242,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::post('/admin/skills/{skillTest}/assign', [AdminSkillTest::class, 'assignApplicants'])->name('admin.skills.assign');
     Route::post('/admin/skills/{skillTest}/toggle', [AdminSkillTest::class, 'toggleStatus'])->middleware('assessment.capability:reviewer')->name('admin.skills.toggle');
     Route::post('/admin/skills/{skillTest}/approve', [AdminSkillTest::class, 'approve'])->middleware('assessment.capability:reviewer')->name('admin.skills.approve');
+    Route::post('/admin/skills/{skillTest}/accommodations', [AdminSkillTest::class, 'saveAccommodation'])->middleware('assessment.capability:monitor')->name('admin.skills.accommodations');
     Route::post('/admin/skills/{skillTest}/pause', [AdminSkillTest::class, 'pause'])->middleware('assessment.capability:monitor')->name('admin.skills.pause');
     Route::post('/admin/skills/{skillTest}/resume', [AdminSkillTest::class, 'resume'])->middleware('assessment.capability:monitor')->name('admin.skills.resume');
     Route::post('/admin/skills/{skillTest}/archive', [AdminSkillTest::class, 'archive'])->middleware('assessment.capability:release')->name('admin.skills.archive');
