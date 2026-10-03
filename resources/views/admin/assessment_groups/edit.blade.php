@@ -184,10 +184,10 @@
                 <p class="mb-2">Policy: <strong>{{ ucfirst(str_replace('_',' ',$assessmentGroup->score_release_policy)) }}</strong></p>
                 <p class="small text-muted">Released at: {{ optional($assessmentGroup->scores_released_at)->format('M d, Y h:i A') ?: 'Not manually released' }}</p>
                 <form method="post" action="{{ route('admin.assessment_groups.release_scores',$assessmentGroup) }}" class="d-inline">@csrf
-                    <button class="btn btn-success btn-sm" {{ $assessmentGroup->score_release_policy==='hidden'?'disabled':'' }}>Release Scores</button>
+                    <button class="btn btn-success btn-sm" {{ $assessmentGroup->score_release_policy!=='manual'?'disabled':'' }}>Release Scores</button>
                 </form>
                 <form method="post" action="{{ route('admin.assessment_groups.hide_scores',$assessmentGroup) }}" class="d-inline">@csrf
-                    <button class="btn btn-outline-secondary btn-sm">Hide Scores</button>
+                    <button class="btn btn-outline-secondary btn-sm" {{ in_array($assessmentGroup->score_release_policy,['immediate','after_close'],true)?'disabled':'' }}>Hide Scores</button>
                 </form>
             </div>
         </div>
