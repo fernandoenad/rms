@@ -172,6 +172,8 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/vacancies/{vacancy}/apply', [AdminVacancy::class, 'apply'])->name('admin.vacancies.apply');
 
     Route::get('/admin/assessment-center', [AdminAssessmentCenter::class, 'index'])->name('admin.assessment_center.index');
+    Route::post('/admin/assessment-center/failed-jobs/retry', [AdminAssessmentCenter::class, 'retryFailedJobs'])->name('admin.assessment_center.failed_jobs.retry');
+    Route::post('/admin/assessment-center/failed-jobs/clear', [AdminAssessmentCenter::class, 'clearFailedJobs'])->name('admin.assessment_center.failed_jobs.clear');
     Route::get('/admin/assessment-snapshots', [AdminAssessmentSnapshot::class, 'index'])->name('admin.assessment_snapshots.index');
     Route::get('/admin/assessment-snapshots/{snapshot}/download', [AdminAssessmentSnapshot::class, 'download'])->name('admin.assessment_snapshots.download');
 
