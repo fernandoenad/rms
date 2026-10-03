@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\AssessmentAccommodation;
+use App\Models\AssessmentAiGenerationRun;
 use App\Models\AssessmentGroup;
 use App\Models\AssessmentGroupAttemptLock;
 use App\Models\AssessmentIncident;
@@ -13,6 +14,7 @@ use App\Models\Exam;
 use App\Models\ExamAssignment;
 use App\Models\ExamAttempt;
 use App\Models\Vacancy;
+use App\Jobs\GenerateWrittenExamItemsBatch;
 use App\Services\AssessmentAnalyticsService;
 use App\Services\AssessmentGovernanceService;
 use App\Services\AssessmentScoreSyncService;
@@ -358,6 +360,107 @@ class AssessmentGroupController extends Controller
 
         return redirect()->route('admin.assessment_groups.edit', $assessmentGroup)
             ->with('status', 'Assessment group and blueprint updated.');
+    }
+
+    public function generateAllSets(
+        Request $request,
+        AssessmentGroup $assessmentGroup,
+        AssessmentGovernanceService $governance
+    ) {
+        $this->ensureNotArchived($assessmentGroup);
+
+        $data = $request->validate([
+            'additional_context'=>'nullable|string|max:30000',
+            'generation_focus'=>'required|in:mixed,duties,technical,situational',
+        ]);
+
+        $blueprint = $assessmentGroup->blueprint ?: [];
+        $count = (int)($blueprint['item_count'] ?? 0);
+        $distribution = $blueprint['solo_distribution'] ?? [];
+
+        if ($count < 1 || array_sum(array_map('intval',$distribution)) !== 100) {
+            return back()->with(
+                'status',
+                'Configure the shared blueprint first: item count and SOLO distribution totaling 100% are required for automatic set generation.'
+            );
+        }
+
+        $contextOptions = [
+            'use_qualifications'=>$request->boolean('use_qualifications'),
+            'use_job_description'=>$request->boolean('use_job_description'),
+            'additional_context'=>trim((string)($data['additional_context'] ?? '')),
+            'generation_focus'=>$data['generation_focus'],
+            'blueprint'=>$blueprint,
+        ];
+
+        if (!$contextOptions['use_qualifications']
+            && !$contextOptions['use_job_description']
+            && $contextOptions['additional_context'] === '') {
+            return back()->with('status','Select at least one vacancy context source or provide additional context.');
+        }
+
+        $sets = $assessmentGroup->exams()
+            ->where('status',0)
+            ->whereDoesntHave('attempts',fn($q)=>$q->whereNotNull('started_at'))
+            ->withCount('writtenExams')
+            ->orderBy('set_code')
+            ->get();
+
+        $targets = $sets->filter(fn($set)=>(int)$set->written_exams_count === 0)->values();
+
+        if ($targets->isEmpty()) {
+            return back()->with(
+                'status',
+                'No empty draft sets are available. Existing generated/manual items were left untouched.'
+            );
+        }
+
+        $queuedRuns = 0;
+        $queuedBatches = 0;
+        $batchSize = 10;
+
+        foreach ($targets as $exam) {
+            $exam->update([
+                'ai_context'=>$contextOptions['additional_context'] ?: null,
+                'ai_generation_focus'=>$contextOptions['generation_focus'],
+                'ai_use_qualifications'=>$contextOptions['use_qualifications'],
+                'ai_use_job_description'=>$contextOptions['use_job_description'],
+            ]);
+
+            $batchCount = (int)ceil($count/$batchSize);
+            $run = AssessmentAiGenerationRun::create([
+                'exam_id'=>$exam->id,
+                'requested_count'=>$count,
+                'generated_count'=>0,
+                'failed_batches'=>0,
+                'batch_count'=>$batchCount,
+                'completed_batches'=>0,
+                'solo_distribution'=>$distribution,
+                'context_options'=>$contextOptions,
+                'status'=>'queued',
+                'requested_by'=>auth()->id(),
+            ]);
+
+            for ($remaining=$count; $remaining>0; $remaining-=$batchSize) {
+                GenerateWrittenExamItemsBatch::dispatch($run->id,min($batchSize,$remaining));
+                $queuedBatches++;
+            }
+
+            $queuedRuns++;
+        }
+
+        $governance->log('written_group_ai_generation_queued', [
+            'assessment_group_id'=>$assessmentGroup->id,
+        ], [
+            'set_count'=>$queuedRuns,
+            'batch_count'=>$queuedBatches,
+            'items_per_set'=>$count,
+        ]);
+
+        return back()->with(
+            'status',
+            "AI generation queued for {$queuedRuns} empty set(s), {$count} items per set. Review and approve the generated items before publishing."
+        );
     }
 
     public function createEquivalentSet(
