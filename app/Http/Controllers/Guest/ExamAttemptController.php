@@ -207,12 +207,6 @@ class ExamAttemptController extends Controller
         $this->authorizeExam($application, $exam);
         $this->assertStartWindow($exam);
 
-        $request->validate(['enrollment_key' => 'required|string']);
-
-        if (!hash_equals((string) $exam->enrollment_key, trim((string) $request->enrollment_key))) {
-            return back()->with('status_assessment', 'Invalid enrollment key.');
-        }
-
         if ($exam->assessment_group_id) {
             $existingLock = AssessmentGroupAttemptLock::where('assessment_group_id', $exam->assessment_group_id)
                 ->where('application_id', $application->id)
