@@ -101,6 +101,37 @@ class WrittenExamItemController extends Controller
         ));
     }
 
+    public function generationStatus(Exam $exam, AssessmentGovernanceService $governance)
+    {
+        $runs = AssessmentAiGenerationRun::where('exam_id', $exam->id)
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get()
+            ->map(fn ($run) => [
+                'id'=>$run->id,
+                'requested_count'=>(int)$run->requested_count,
+                'generated_count'=>(int)$run->generated_count,
+                'completed_batches'=>(int)$run->completed_batches,
+                'batch_count'=>(int)$run->batch_count,
+                'failed_batches'=>(int)$run->failed_batches,
+                'status'=>$run->status,
+                'last_error'=>$run->last_error,
+                'updated_at'=>$run->updated_at?->format('M d, h:i:s A'),
+            ])
+            ->values();
+
+        $readiness = $governance->readiness($exam->fresh());
+
+        return response()->json([
+            'runs'=>$runs,
+            'readiness'=>[
+                'ready'=>(bool)$readiness['ready'],
+                'item_count'=>(int)($readiness['item_count'] ?? 0),
+                'issues'=>array_values($readiness['issues'] ?? []),
+            ],
+        ]);
+    }
+
     public function edit(Exam $exam, WrittenExam $item)
     {
         $this->ensureMutable($exam);
