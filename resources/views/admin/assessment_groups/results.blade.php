@@ -98,6 +98,9 @@
                     <td>
                         {{ optional($attempt->application)->getFullname() }}<br>
                         <small class="text-muted">{{ optional($attempt->application)->application_code }}</small>
+                        @if($attempt->incidents->isNotEmpty())
+                            <div class="mt-1"><span class="badge badge-warning"><i class="fas fa-exclamation-triangle"></i> {{ $attempt->incidents->count() }} open incident(s)</span></div>
+                        @endif
                     </td>
                     <td><span class="badge badge-primary">{{ optional($attempt->exam)->set_code ?: optional($attempt->exam)->title }}</span></td>
                     <td>
