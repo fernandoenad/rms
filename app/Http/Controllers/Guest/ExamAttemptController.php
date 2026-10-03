@@ -16,6 +16,7 @@ use App\Models\ExamAttemptItemOrder;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\AssessmentScoreSyncService;
 
 class ExamAttemptController extends Controller
 {
@@ -149,7 +150,7 @@ class ExamAttemptController extends Controller
             return $attempt;
         }
 
-        return DB::transaction(function () use ($request, $attempt, $reason, $autoSubmitted) {
+        $finalized = DB::transaction(function () use ($request, $attempt, $reason, $autoSubmitted) {
             $locked = ExamAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
 
             if ((int) $locked->status === 2) {
@@ -197,6 +198,10 @@ class ExamAttemptController extends Controller
 
             return $locked;
         });
+
+        app(AssessmentScoreSyncService::class)->syncWrittenAttempt($finalized);
+
+        return $finalized;
     }
 
     protected function finalizeExpiredAttempt(Request $request, ExamAttempt $attempt): ExamAttempt
