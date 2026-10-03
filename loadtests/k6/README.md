@@ -123,3 +123,24 @@ Review the query plans and the Assessment Center save-latency panel. If a query 
 ## Important
 
 A successful 1,000-VU test on staging is evidence for that staging/server configuration. If production has fewer PHP-FPM workers, different MySQL settings, less RAM/CPU, or slower storage, repeat the test on infrastructure that closely matches production before relying on the result.
+
+
+## Simulating live admin monitoring
+
+While the applicant scenario is running, a second k6 process can simulate several administrators/proctors refreshing operational dashboards.
+
+Use a disposable staging admin session cookie:
+
+```bash
+k6 run \
+  -e BASE_URL=https://staging.example.org \
+  -e ADMIN_SESSION_COOKIE='laravel_session=YOUR_STAGING_SESSION_COOKIE' \
+  -e GROUP_ID=12 \
+  -e SKILL_TEST_ID=55 \
+  -e TARGET_VUS=5 \
+  loadtests/k6/operations-dashboard.js
+```
+
+This repeatedly loads the unified Assessment Center and, when IDs are supplied, the Written Group Results and Skills Results pages. Run this concurrently with the 500/1,000 applicant scenarios to verify that monitoring queries do not materially degrade autosave latency.
+
+Use only a staging admin session. Do not commit session cookies or include them in shell history on shared systems.
