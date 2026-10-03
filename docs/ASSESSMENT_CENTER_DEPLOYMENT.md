@@ -242,3 +242,18 @@ The streamed CSV export includes criterion-level human scores and evaluator note
 ### AI file-scoring limitation
 
 The current AI scorer extracts text from DOCX submissions. Other allowed file formats remain fully available for human evaluation, but are not silently treated as machine-readable. If a submission contains no inline response and the uploaded file cannot be text-extracted, AI evaluation is marked **Skipped** rather than failing the queue job.
+
+
+## Assessment approval and skills response integrity
+
+Written tests and Skills Tests now carry assessment-level creator/approval metadata.
+
+- If the creator is an administrator (role level 1), the assessment is automatically approved at creation.
+- Assessments created by non-admin users remain Pending Approval until an administrator approves them.
+- Assessment readiness blocks publication while assessment-level approval is pending.
+- Equivalent written-set placeholders and new equivalent sets follow the same creator rule.
+- Existing assessments are grandfathered as approved by the migration so the governance upgrade does not unexpectedly block assessments already in operational use.
+
+This assessment-level approval is separate from item/task/rubric review. AI-generated written items and AI-generated/revised Skills content still follow their specific review requirements.
+
+For inline Skills Test responses, browser paste and drag/drop text insertion are disabled. Applicants are instructed to type the response directly into the assessment. This is a browser-side integrity control and should be treated as deterrence rather than proof that external assistance was impossible.
