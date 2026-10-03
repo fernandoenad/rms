@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Models\AssessmentAccommodation;
 use App\Models\AssessmentGroup;
 use App\Models\AssessmentGroupAttemptLock;
 use App\Models\AssessmentIncident;
@@ -635,6 +636,55 @@ class AssessmentGroupController extends Controller
         });
 
         return back()->with('status', 'Attempt retained as voided and applicant locked to the selected retake set.');
+    }
+
+    public function saveAccommodation(
+        Request $request,
+        AssessmentGroup $assessmentGroup,
+        AssessmentGovernanceService $governance
+    ) {
+        $this->ensureNotArchived($assessmentGroup);
+
+        $data = $request->validate([
+            'application_code'=>'required|string|max:100',
+            'extra_minutes'=>'required|integer|min:0|max:240',
+            'large_text'=>'nullable|boolean',
+            'notes'=>'nullable|string|max:3000',
+        ]);
+
+        $application = Application::where('vacancy_id',$assessmentGroup->vacancy_id)
+            ->where('application_code',$data['application_code'])
+            ->whereHas('assessment')
+            ->first();
+
+        if (!$application) {
+            return back()->with('status','No taken-in applicant with that application code was found for this position.');
+        }
+
+        AssessmentAccommodation::updateOrCreate(
+            [
+                'application_id'=>$application->id,
+                'assessment_group_id'=>$assessmentGroup->id,
+            ],
+            [
+                'exam_id'=>null,
+                'skill_test_id'=>null,
+                'extra_minutes'=>(int)$data['extra_minutes'],
+                'large_text'=>$request->boolean('large_text'),
+                'notes'=>$data['notes'] ?? null,
+                'approved_by'=>auth()->id(),
+            ]
+        );
+
+        $governance->log('written_accommodation_saved', [
+            'assessment_group_id'=>$assessmentGroup->id,
+        ], [
+            'application_id'=>$application->id,
+            'extra_minutes'=>(int)$data['extra_minutes'],
+            'large_text'=>$request->boolean('large_text'),
+        ]);
+
+        return back()->with('status','Applicant accommodation saved for all sets in this written assessment.');
     }
 
     public function pause(
