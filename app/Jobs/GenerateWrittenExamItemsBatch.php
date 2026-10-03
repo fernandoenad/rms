@@ -22,10 +22,14 @@ class GenerateWrittenExamItemsBatch implements ShouldQueue
     public int $tries = 2;
     public int $timeout = 600;
 
+    public array $backoff = [30, 120];
+
     public function __construct(
         public int $runId,
         public int $batchSize
-    ) {}
+    ) {
+        $this->onQueue('assessment-ai');
+    }
 
     public function handle(AssessmentAiService $ai): void
     {
