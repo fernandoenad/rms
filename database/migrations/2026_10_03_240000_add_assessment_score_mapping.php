@@ -11,7 +11,6 @@ return new class extends Migration
         Schema::table('assessment_groups', function (Blueprint $table) {
             $table->string('assessment_score_key')->nullable()->after('score_release_policy');
             $table->dateTime('scores_synced_at')->nullable()->after('assessment_score_key');
-            $table->dateTime('scores_synced_at')->nullable()->after('assessment_score_key');
         });
 
         Schema::table('exams', function (Blueprint $table) {
@@ -20,6 +19,7 @@ return new class extends Migration
 
         Schema::table('skill_tests', function (Blueprint $table) {
             $table->string('assessment_score_key')->nullable()->after('score_release_policy');
+            $table->dateTime('scores_synced_at')->nullable()->after('assessment_score_key');
         });
     }
 
