@@ -281,6 +281,34 @@
                                     <button class="btn btn-sm btn-outline-info">Record Incident</button>
                                 </form>
 
+                                @if((int)$attempt->status===1)
+                                <form method="post" action="{{ route('admin.skills.attempts.extend',[$skillTest,$attempt]) }}" class="mb-3">@csrf
+                                    <strong>Approved Time Extension</strong>
+                                    <div class="form-row mt-1">
+                                        <div class="col-4"><input type="number" min="1" max="240" name="minutes" class="form-control form-control-sm" placeholder="Minutes" required></div>
+                                        <div class="col-8"><input name="reason" class="form-control form-control-sm" placeholder="Reason / accommodation" required></div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary mt-1">Add Time</button>
+                                </form>
+                                @endif
+
+                                <details class="mb-3">
+                                    <summary class="small font-weight-bold">Attempt timeline & score history</summary>
+                                    <div class="small mt-2">
+                                        <div><strong>Started:</strong> {{ optional($attempt->started_at)->format('M d, Y h:i:s A') ?: '-' }}</div>
+                                        @foreach($attempt->timeExtensions as $extension)
+                                            <div class="text-primary">+{{ $extension->minutes }} min · {{ $extension->reason }} · {{ $extension->created_at->format('M d, h:i A') }}</div>
+                                        @endforeach
+                                        @foreach($attempt->events as $event)
+                                            <div>{{ $event->event_at->format('M d, h:i:s A') }} · {{ str_replace('_',' ',$event->event_type) }}</div>
+                                        @endforeach
+                                        @foreach($attempt->scoreChanges as $change)
+                                            <div class="text-success">Score {{ $change->previous_score ?? '-' }} → {{ $change->new_score }} · {{ $change->source }} · {{ $change->created_at->format('M d, h:i A') }}</div>
+                                        @endforeach
+                                        @if($attempt->submitted_at)<div><strong>Submitted:</strong> {{ $attempt->submitted_at->format('M d, Y h:i:s A') }}</div>@endif
+                                    </div>
+                                </details>
+
                                 @if((int)$attempt->status !== 3 && $retakeTests->isNotEmpty())
                                 <form method="post" action="{{ route('admin.skills.attempts.void_retake',[$skillTest,$attempt]) }}"
                                       onsubmit="return confirm('Void this skills attempt and authorize the selected retake task? The original record will remain in the audit trail.');">@csrf
