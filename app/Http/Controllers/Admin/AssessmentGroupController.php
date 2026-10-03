@@ -47,17 +47,17 @@ class AssessmentGroupController extends Controller
 
     protected function validated(Request $request, ?AssessmentGroup $group = null): array
     {
+        $codeRule = Rule::unique('assessment_groups', 'code')
+            ->where(fn ($q) => $q->where('vacancy_id', $request->vacancy_id));
+
+        if ($group) {
+            $codeRule->ignore($group->id);
+        }
+
         return $request->validate([
             'vacancy_id' => 'required|exists:vacancies,id',
             'title' => 'required|string|max:255',
-            'code' => [
-                'nullable',
-                'string',
-                'max:100',
-                Rule::unique('assessment_groups', 'code')
-                    ->ignore($group?->id)
-                    ->where(fn ($q) => $q->where('vacancy_id', $request->vacancy_id)),
-            ],
+            'code' => ['nullable', 'string', 'max:100', $codeRule],
             'expected_sets' => 'required|integer|min:1|max:26',
             'default_duration' => 'nullable|integer|min:1|max:480',
             'status' => 'required|boolean',
@@ -250,6 +250,20 @@ class AssessmentGroupController extends Controller
             ]);
         }
 
+        $blueprintChanged = $assessmentGroup->blueprint != $blueprint;
+
+        if ($blueprintChanged && $started) {
+            return back()->withInput()->withErrors([
+                'blueprint_item_count' => 'The shared blueprint is locked after any applicant starts the assessment.',
+            ]);
+        }
+
+        if ($blueprintChanged && $assessmentGroup->exams()->where('status', 1)->exists()) {
+            return back()->withInput()->withErrors([
+                'blueprint_item_count' => 'Return all sets to draft before changing the shared blueprint.',
+            ]);
+        }
+
         DB::transaction(function () use ($assessmentGroup, $data, $blueprint, $governance) {
             $blueprintChanged = $assessmentGroup->blueprint != $blueprint;
 
@@ -290,7 +304,7 @@ class AssessmentGroupController extends Controller
         AssessmentGroup $assessmentGroup,
         AssessmentGovernanceService $governance
     ) {
-        if ($assessmentGroup->exams()->whereHas('attempts')->exists()) {
+        if ($assessmentGroup->exams()->whereHas('attempts', fn ($q) => $q->whereNotNull('started_at'))->exists()) {
             return back()->with('status', 'Equivalent set structure is locked after attempts exist.');
         }
 
@@ -452,6 +466,10 @@ class AssessmentGroupController extends Controller
         AssessmentGroup $assessmentGroup,
         AssessmentGovernanceService $governance
     ) {
+        if (in_array($assessmentGroup->score_release_policy, ['immediate', 'after_close'], true)) {
+            return back()->with('status', 'This score policy releases automatically. Change the policy to Manual or Hidden to suppress scores.');
+        }
+
         $assessmentGroup->update(['scores_released_at' => null]);
         $governance->log('scores_hidden', [
             'assessment_group_id' => $assessmentGroup->id,
@@ -515,6 +533,14 @@ class AssessmentGroupController extends Controller
 
         if ((int) $retakeExam->id === (int) $attempt->exam_id) {
             return back()->with('status', 'Choose a different equivalent set for the retake.');
+        }
+
+        if ((int) $retakeExam->status !== 1) {
+            return back()->with('status', 'Publish and validate the retake set before assigning an applicant to it.');
+        }
+
+        if ((int) $attempt->status === 3) {
+            return back()->with('status', 'This attempt is already voided.');
         }
 
         if ($retakeExam->attempts()->where('application_id', $attempt->application_id)->exists()) {
