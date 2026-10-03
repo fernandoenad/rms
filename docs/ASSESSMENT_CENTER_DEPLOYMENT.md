@@ -385,3 +385,46 @@ It now supports:
 - Assessment Center health heartbeat;
 - scheduled telemetry retention.
 
+
+
+## Load testing and database optimization
+
+The Assessment Center now includes a staged k6 load-test harness under `loadtests/k6/` and a read-only database diagnostics command.
+
+Before a high-volume recruitment window:
+
+1. Deploy to staging and run all migrations.
+2. Verify expected indexes and representative query plans:
+
+   `php artisan assessments:db-diagnostics --explain`
+
+3. Prepare synthetic taken-in applicants for the staging vacancy. Use at least as many unique applicants as the intended k6 VU target.
+4. Run the Written and Skills scenarios progressively at approximately 100, 500, then 1,000 concurrent VUs rather than jumping directly to maximum load.
+5. Review server CPU/RAM, PHP-FPM saturation, database connections, slow-query log, disk I/O, Assessment Center save-latency metrics, failed jobs, and timeout backlog after every stage.
+
+The high-volume index migration adds targeted indexes for:
+- applicant guest lookup and vacancy/application-code lookup;
+- application assessment eligibility;
+- vacancy/schedule assessment discovery;
+- written item publication/review lookup;
+- global and per-assessment timeout scans;
+- recent written-answer activity;
+- assessment-group lock lookup by applicant;
+- skills pending-human and timeout scans;
+- versioned skills submissions;
+- queued skills AI evaluation lookup.
+
+The unified Assessment Center dashboard also consolidates several status counters into aggregate queries rather than issuing separate count queries for every metric.
+
+The k6 scenarios exercise real session, CSRF, start/resume, and autosave routes. They do not bypass applicant access controls and therefore require unique staging applicants.
+
+Default load-test acceptance thresholds are:
+- HTTP failure rate below 1%;
+- successful checks above 99%;
+- autosave failure rate below 1%;
+- autosave P95 below 2 seconds;
+- autosave P99 below 5 seconds.
+
+See `loadtests/k6/README.md` for commands and fixture format.
+
+Do not treat a successful staging load test as a guarantee for materially different production hardware. The final pre-launch test should use infrastructure that matches production PHP-FPM, database, CPU/RAM, and storage characteristics as closely as practical.
