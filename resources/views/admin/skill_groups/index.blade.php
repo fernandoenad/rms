@@ -7,7 +7,7 @@
         <small class="text-muted">Equivalent skills-task sets for the same position</small>
     </div>
     <div>
-        <a href="{{ route('admin.skills.index') }}" class="btn btn-outline-secondary mr-2">All Skills Tests</a>
+        <a href="{{ route('admin.skills.tests.index') }}" class="btn btn-outline-secondary mr-2">All Skills Tests</a>
         <a href="{{ route('admin.skill_groups.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> New Skills Test Group</a>
     </div>
 </div>
