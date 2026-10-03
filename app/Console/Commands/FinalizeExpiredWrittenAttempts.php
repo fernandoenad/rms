@@ -40,16 +40,27 @@ class FinalizeExpiredWrittenAttempts extends Command
                     $total = $items->count();
 
                     $correct = DB::table('exam_attempt_answers as a')
-                        ->join('written_exam_options as o', 'o.id', '=', 'a.selected_option_id')
+                        ->join('written_exams as w', 'w.id', '=', 'a.written_exam_id')
+                        ->leftJoin('written_exam_options as o', 'o.id', '=', 'a.selected_option_id')
                         ->where('a.exam_attempt_id', $attempt->id)
                         ->whereIn('a.written_exam_id', $items)
-                        ->where('o.is_correct', 1)
+                        ->where(function ($query) {
+                            $query->where('o.is_correct', 1)
+                                ->orWhere(function ($legacy) {
+                                    $legacy->whereNull('a.selected_option_id')
+                                        ->whereNotNull('a.selected_option')
+                                        ->whereRaw('UPPER(a.selected_option) = UPPER(w.answer_key)');
+                                });
+                        })
                         ->count();
 
                     $answered = DB::table('exam_attempt_answers')
                         ->where('exam_attempt_id', $attempt->id)
                         ->whereIn('written_exam_id', $items)
-                        ->whereNotNull('selected_option_id')
+                        ->where(function ($query) {
+                            $query->whereNotNull('selected_option_id')
+                                ->orWhereNotNull('selected_option');
+                        })
                         ->count();
 
                     $percentage = $total > 0 ? round(($correct / $total) * 100, 2) : 0;
