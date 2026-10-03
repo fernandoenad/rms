@@ -72,6 +72,95 @@ class AssessmentAiService
         return $decoded;
     }
 
+    protected function optionWordCount(string $text): int
+    {
+        $text = trim((string) preg_replace('/\\s+/u', ' ', strip_tags($text)));
+        if ($text === '') return 0;
+
+        $words = preg_split('/\\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY);
+        return count($words ?: []);
+    }
+
+    protected function writtenOptionsHaveEqualLength(array $item): bool
+    {
+        if (!isset($item['options'], $item['correct_index'])
+            || !is_array($item['options'])
+            || count($item['options']) !== 4
+            || !in_array((int)$item['correct_index'], [0,1,2,3], true)) {
+            return false;
+        }
+
+        $counts = array_map(
+            fn($option) => $this->optionWordCount((string)$option),
+            $item['options']
+        );
+
+        if (min($counts) < 2) return false;
+
+        // Strict parity: longest and shortest may differ by at most one word.
+        if ((max($counts) - min($counts)) > 1) return false;
+
+        // Also prevent the answer key from being the sole longest choice.
+        $correctIndex = (int)$item['correct_index'];
+        $correctCount = $counts[$correctIndex];
+        $max = max($counts);
+
+        if ($correctCount === $max && count(array_filter($counts, fn($n) => $n === $max)) === 1) {
+            return false;
+        }
+
+        return true;
+    }
+
+    protected function repairWrittenOptions(array $items): array
+    {
+        if (!$items) return [];
+
+        $system = <<<'PROMPT'
+You are a strict multiple-choice option editor.
+
+Rewrite ONLY the four answer options for each item. Preserve:
+- the stem/question;
+- correct_index;
+- the meaning of the keyed answer;
+- SOLO level;
+- difficulty;
+- competency basis;
+- rationale.
+
+NON-NEGOTIABLE RULES:
+1. All four options must have the SAME WORD COUNT. A maximum difference of ONE word is allowed only if exact equality would make the language unnatural.
+2. The keyed answer must NEVER be the only longest option.
+3. Keep options parallel in grammar, syntax, specificity, tone, and detail.
+4. Preserve one BEST keyed answer, two strong BETTER near-miss distractors, and one plausible GOOD distractor. Do not label these levels.
+5. Do not weaken distractors merely to shorten them. Rewrite all four options as needed.
+6. For extended-abstract and relational items, keep the cognitive complexity in the stem/reasoning, not in longer answer text.
+7. Before returning JSON, COUNT THE WORDS in A, B, C, and D and revise until the four counts are equal or differ by no more than one.
+8. Return VALID JSON ONLY, no markdown.
+
+JSON:
+{"items":[{"question":"...","options":["...","...","...","..."],"correct_index":0,"solo_level":"...","difficulty":"...","competency_basis":"...","rationale":"..."}]}
+PROMPT;
+
+        $response = $this->client()->chat()->create([
+            'model'=>$this->model(),
+            'messages'=>[
+                ['role'=>'system','content'=>$system],
+                ['role'=>'user','content'=>"Repair these option sets:\n".json_encode(
+                    ['items'=>$items],
+                    JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+                )],
+            ],
+        ]);
+
+        $decoded = $this->decodeJson($response['choices'][0]['message']['content'] ?? '');
+        if (!isset($decoded['items']) || !is_array($decoded['items'])) {
+            throw new RuntimeException('AI returned an invalid option-repair payload.');
+        }
+
+        return $decoded['items'];
+    }
+
     public function generateWrittenItems(
         Vacancy $vacancy,
         int $count,
@@ -145,7 +234,37 @@ PROMPT;
             throw new RuntimeException('AI returned an invalid written-exam payload.');
         }
 
-        return array_slice($decoded['items'], 0, $count);
+        $items = array_slice($decoded['items'], 0, $count);
+
+        // Prompting alone is not reliable enough for option-length parity.
+        // Validate generated options in code and send only violating items
+        // through a focused repair pass before they can be persisted.
+        for ($pass = 0; $pass < 2; $pass++) {
+            $invalidIndexes = [];
+
+            foreach ($items as $index => $item) {
+                if (!$this->writtenOptionsHaveEqualLength($item)) {
+                    $invalidIndexes[] = $index;
+                }
+            }
+
+            if (!$invalidIndexes) break;
+
+            $repairInput = array_map(fn($index) => $items[$index], $invalidIndexes);
+            $repaired = $this->repairWrittenOptions($repairInput);
+
+            foreach ($invalidIndexes as $position => $originalIndex) {
+                if (isset($repaired[$position])) {
+                    $items[$originalIndex] = $repaired[$position];
+                }
+            }
+        }
+
+        // Never persist an item whose option lengths still violate the rule.
+        return array_values(array_filter(
+            $items,
+            fn($item) => $this->writtenOptionsHaveEqualLength($item)
+        ));
     }
 
     public function generateSkillsTask(
