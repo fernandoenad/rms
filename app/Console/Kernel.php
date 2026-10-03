@@ -12,6 +12,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        $schedule->command('assessments:health-heartbeat')
+            ->everyMinute()
+            ->withoutOverlapping();
         $schedule->command('assessments:finalize-expired --limit=1000')
             ->everyMinute()
             ->withoutOverlapping();
