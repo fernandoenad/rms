@@ -176,6 +176,9 @@ class AssessmentGroupController extends Controller
                 'blueprint_version' => 1,
                 'status' => $data['status'],
                 'score_release_policy' => $data['score_release_policy'],
+                'scores_released_at' => $data['score_release_policy'] === 'manual'
+                    ? $assessmentGroup->scores_released_at
+                    : null,
             ]);
 
             $this->createSetPlaceholders(
@@ -451,8 +454,8 @@ class AssessmentGroupController extends Controller
         AssessmentGroup $assessmentGroup,
         AssessmentGovernanceService $governance
     ) {
-        if ($assessmentGroup->score_release_policy === 'hidden') {
-            return back()->with('status', 'Score release is disabled for this assessment group.');
+        if ($assessmentGroup->score_release_policy !== 'manual') {
+            return back()->with('status', 'Manual release is available only when the score release policy is set to Manual.');
         }
 
         $assessmentGroup->update(['scores_released_at' => now()]);
@@ -634,8 +637,8 @@ class AssessmentGroupController extends Controller
                             optional($attempt->application)->application_code,
                             optional($attempt->application)->getFullname(),
                             optional($attempt->exam)->set_code,
-                            optional($attempt->started_at)?->toIso8601String(),
-                            optional($attempt->ended_at)?->toIso8601String(),
+                            $attempt->started_at?->toIso8601String(),
+                            $attempt->ended_at?->toIso8601String(),
                             match ((int) $attempt->status) {
                                 1 => 'In progress',
                                 2 => 'Submitted',
