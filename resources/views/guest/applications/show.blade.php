@@ -356,6 +356,12 @@
                                                         <div class="card h-100 border">
                                                             <div class="card-body">
                                                                 <h6 class="mb-1">{{ $skillTest->title }}</h6>
+                                                                @if($skillTest->skill_test_group_id)
+                                                                    <div class="mb-1">
+                                                                        <span class="badge badge-primary">Set {{ $skillTest->set_code }}</span>
+                                                                        <span class="small text-muted">{{ optional($skillTest->skillTestGroup)->title }}</span>
+                                                                    </div>
+                                                                @endif
                                                                 <div class="small text-muted mb-2">{{ $skillTest->duration }} min · {{ $skillTest->start_date->format('M d, Y h:i A') }}</div>
                                                                 <div class="mb-2">
                                                                     @if($skillVoided)
@@ -393,7 +399,7 @@
                                                                     <a href="{{ route('guest.skills.attempts.take',$skillAttempt) }}" class="btn btn-sm btn-primary btn-block">Continue</a>
                                                                 @elseif($skillOpen)
                                                                     <form method="post" action="{{ route('guest.skills.start',[$application,$skillTest]) }}">@csrf
-                                                                        <button class="btn btn-sm btn-primary btn-block" onclick="return confirm('Start this skills test? The timer begins immediately.');">Start Skills Test</button>
+                                                                        <button class="btn btn-sm btn-primary btn-block" onclick="return confirm('{{ $skillTest->skill_test_group_id ? 'Start this Skills Test set? Your timer begins immediately and you will be locked to this equivalent set.' : 'Start this skills test? The timer begins immediately.' }}');">Start Skills Test</button>
                                                                     </form>
                                                                 @else
                                                                     <button class="btn btn-sm btn-secondary btn-block" disabled>Unavailable</button>
