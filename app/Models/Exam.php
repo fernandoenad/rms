@@ -15,6 +15,7 @@ class Exam extends Model
         'vacancy_id', 'created_by', 'assessment_group_id', 'title', 'code', 'set_code', 'enrollment_key',
         'start_date', 'end_date', 'duration', 'access_mode',
         'shuffle_items', 'shuffle_options', 'status',
+        'is_paused', 'pause_reason', 'paused_at', 'paused_by', 'archived_at', 'archived_by',
         'approval_status', 'approved_by', 'approved_at', 'approval_notes',
         'ai_context', 'ai_generation_focus',
         'ai_use_qualifications', 'ai_use_job_description',
@@ -28,6 +29,9 @@ class Exam extends Model
         'ai_use_qualifications' => 'boolean',
         'ai_use_job_description' => 'boolean',
         'approved_at' => 'datetime',
+        'is_paused' => 'boolean',
+        'paused_at' => 'datetime',
+        'archived_at' => 'datetime',
     ];
 
     public function vacancy(): BelongsTo { return $this->belongsTo(Vacancy::class); }
