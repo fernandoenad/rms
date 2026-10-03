@@ -246,9 +246,27 @@ class AssessmentGroupController extends Controller
         $assessmentGroup->load([
             'vacancy',
             'exams' => fn ($q) => $q->withCount(['attempts', 'assignments'])->orderBy('set_code'),
-            'incidents' => fn ($q) => $q->where('status', 'open')->latest()->limit(20),
-            'auditLogs' => fn ($q) => $q->with('user:id,name,email')->latest()->limit(30),
         ]);
+
+        // Avoid Laravel's per-parent eager-load limit window query here. Some
+        // production MySQL/MariaDB configurations reject the generated
+        // ROW_NUMBER() OVER (PARTITION BY ...) statement with SQLSTATE 1140.
+        // These are single-group queries, so ordinary LIMIT clauses are enough.
+        $incidents = $assessmentGroup->incidents()
+            ->where('status', 'open')
+            ->latest()
+            ->limit(20)
+            ->get();
+
+        $auditLogs = $assessmentGroup->auditLogs()
+            ->with('user:id,name,email')
+            ->latest()
+            ->limit(30)
+            ->get();
+
+        // Preserve the relationship API expected by the existing Blade view.
+        $assessmentGroup->setRelation('incidents', $incidents);
+        $assessmentGroup->setRelation('auditLogs', $auditLogs);
 
         $readiness = $assessmentGroup->exams
             ->mapWithKeys(fn ($exam) => [$exam->id => $governance->readiness($exam)]);
