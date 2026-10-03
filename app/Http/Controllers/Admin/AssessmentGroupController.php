@@ -15,6 +15,7 @@ use App\Models\ExamAttempt;
 use App\Models\Vacancy;
 use App\Services\AssessmentAnalyticsService;
 use App\Services\AssessmentGovernanceService;
+use App\Services\AssessmentScoreSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -48,12 +49,16 @@ class AssessmentGroupController extends Controller
         return view('admin.assessment_groups.index', compact('groups'));
     }
 
-    public function create()
+    public function create(AssessmentScoreSyncService $scoreSync)
     {
         $vacancies = Vacancy::orderByDesc('id')
-            ->get(['id', 'position_title', 'cycle']);
+            ->get(['id', 'position_title', 'cycle', 'template_id']);
 
-        return view('admin.assessment_groups.create', compact('vacancies'));
+        $scoreCriteriaByVacancy = $vacancies->mapWithKeys(
+            fn ($vacancy) => [$vacancy->id => $scoreSync->criteriaForVacancy($vacancy)]
+        );
+
+        return view('admin.assessment_groups.create', compact('vacancies','scoreCriteriaByVacancy'));
     }
 
     protected function validated(Request $request, ?AssessmentGroup $group = null): array
@@ -73,6 +78,7 @@ class AssessmentGroupController extends Controller
             'default_duration' => 'nullable|integer|min:1|max:480',
             'status' => 'required|boolean',
             'score_release_policy' => 'required|in:hidden,manual,after_close,immediate',
+            'assessment_score_key' => 'nullable|string|max:255',
             'blueprint_item_count' => 'nullable|integer|min:1|max:300',
             'solo_unistructural' => 'nullable|integer|min:0|max:100',
             'solo_multistructural' => 'nullable|integer|min:0|max:100',
@@ -179,9 +185,19 @@ class AssessmentGroupController extends Controller
         }
     }
 
-    public function store(Request $request, AssessmentGovernanceService $governance)
-    {
+    public function store(
+        Request $request,
+        AssessmentGovernanceService $governance,
+        AssessmentScoreSyncService $scoreSync
+    ) {
         $data = $this->validated($request);
+
+        if (!$scoreSync->criterionExistsForVacancy((int)$data['vacancy_id'], $data['assessment_score_key'] ?? null)) {
+            return back()->withInput()->withErrors([
+                'assessment_score_key'=>'The selected applicant-score criterion does not belong to this vacancy template.',
+            ]);
+        }
+
         $blueprint = $this->buildBlueprint($data);
 
         $group = DB::transaction(function () use ($data, $blueprint, $governance) {
@@ -194,7 +210,9 @@ class AssessmentGroupController extends Controller
                 'blueprint_version' => 1,
                 'status' => $data['status'],
                 'score_release_policy' => $data['score_release_policy'],
+                'assessment_score_key' => $data['assessment_score_key'] ?? null,
                 'scores_released_at' => null,
+                'scores_synced_at' => null,
             ]);
 
             $this->createSetPlaceholders(
@@ -215,12 +233,16 @@ class AssessmentGroupController extends Controller
             ->with('status', 'Assessment group created with draft set placeholders.');
     }
 
-    public function edit(AssessmentGroup $assessmentGroup, AssessmentGovernanceService $governance)
-    {
+    public function edit(
+        AssessmentGroup $assessmentGroup,
+        AssessmentGovernanceService $governance,
+        AssessmentScoreSyncService $scoreSync
+    ) {
         $vacancies = Vacancy::orderByDesc('id')
             ->get(['id', 'position_title', 'cycle']);
 
         $assessmentGroup->load([
+            'vacancy',
             'exams' => fn ($q) => $q->withCount(['attempts', 'assignments'])->orderBy('set_code'),
             'incidents' => fn ($q) => $q->where('status', 'open')->latest()->limit(20),
             'auditLogs' => fn ($q) => $q->with('user:id,name,email')->latest()->limit(30),
@@ -229,20 +251,31 @@ class AssessmentGroupController extends Controller
         $readiness = $assessmentGroup->exams
             ->mapWithKeys(fn ($exam) => [$exam->id => $governance->readiness($exam)]);
 
+        $scoreCriteria = $scoreSync->criteriaForVacancy($assessmentGroup->vacancy);
+
         return view('admin.assessment_groups.edit', compact(
             'assessmentGroup',
             'vacancies',
-            'readiness'
+            'readiness',
+            'scoreCriteria'
         ));
     }
 
     public function update(
         Request $request,
         AssessmentGroup $assessmentGroup,
-        AssessmentGovernanceService $governance
+        AssessmentGovernanceService $governance,
+        AssessmentScoreSyncService $scoreSync
     ) {
         $this->ensureNotArchived($assessmentGroup);
         $data = $this->validated($request, $assessmentGroup);
+
+        if (!$scoreSync->criterionExistsForVacancy((int)$data['vacancy_id'], $data['assessment_score_key'] ?? null)) {
+            return back()->withInput()->withErrors([
+                'assessment_score_key'=>'The selected applicant-score criterion does not belong to this vacancy template.',
+            ]);
+        }
+
         $blueprint = $this->buildBlueprint($data);
 
         if ($assessmentGroup->exams()->exists()
@@ -298,9 +331,14 @@ class AssessmentGroupController extends Controller
                     : $assessmentGroup->blueprint_version,
                 'status' => $data['status'],
                 'score_release_policy' => $data['score_release_policy'],
+                'assessment_score_key' => $data['assessment_score_key'] ?? null,
                 'scores_released_at' => $data['score_release_policy'] === 'manual'
                     ? $assessmentGroup->scores_released_at
                     : null,
+                'scores_synced_at' => (
+                    ($data['assessment_score_key'] ?? null) === $assessmentGroup->assessment_score_key
+                    && $data['score_release_policy'] === $assessmentGroup->score_release_policy
+                ) ? $assessmentGroup->scores_synced_at : null,
             ]);
 
             $this->createSetPlaceholders(
@@ -482,7 +520,8 @@ class AssessmentGroupController extends Controller
 
     public function releaseScores(
         AssessmentGroup $assessmentGroup,
-        AssessmentGovernanceService $governance
+        AssessmentGovernanceService $governance,
+        AssessmentScoreSyncService $scoreSync
     ) {
         $this->ensureNotArchived($assessmentGroup);
         if ($assessmentGroup->score_release_policy !== 'manual') {
@@ -490,11 +529,20 @@ class AssessmentGroupController extends Controller
         }
 
         $assessmentGroup->update(['scores_released_at' => now()]);
+        $sync = $scoreSync->syncWrittenGroup($assessmentGroup->fresh());
         $governance->log('scores_released', [
             'assessment_group_id' => $assessmentGroup->id,
+        ], [
+            'applicant_scores_synced'=>$sync['synced'],
+            'applicant_scores_skipped'=>$sync['skipped'],
         ]);
 
-        return back()->with('status', 'Applicant score visibility has been released.');
+        return back()->with(
+            'status',
+            'Applicant score visibility has been released. '
+            .$sync['synced'].' official written score(s) were synchronized to applicant assessment records.'
+            .($sync['skipped'] ? ' '.$sync['skipped'].' record(s) were skipped because no compatible applicant assessment/template mapping was available.' : '')
+        );
     }
 
     public function hideScores(
