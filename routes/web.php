@@ -19,6 +19,7 @@ use App\Http\Controllers\Admin\WrittenExamController as AdminWrittenExam;
 use App\Http\Controllers\Admin\AssessmentGroupController as AdminAssessmentGroup;
 use App\Http\Controllers\Admin\WrittenExamItemController as AdminWrittenExamItem;
 use App\Http\Controllers\Admin\SkillTestController as AdminSkillTest;
+use App\Http\Controllers\Admin\SkillTestGroupController as AdminSkillTestGroup;
 use App\Http\Controllers\Admin\AssessmentCenterController as AdminAssessmentCenter;
 use App\Http\Controllers\Admin\AssessmentContentBankController as AdminAssessmentContentBank;
 use App\Http\Controllers\Admin\AssessmentPermissionController as AdminAssessmentPermission;
@@ -232,6 +233,13 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/assessments/attempts/{attempt}', [\App\Http\Controllers\Admin\ExamAttemptController::class, 'take'])->name('admin.assessments.attempts.take');
     Route::post('/admin/assessments/attempts/{attempt}/answer', [\App\Http\Controllers\Admin\ExamAttemptController::class, 'saveAnswer'])->name('admin.assessments.attempts.answer');
     Route::post('/admin/assessments/attempts/{attempt}/submit', [\App\Http\Controllers\Admin\ExamAttemptController::class, 'submit'])->name('admin.assessments.attempts.submit');
+
+    Route::get('/admin/skill-groups', [AdminSkillTestGroup::class, 'index'])->name('admin.skill_groups.index');
+    Route::get('/admin/skill-groups/create', [AdminSkillTestGroup::class, 'create'])->name('admin.skill_groups.create');
+    Route::post('/admin/skill-groups', [AdminSkillTestGroup::class, 'store'])->middleware('assessment.capability:author')->name('admin.skill_groups.store');
+    Route::get('/admin/skill-groups/{skillTestGroup}/edit', [AdminSkillTestGroup::class, 'edit'])->name('admin.skill_groups.edit');
+    Route::put('/admin/skill-groups/{skillTestGroup}', [AdminSkillTestGroup::class, 'update'])->middleware('assessment.capability:author')->name('admin.skill_groups.update');
+    Route::post('/admin/skill-groups/{skillTestGroup}/equivalent-set', [AdminSkillTestGroup::class, 'addEquivalentSet'])->middleware('assessment.capability:author')->name('admin.skill_groups.equivalent_set');
 
     Route::get('/admin/skills', [AdminSkillTest::class, 'index'])->name('admin.skills.index');
     Route::get('/admin/skills/create', [AdminSkillTest::class, 'create'])->name('admin.skills.create');
