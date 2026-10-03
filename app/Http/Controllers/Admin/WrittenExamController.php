@@ -125,29 +125,75 @@ class WrittenExamController extends Controller
         return $data;
     }
 
-    public function store(Request $request)
+    public function store(Request $request, AssessmentGovernanceService $governance)
     {
         $data = $this->validateGroupSelection($request, $this->validated($request));
+        $requestedPublish = (int) $data['status'] === 1;
+        $data['status'] = 0;
         $data['enrollment_key'] = strtoupper(Str::random(8));
         $data['code'] = $data['code'] ?: 'WE-' . now()->format('Ymd-His');
 
-        Exam::create($data);
+        $exam = Exam::create($data);
 
-        return redirect()->route('admin.assessments.index')
-            ->with('status', 'Written exam was successfully saved.');
+        $governance->log('exam_created', [
+            'assessment_group_id' => $exam->assessment_group_id,
+            'exam_id' => $exam->id,
+        ]);
+
+        $message = 'Written exam saved as a draft.';
+        if ($requestedPublish) {
+            $message .= ' Add/review the items and publish only after readiness validation.';
+        }
+
+        return redirect()->route('admin.assessments.edit', $exam)
+            ->with('status', $message);
     }
 
-    public function update(Request $request, Exam $exam)
-    {
-        if ($exam->attempts()->exists()) {
-            return back()->with('status', 'Exam settings are locked after an attempt has started. Create/duplicate a new set instead.');
+    public function update(
+        Request $request,
+        Exam $exam,
+        AssessmentGovernanceService $governance
+    ) {
+        if ($exam->attempts()->whereNotNull('started_at')->exists()) {
+            return back()->with('status', 'Exam settings are locked after an attempt has started. Create a new governed set/version instead.');
+        }
+
+        if ((int) $exam->status === 1) {
+            return back()->with('status', 'Return this published set to draft before changing its settings.');
         }
 
         $data = $this->validateGroupSelection($request, $this->validated($request), $exam);
+        $requestedPublish = (int) $data['status'] === 1;
+        $data['status'] = 0;
         $exam->update($data);
 
+        if ($requestedPublish) {
+            $readiness = $governance->readiness($exam->fresh());
+
+            if (!$readiness['ready']) {
+                return back()->with(
+                    'status',
+                    'Settings saved, but the set remains draft: '.implode(' ', array_slice($readiness['issues'], 0, 8))
+                );
+            }
+
+            $exam->update(['status' => 1]);
+            $governance->log('exam_published', [
+                'assessment_group_id' => $exam->assessment_group_id,
+                'exam_id' => $exam->id,
+            ]);
+
+            return redirect()->route('admin.assessments.index')
+                ->with('status', 'Written exam updated and published after readiness validation.');
+        }
+
+        $governance->log('exam_updated', [
+            'assessment_group_id' => $exam->assessment_group_id,
+            'exam_id' => $exam->id,
+        ]);
+
         return redirect()->route('admin.assessments.index')
-            ->with('status', 'Written exam was successfully updated.');
+            ->with('status', 'Written exam settings updated.');
     }
 
     public function duplicate(Exam $exam)
