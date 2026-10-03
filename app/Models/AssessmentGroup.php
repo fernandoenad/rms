@@ -55,7 +55,13 @@ class AssessmentGroup extends Model
         }
 
         if ($this->score_release_policy === 'after_close') {
-            return !$this->exams()->where(function ($q) {
+            $published = $this->exams()->where('status', 1);
+
+            if (!(clone $published)->exists()) {
+                return false;
+            }
+
+            return !(clone $published)->where(function ($q) {
                 $q->whereNull('end_date')->orWhere('end_date', '>', now());
             })->exists();
         }
