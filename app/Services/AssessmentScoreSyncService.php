@@ -86,16 +86,33 @@ class AssessmentScoreSyncService
         }
 
         $attempt->loadMissing('exam.assessmentGroup');
-        $group = $attempt->exam?->assessmentGroup;
+        $exam = $attempt->exam;
+        $group = $exam?->assessmentGroup;
 
-        if (!$group || !$group->assessment_score_key || !$group->scoresAreReleased()) {
+        if ($group) {
+            if (!$group->assessment_score_key || !$group->scoresAreReleased()) {
+                return false;
+            }
+
+            return $this->syncApplicationCriterion(
+                (int) $attempt->application_id,
+                (int) $group->vacancy_id,
+                (string) $group->assessment_score_key,
+                (float) $attempt->percentage
+            );
+        }
+
+        // Standalone Written Tests do not have a group release policy.
+        // When explicitly mapped, their submitted score is treated as official
+        // and synchronized immediately.
+        if (!$exam || !$exam->assessment_score_key) {
             return false;
         }
 
         return $this->syncApplicationCriterion(
             (int) $attempt->application_id,
-            (int) $group->vacancy_id,
-            (string) $group->assessment_score_key,
+            (int) $exam->vacancy_id,
+            (string) $exam->assessment_score_key,
             (float) $attempt->percentage
         );
     }
