@@ -83,13 +83,20 @@ onsubmit="return confirm('Queue AI generation for every empty draft set in this 
 <div class="card-header"><strong>Equivalent Sets</strong></div>
 <div class="card-body table-responsive p-0">
 <table class="table table-hover mb-0">
-<thead><tr><th>Set</th><th>Task</th><th>Attempts</th><th>Assignments</th><th>Readiness</th><th>Status</th><th></th></tr></thead>
+<thead><tr><th>Set</th><th>Task</th><th>Schedule</th><th>Attempts</th><th>Assignments</th><th>Readiness</th><th>Status</th><th></th></tr></thead>
 <tbody>
 @foreach($skillTestGroup->skillTests as $set)
 @php $ready=$readiness[$set->id] ?? ['ready'=>false,'issues'=>[]]; @endphp
 <tr>
 <td><span class="badge badge-primary">Set {{ $set->set_code }}</span></td>
 <td><strong>{{ $set->title }}</strong><br><small class="text-muted">{{ Str::limit($set->instructions,90) }}</small></td>
+<td>
+@if($set->start_date && $set->end_date)
+    <small>{{ $set->start_date->format('M d, Y h:i A') }}<br>to {{ $set->end_date->format('M d, Y h:i A') }}</small>
+@else
+    <span class="badge badge-warning">Not scheduled</span>
+@endif
+</td>
 <td>{{ $set->attempts_count }}</td>
 <td>{{ $set->assignments_count }}</td>
 <td>@if($ready['ready'])<span class="badge badge-success">Ready</span>@else<span class="badge badge-warning" title="{{ implode(' ',array_slice($ready['issues'],0,4)) }}">Needs review</span>@endif</td>
@@ -136,9 +143,11 @@ onsubmit="return confirm('Delete Set {{ $set->set_code }} permanently? No applic
 </div>
 @php $first=$skillTestGroup->skillTests->first(); @endphp
 <div class="form-row">
-<div class="form-group col-md-4"><label>Opens</label><input type="datetime-local" name="start_date" value="{{ old('start_date',optional($first?->start_date)->format('Y-m-d\TH:i')) }}" class="form-control" required></div>
-<div class="form-group col-md-4"><label>Closes</label><input type="datetime-local" name="end_date" value="{{ old('end_date',optional($first?->end_date)->format('Y-m-d\TH:i')) }}" class="form-control" required></div>
-<div class="form-group col-md-4"><label>Duration</label><input type="number" min="1" max="480" name="duration" value="{{ old('duration',$first?->duration ?? 60) }}" class="form-control"></div>
+<div class="form-group col-md-4">
+<label>Default duration (minutes)</label>
+<input type="number" min="1" max="480" name="duration" value="{{ old('duration',$first?->duration ?? 60) }}" class="form-control">
+<small class="text-muted">Updates duration for unstarted sets only. Opening and closing schedules stay set-specific.</small>
+</div>
 </div>
 <div class="form-row">
 <div class="form-group col-md-4"><label>Access</label><select name="access_mode" class="form-control"><option value="all_taken_in" {{ ($first?->access_mode)==='all_taken_in'?'selected':'' }}>All taken-in</option><option value="selected_applicants" {{ ($first?->access_mode)==='selected_applicants'?'selected':'' }}>Selected applicants</option></select></div>
@@ -152,6 +161,7 @@ onsubmit="return confirm('Delete Set {{ $set->set_code }} permanently? No applic
 <div class="form-group col-md-3"><label>Status</label><select name="status" class="form-control"><option value="1" {{ $skillTestGroup->status?'selected':'' }}>Active</option><option value="0" {{ !$skillTestGroup->status?'selected':'' }}>Inactive</option></select></div>
 </div>
 <div class="form-group"><label>Applicant score criterion</label><select name="assessment_score_key" class="form-control"><option value="">Do not sync</option>@foreach($scoreCriteria as $key=>$max)<option value="{{ $key }}" {{ $skillTestGroup->assessment_score_key===$key?'selected':'' }}>{{ $key }} ({{ number_format($max,2) }} pts)</option>@endforeach</select></div>
+<div class="alert alert-light border small">Set schedules are intentionally not shared. Use <strong>Edit</strong> beside each Set A/B/C to assign its opening and closing date/time.</div>
 <button class="btn btn-primary">Save Shared Settings</button>
 </form>
 </div>
