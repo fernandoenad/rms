@@ -255,7 +255,7 @@
                                     <select name="retake_skill_test_id" class="form-control form-control-sm mt-1 mb-1" required>
                                         <option value="">Select published retake task</option>
                                         @foreach($retakeTests as $retake)
-                                            <option value="{{ $retake->id }}">{{ $retake->title }} ({{ $retake->code }})</option>
+                                            <option value="{{ $retake->id }}">{{ $retake->title }} ({{ $retake->code }}) — {{ $retake->status ? 'Published' : 'Ready draft; publishes on authorization' }}</option>
                                         @endforeach
                                     </select>
                                     <textarea name="reason" class="form-control form-control-sm mb-1" rows="2" required placeholder="Reason for void/retake"></textarea>
