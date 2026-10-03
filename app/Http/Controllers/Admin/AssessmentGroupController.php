@@ -751,6 +751,10 @@ class AssessmentGroupController extends Controller
             'archived_by'=>auth()->id(),
         ]);
 
+        foreach ($assessmentGroup->exams()->get() as $exam) {
+            $governance->snapshotExam($exam,'group_archived');
+        }
+
         $governance->log('assessment_group_archived', [
             'assessment_group_id'=>$assessmentGroup->id,
         ]);
