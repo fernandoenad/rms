@@ -170,3 +170,75 @@ The group analytics page provides:
 These are descriptive diagnostics and should be interpreted with adequate sample sizes.
 
 The official CSV export includes application code, applicant, set, start/submission timestamps, attempt status, raw score, total items, percentage, and void reason.
+
+
+## Skills-test governance parity
+
+Skills Tests now use the same governance principles as the Written Assessment where they are applicable.
+
+### Readiness and immutability
+
+A skills test cannot be published until:
+- the task instructions and schedule are valid;
+- at least one submission mode is enabled;
+- file settings are valid when file upload is enabled;
+- the task is approved;
+- the active rubric totals exactly 100 points;
+- every active rubric criterion is approved;
+- selected-applicant mode has at least one assignment.
+
+Published tasks are immutable. Once an applicant has started, the administered task and rubric remain preserved. Future changes should use **Create Revision**, which creates a new draft task version and copies the rubric as a new pending-review version.
+
+### Rubric and human scoring
+
+Human evaluation is criterion-level. Evaluators enter a score for every active rubric criterion; RMS calculates the official final score from those human ratings. AI scoring remains a proposal only and never becomes the official score automatically.
+
+Rubric versions are retained instead of deleting prior criteria. Prior human ratings continue to reference the rubric version that was actually administered.
+
+### Submission version history
+
+File uploads no longer overwrite earlier files. Every upload creates a new submission version while preserving earlier uploaded files for audit history. Evaluators can inspect inline responses and securely download retained file versions from the results page.
+
+Inline responses continue to autosave. The browser temporarily retains an unsaved inline response locally and retries it when connectivity returns.
+
+### Live skills operations
+
+The skills results page now includes:
+- attempted, taking-now, submitted, and human-evaluated counts;
+- proactive expired-attempt finalization;
+- queue / failed-job health indicators;
+- open incident counts;
+- optional 60-second admin refresh;
+- AI proposal status;
+- criterion-level human scoring;
+- controlled retake actions.
+
+Run the Laravel scheduler every minute. It now drives both:
+- `assessments:finalize-expired` for written assessments; and
+- `assessments:finalize-expired-skills` for skills tests.
+
+### Skills incidents and controlled retakes
+
+A started skills attempt is retained for audit history. If a legitimate incident requires a retake, the original attempt can be marked **Voided** with a required reason and the applicant can be explicitly assigned to another published, selected-applicant skills task/revision.
+
+Connectivity, device, power, proctoring, administrative, and other incidents can be recorded and resolved from the live results page.
+
+### Skills score release
+
+Skills Tests support:
+- Hidden;
+- Manual release;
+- After the test schedule closes; or
+- Immediate visibility once a human final score exists.
+
+The applicant portal never exposes the AI proposed score as the official result.
+
+### Skills analytics and export
+
+The live results page provides rubric-level human score averages and the mean absolute difference between AI-proposed totals and human-final totals where both exist.
+
+The streamed CSV export includes criterion-level human scores and evaluator notes in addition to the overall final score, AI proposal, timestamps, status, and void reason.
+
+### AI file-scoring limitation
+
+The current AI scorer extracts text from DOCX submissions. Other allowed file formats remain fully available for human evaluation, but are not silently treated as machine-readable. If a submission contains no inline response and the uploaded file cannot be text-extracted, AI evaluation is marked **Skipped** rather than failing the queue job.
