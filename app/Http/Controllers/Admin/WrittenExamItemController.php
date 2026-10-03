@@ -20,6 +20,10 @@ class WrittenExamItemController extends Controller
 
     protected function ensureMutable(Exam $exam): void
     {
+        if ($exam->archived_at) {
+            abort(403, 'Archived assessments are frozen and cannot be modified.');
+        }
+
         if ((int) $exam->status === 1) {
             abort(403, 'Published sets are immutable. Return the set to draft before changing items.');
         }
@@ -205,6 +209,8 @@ class WrittenExamItemController extends Controller
             return $item;
         });
 
+        $governance->syncWrittenItemToBank($item);
+
         $governance->log('item_created', [
             'assessment_group_id' => $exam->assessment_group_id,
             'exam_id' => $exam->id,
@@ -291,6 +297,10 @@ class WrittenExamItemController extends Controller
             'review_notes' => $data['review_notes'] ?? null,
             'status' => $data['decision'] === 'rejected' ? 0 : $item->status,
         ]);
+
+        if ($data['decision'] === 'approved') {
+            $governance->syncWrittenItemToBank($item->fresh());
+        }
 
         $governance->log('item_reviewed', [
             'assessment_group_id' => $exam->assessment_group_id,
