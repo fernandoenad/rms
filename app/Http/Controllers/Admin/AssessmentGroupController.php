@@ -50,8 +50,7 @@ class AssessmentGroupController extends Controller
 
     public function create()
     {
-        $vacancies = Vacancy::orderByDesc('cycle')
-            ->orderBy('position_title')
+        $vacancies = Vacancy::orderByDesc('id')
             ->get(['id', 'position_title', 'cycle']);
 
         return view('admin.assessment_groups.create', compact('vacancies'));
@@ -218,8 +217,7 @@ class AssessmentGroupController extends Controller
 
     public function edit(AssessmentGroup $assessmentGroup, AssessmentGovernanceService $governance)
     {
-        $vacancies = Vacancy::orderByDesc('cycle')
-            ->orderBy('position_title')
+        $vacancies = Vacancy::orderByDesc('id')
             ->get(['id', 'position_title', 'cycle']);
 
         $assessmentGroup->load([
