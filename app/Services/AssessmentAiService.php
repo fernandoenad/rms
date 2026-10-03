@@ -88,7 +88,7 @@ HARD RULES:
 1. Follow the SOLO taxonomy as the abstraction/cognitive framework. Each item must be tagged internally as unistructural, multistructural, relational, or extended_abstract according to the thinking genuinely required.
 2. Each displayed item must read naturally as a contextual stem followed by a question, with NO visible labels such as "Stem:", "Question:", or SOLO labels.
 3. Provide exactly four plausible options.
-4. OPTION LENGTH PARITY IS A HARD REQUIREMENT. All four options must be parallel in grammar, structure, specificity, and word count. Aim for no more than about 3-4 words difference between the shortest and longest option, and keep each option roughly within 20-25% of the others by length.
+4. OPTION LENGTH PARITY IS A HARD REQUIREMENT. All four options must be parallel in grammar, structure, specificity, and text length. Make the options essentially the SAME LENGTH. Target the same word count for all four choices; at most a 1-word difference is acceptable when exact equality would make the wording unnatural.
 5. The keyed answer MUST NOT be conspicuously longer, more detailed, more qualified, more specific, or more polished than the distractors. Do not let length reveal the answer.
 6. For RELATIONAL and especially EXTENDED_ABSTRACT items, put the complexity in the scenario/stem and in the reasoning required. Do NOT express higher-level thinking by making the correct option longer.
 7. Exactly one option must be clearly BEST. Build the distractors using this internal quality ladder: one BEST keyed answer, two strong BETTER near-miss distractors, and one plausible GOOD distractor. Do not label these levels in the visible options.
@@ -99,7 +99,7 @@ HARD RULES:
 12. Return a concise rationale and the job/qualification basis for internal reviewer use.
 13. Difficulty must be exactly one of: easy, moderate, difficult.
 14. Do not mention that the item was AI-generated.
-15. Before returning JSON, silently compare the four option lengths and rewrite any set where one option is noticeably longer or shorter than the others.
+15. Before returning JSON, count the words in all four options. Rewrite the set until all four choices have the same word count, or differ by no more than 1 word only when exact equality would make the language unnatural.
 16. Output VALID JSON ONLY, no markdown.
 
 JSON shape:
