@@ -418,13 +418,4 @@ class WrittenExamController extends Controller
         return redirect()->route('admin.assessments.results', $exam)
             ->with('status', 'Attempt deleted. Consider using void/retake workflow for operational use.');
     }
-
-    public function regenerateKey(Exam $exam)
-    {
-        $exam->enrollment_key = strtoupper(Str::random(8));
-        $exam->save();
-
-        return redirect()->route('admin.assessments.index')
-            ->with('status', 'Enrollment key regenerated.');
-    }
 }
