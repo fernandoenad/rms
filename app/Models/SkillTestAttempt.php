@@ -23,5 +23,8 @@ class SkillTestAttempt extends Model
     public function submissions(): HasMany { return $this->hasMany(SkillTestSubmission::class); }
     public function aiEvaluations(): HasMany { return $this->hasMany(SkillTestAiEvaluation::class); }
     public function humanScores(): HasMany { return $this->hasMany(SkillTestHumanScore::class); }
+    public function events(): HasMany { return $this->hasMany(SkillTestAttemptEvent::class); }
+    public function timeExtensions(): HasMany { return $this->hasMany(AssessmentTimeExtension::class); }
+    public function scoreChanges(): HasMany { return $this->hasMany(AssessmentScoreChange::class); }
 }
 
