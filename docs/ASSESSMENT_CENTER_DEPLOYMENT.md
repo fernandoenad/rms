@@ -5,6 +5,7 @@
 - Written exam sets per vacancy/position and schedule
 - Taken-in applicant eligibility as the default access rule
 - Optional bulk applicant assignment by application code
+- Schedule-based applicant access with no enrollment-key prompt
 - Server-authoritative timing with confirmed early submission and automatic timeout finalization
 - Tab/app-switch audit logging instead of auto-submit
 - Immediate answer autosave with persistent refresh-safe question/option order
@@ -51,7 +52,7 @@ Do not roll back the option migration after new option-ID answers have been coll
 ## Operational smoke test
 
 - Create a written exam with question and option shuffling enabled.
-- Start it as a taken-in applicant.
+- Start it as a taken-in applicant during the published schedule; no enrollment key should be requested.
 - Select answers and refresh; confirm answers and order remain unchanged.
 - Switch tabs; confirm the attempt remains active.
 - Let the timer expire; confirm score snapshot and timeout submission.
@@ -75,3 +76,10 @@ An applicant may start only one set in the group. The lock is created when Start
 For controlled daily batches, set each exam to Selected applicants only and bulk-assign application codes to the appropriate set. RMS skips applicants already assigned to another sibling set.
 
 The combined group results page treats the completed attempt percentage from the applicant's one set as the written-assessment score for that group.
+
+
+## Enrollment-key retirement
+
+Applicants no longer enter an enrollment key. Written-test access is controlled by applicant eligibility, set assignment when applicable, assessment-group locking, exam publication status, and the configured start/end schedule.
+
+The legacy enrollment_key database columns are intentionally retained for backward compatibility with older records and schema constraints, but the value is no longer shown to applicants or administrators and is not used to authorize applicant starts.
