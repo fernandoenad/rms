@@ -374,6 +374,43 @@ class ExamAttemptController extends Controller
         return view('guest.assessments.take', compact('attempt', 'exam', 'items', 'remainingSeconds'));
     }
 
+    public function reviewStatus(Request $request, ExamAttempt $attempt)
+    {
+        $application = $attempt->application;
+        $this->authorizeApplication($request, $application);
+        $this->authorizeExam($application, $attempt->exam);
+
+        $fresh = $attempt->fresh();
+
+        if (!$this->ensureNotExpired($request, $fresh)) {
+            return response()->json([
+                'expired' => true,
+                'message' => 'Assessment time has ended.',
+            ], 409);
+        }
+
+        $itemIds = DB::table('written_exams')
+            ->where('exam_id', $attempt->exam_id)
+            ->where('status', 1)
+            ->pluck('id');
+
+        $answeredIds = DB::table('exam_attempt_answers')
+            ->where('exam_attempt_id', $attempt->id)
+            ->whereIn('written_exam_id', $itemIds)
+            ->whereNotNull('selected_option_id')
+            ->pluck('written_exam_id')
+            ->map(fn ($id) => (int) $id)
+            ->values();
+
+        return response()->json([
+            'expired' => false,
+            'total' => $itemIds->count(),
+            'answered' => $answeredIds->count(),
+            'unanswered' => max(0, $itemIds->count() - $answeredIds->count()),
+            'answered_item_ids' => $answeredIds,
+        ]);
+    }
+
     public function saveAnswer(Request $request, ExamAttempt $attempt)
     {
         $this->authorizeAnswerSave($request, $attempt);
