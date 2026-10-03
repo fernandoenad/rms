@@ -10,6 +10,40 @@
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
 
+<div class="card card-outline {{ $skillTestGroup->is_paused ? 'card-warning':'card-secondary' }}">
+<div class="card-header"><strong>Group Operations</strong></div>
+<div class="card-body">
+@if($skillTestGroup->is_paused)
+<div class="alert alert-warning">New starts are paused for every set in this group.<br><small>{{ $skillTestGroup->pause_reason }}</small></div>
+<form method="post" action="{{ route('admin.skill_groups.resume',$skillTestGroup) }}" class="d-inline">@csrf
+<button class="btn btn-sm btn-success">Resume All Sets</button>
+</form>
+@else
+<form method="post" action="{{ route('admin.skill_groups.pause',$skillTestGroup) }}" class="form-inline mb-2">@csrf
+<input name="reason" class="form-control form-control-sm mr-2" style="min-width:320px" placeholder="Reason for pausing all new starts" required>
+<button class="btn btn-sm btn-warning">Pause All New Starts</button>
+</form>
+@endif
+
+@if($skillTestGroup->score_release_policy==='manual')
+@if($skillTestGroup->scores_released_at)
+<form method="post" action="{{ route('admin.skill_groups.hide_scores',$skillTestGroup) }}" class="d-inline">@csrf
+<button class="btn btn-sm btn-outline-warning">Withdraw Manual Release</button>
+</form>
+@else
+<form method="post" action="{{ route('admin.skill_groups.release_scores',$skillTestGroup) }}" class="d-inline">@csrf
+<button class="btn btn-sm btn-success">Release Official Scores for All Sets</button>
+</form>
+@endif
+@endif
+
+<form method="post" action="{{ route('admin.skill_groups.archive',$skillTestGroup) }}" class="d-inline ml-2"
+onsubmit="return confirm('Archive and freeze this entire Skills Test group?');">@csrf
+<button class="btn btn-sm btn-outline-secondary">Archive / Freeze Group</button>
+</form>
+</div>
+</div>
+
 <div class="card card-outline card-primary">
 <div class="card-header"><strong>Equivalent Sets</strong></div>
 <div class="card-body table-responsive p-0">
