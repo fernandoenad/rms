@@ -11,8 +11,6 @@ use App\Models\ExamAssignment;
 use App\Models\ExamAttempt;
 use App\Models\ExamAttemptAnswer;
 use App\Models\ExamAttemptItemOrder;
-use App\Models\WrittenExam;
-use App\Models\WrittenExamOption;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
