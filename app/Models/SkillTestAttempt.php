@@ -26,5 +26,6 @@ class SkillTestAttempt extends Model
     public function events(): HasMany { return $this->hasMany(SkillTestAttemptEvent::class); }
     public function timeExtensions(): HasMany { return $this->hasMany(AssessmentTimeExtension::class); }
     public function scoreChanges(): HasMany { return $this->hasMany(AssessmentScoreChange::class); }
+    public function incidents(): HasMany { return $this->hasMany(AssessmentIncident::class, 'skill_test_attempt_id'); }
 }
 
