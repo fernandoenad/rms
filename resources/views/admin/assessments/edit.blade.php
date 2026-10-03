@@ -1,6 +1,10 @@
 @extends('adminlte::page')
 @section('title','Edit Written Exam')
-@section('content_header')<h1>Edit Written Exam</h1>
+@section('content_header')
+<div class="d-flex justify-content-between align-items-center">
+    <h1 class="mb-0">Edit Written Exam</h1>
+    <a href="{{ route('admin.assessments.preview',$exam) }}" class="btn btn-outline-info"><i class="fas fa-eye"></i> Preview & Dry Run</a>
+</div>
 @stop
 @section('content')
 @if($exam->access_mode==='selected_applicants')
