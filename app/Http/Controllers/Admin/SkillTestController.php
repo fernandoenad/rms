@@ -17,6 +17,7 @@ use App\Models\SkillTestSubmission;
 use App\Models\Vacancy;
 use App\Services\AssessmentAiService;
 use App\Services\AssessmentGovernanceService;
+use App\Services\AssessmentScoreSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -58,12 +59,16 @@ class SkillTestController extends Controller
         return view('admin.skills.index', compact('tests', 'readiness'));
     }
 
-    public function create()
+    public function create(AssessmentScoreSyncService $scoreSync)
     {
         $vacancies = Vacancy::orderByDesc('id')
-            ->get(['id','position_title','cycle']);
+            ->get(['id','position_title','cycle','template_id']);
 
-        return view('admin.skills.create', compact('vacancies'));
+        $scoreCriteriaByVacancy = $vacancies->mapWithKeys(
+            fn ($vacancy) => [$vacancy->id => $scoreSync->criteriaForVacancy($vacancy)]
+        );
+
+        return view('admin.skills.create', compact('vacancies','scoreCriteriaByVacancy'));
     }
 
     protected function validated(Request $request): array
@@ -84,6 +89,7 @@ class SkillTestController extends Controller
             'max_file_size_kb'=>'required|integer|min:100|max:51200',
             'ai_scoring'=>'required|boolean',
             'score_release_policy'=>'required|in:hidden,manual,after_close,immediate',
+            'assessment_score_key'=>'nullable|string|max:255',
             'status'=>'nullable|boolean',
             'ai_generated_task'=>'nullable|boolean',
             'generated_rubric'=>'nullable|string|max:50000',
@@ -107,9 +113,18 @@ class SkillTestController extends Controller
         return $data;
     }
 
-    public function store(Request $request, AssessmentGovernanceService $governance)
-    {
+    public function store(
+        Request $request,
+        AssessmentGovernanceService $governance,
+        AssessmentScoreSyncService $scoreSync
+    ) {
         $data = $this->normalize($this->validated($request));
+
+        if (!$scoreSync->criterionExistsForVacancy((int)$data['vacancy_id'], $data['assessment_score_key'] ?? null)) {
+            return back()->withInput()->withErrors([
+                'assessment_score_key'=>'The selected applicant-score criterion does not belong to this vacancy template.',
+            ]);
+        }
         $requestedPublish = (int) ($data['status'] ?? 0) === 1;
         $aiGenerated = (bool) ($data['ai_generated_task'] ?? false);
         $generatedRubricJson = $data['generated_rubric'] ?? null;
@@ -291,8 +306,11 @@ class SkillTestController extends Controller
         }
     }
 
-    public function edit(SkillTest $skillTest, AssessmentGovernanceService $governance)
-    {
+    public function edit(
+        SkillTest $skillTest,
+        AssessmentGovernanceService $governance,
+        AssessmentScoreSyncService $scoreSync
+    ) {
         $skillTest->load([
             'rubricCriteria',
             'vacancy',
@@ -313,19 +331,23 @@ class SkillTestController extends Controller
 
         $hasStartedAttempts = $skillTest->attempts()->whereNotNull('started_at')->exists();
 
+        $scoreCriteria = $scoreSync->criteriaForVacancy($skillTest->vacancy);
+
         return view('admin.skills.edit', compact(
             'skillTest',
             'readiness',
             'incidents',
             'auditLogs',
-            'hasStartedAttempts'
+            'hasStartedAttempts',
+            'scoreCriteria'
         ));
     }
 
     public function update(
         Request $request,
         SkillTest $skillTest,
-        AssessmentGovernanceService $governance
+        AssessmentGovernanceService $governance,
+        AssessmentScoreSyncService $scoreSync
     ) {
         $this->ensureNotArchived($skillTest);
         if ((int) $skillTest->status === 1) {
@@ -337,6 +359,13 @@ class SkillTestController extends Controller
         }
 
         $data = $this->normalize($this->validated($request));
+
+        if (!$scoreSync->criterionExistsForVacancy((int)$data['vacancy_id'], $data['assessment_score_key'] ?? null)) {
+            return back()->withInput()->withErrors([
+                'assessment_score_key'=>'The selected applicant-score criterion does not belong to this vacancy template.',
+            ]);
+        }
+
         $requestedPublish = (int) ($data['status'] ?? 0) === 1;
         $data['status'] = 0;
 
@@ -1119,7 +1148,8 @@ class SkillTestController extends Controller
 
     public function releaseScores(
         SkillTest $skillTest,
-        AssessmentGovernanceService $governance
+        AssessmentGovernanceService $governance,
+        AssessmentScoreSyncService $scoreSync
     ) {
         $this->ensureNotArchived($skillTest);
         if ($skillTest->score_release_policy !== 'manual') {
@@ -1127,10 +1157,19 @@ class SkillTestController extends Controller
         }
 
         $skillTest->update(['scores_released_at'=>now()]);
+        $sync = $scoreSync->syncSkillTest($skillTest->fresh());
         $governance->snapshotSkill($skillTest->fresh(),'scores_released');
-        $governance->log('skill_scores_released', ['skill_test_id'=>$skillTest->id]);
+        $governance->log('skill_scores_released', ['skill_test_id'=>$skillTest->id], [
+            'applicant_scores_synced'=>$sync['synced'],
+            'applicant_scores_skipped'=>$sync['skipped'],
+        ]);
 
-        return back()->with('status', 'Skills test scores released to applicants.');
+        return back()->with(
+            'status',
+            'Skills test scores released to applicants. '
+            .$sync['synced'].' official skills score(s) were synchronized to applicant assessment records.'
+            .($sync['skipped'] ? ' '.$sync['skipped'].' record(s) were skipped because no compatible applicant assessment/template mapping was available.' : '')
+        );
     }
 
     public function hideScores(
