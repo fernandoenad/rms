@@ -179,7 +179,41 @@
 
                 <hr>
                 <form method="post" action="{{ route('admin.skills.ai_generate',$skillTest) }}">@csrf
-                    <button class="btn btn-outline-primary"><i class="fas fa-magic"></i> Generate/Replace Task & Rubric with AI</button>
+                    <strong>AI Generation Context</strong>
+                    <div class="small text-muted mb-2">Vacancy context is included automatically when selected. You may paste approved job-specific reference material below.</div>
+
+                    <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="skillUseQualifications" name="use_qualifications" value="1"
+                               {{ old('use_qualifications',$skillTest->ai_use_qualifications ?? true) ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="skillUseQualifications">Use vacancy qualifications / qualification standards</label>
+                    </div>
+
+                    <div class="custom-control custom-checkbox mb-2">
+                        <input type="checkbox" class="custom-control-input" id="skillUseJobDescription" name="use_job_description" value="1"
+                               {{ old('use_job_description',$skillTest->ai_use_job_description ?? true) ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="skillUseJobDescription">Use vacancy job description / details</label>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Generation focus</label>
+                        @php $skillFocus=old('generation_focus',$skillTest->ai_generation_focus ?: 'mixed'); @endphp
+                        <select name="generation_focus" class="form-control">
+                            <option value="mixed" {{ $skillFocus==='mixed'?'selected':'' }}>Mixed job-relevant performance task</option>
+                            <option value="duties" {{ $skillFocus==='duties'?'selected':'' }}>Duties and responsibilities</option>
+                            <option value="technical" {{ $skillFocus==='technical'?'selected':'' }}>Technical competencies</option>
+                            <option value="situational" {{ $skillFocus==='situational'?'selected':'' }}>Situational judgment / work scenario</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Additional Context <span class="text-muted font-weight-normal">(optional)</span></label>
+                        <textarea name="additional_context" rows="6" maxlength="30000" class="form-control"
+                                  placeholder="Paste approved duties, procedures, competency statements, or reference material.">{{ old('additional_context',$skillTest->ai_context) }}</textarea>
+                    </div>
+
+                    <button class="btn btn-outline-primary" onclick="return confirm('Replace the current draft task and active rubric with a new AI-generated draft requiring review?');">
+                        <i class="fas fa-magic"></i> Generate/Replace Task & Rubric with AI
+                    </button>
                 </form>
                 @endunless
             </div>
