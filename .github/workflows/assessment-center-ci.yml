@@ -6,27 +6,45 @@ on:
       - feature/assessment-center-upgrade
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
   php-validation:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: feature/assessment-center-upgrade
 
-      - name: Setup PHP
+      - name: Setup PHP 8.2
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
-          extensions: mbstring, xml, ctype, json, tokenizer, zip, pdo_sqlite
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, json, tokenizer, zip, pdo_sqlite, curl
           coverage: none
 
       - name: Validate Composer files
         run: composer validate --no-check-publish
 
-      - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Resolve dependencies for production PHP 8.2.14
+        run: composer update --with-all-dependencies --no-interaction --prefer-dist --no-progress
+
+      - name: Commit PHP 8.2-compatible lock if changed
+        if: github.event_name == 'push'
+        run: |
+          if git diff --quiet composer.lock; then
+            echo "composer.lock already compatible."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add composer.lock
+            git commit -m "Regenerate Composer lock for PHP 8.2.14"
+            git push origin HEAD:feature/assessment-center-upgrade
+          fi
 
       - name: Prepare environment
         run: |
