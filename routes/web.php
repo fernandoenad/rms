@@ -156,6 +156,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/assessment-groups/create', [AdminAssessmentGroup::class, 'create'])->name('admin.assessment_groups.create');
     Route::post('/admin/assessment-groups', [AdminAssessmentGroup::class, 'store'])->name('admin.assessment_groups.store');
     Route::get('/admin/assessment-groups/{assessmentGroup}/edit', [AdminAssessmentGroup::class, 'edit'])->name('admin.assessment_groups.edit');
+    Route::get('/admin/assessment-groups/{assessmentGroup}/results', [AdminAssessmentGroup::class, 'results'])->name('admin.assessment_groups.results');
     Route::put('/admin/assessment-groups/{assessmentGroup}', [AdminAssessmentGroup::class, 'update'])->name('admin.assessment_groups.update');
 
     Route::get('/admin/assessment', [AdminWrittenExam::class, 'index'])->name('admin.assessments.index');
