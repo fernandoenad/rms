@@ -26,7 +26,7 @@ class WrittenExamController extends Controller
 
     public function index()
     {
-        $exams = Exam::with('vacancy:id,position_title')
+        $exams = Exam::with(['vacancy:id,position_title', 'assessmentGroup:id,title'])
             ->withCount(['writtenExams', 'attempts'])
             ->orderByDesc('id')
             ->get();
