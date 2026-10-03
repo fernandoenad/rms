@@ -20,15 +20,40 @@ class AssessmentAiService
 
     protected function model(): string
     {
-        return optional(Setting::where('item', 'ai_model_id')->first())->value ?: 'gpt-4o-mini';
+        return config('services.openai.model')
+            ?: optional(Setting::where('item', 'ai_model_id')->first())->value
+            ?: 'gpt-4o-mini';
     }
 
-    protected function vacancyContext(Vacancy $vacancy): string
+    protected function vacancyContext(Vacancy $vacancy, array $options = []): string
     {
-        return "Position: {$vacancy->position_title}\n"
-            . "Salary grade: {$vacancy->salary_grade}\n"
-            . "Qualification standards / qualifications: " . ($vacancy->qualifications ?: 'Not provided') . "\n"
-            . "Job description / vacancy details: " . ($vacancy->vacancy ?: 'Not provided');
+        $useQualifications = $options['use_qualifications'] ?? true;
+        $useJobDescription = $options['use_job_description'] ?? true;
+        $additionalContext = trim((string) ($options['additional_context'] ?? ''));
+        $focus = trim((string) ($options['generation_focus'] ?? 'mixed'));
+
+        $parts = [
+            "Position: {$vacancy->position_title}",
+            "Salary grade: {$vacancy->salary_grade}",
+            "Generation focus: {$focus}",
+        ];
+
+        if ($useQualifications) {
+            $parts[] = "Qualification standards / qualifications:\n"
+                . ($vacancy->qualifications ?: 'Not provided');
+        }
+
+        if ($useJobDescription) {
+            $parts[] = "Job description / vacancy details:\n"
+                . ($vacancy->vacancy ?: 'Not provided');
+        }
+
+        if ($additionalContext !== '') {
+            $parts[] = "Additional administrator-provided assessment context:\n"
+                . $additionalContext;
+        }
+
+        return implode("\n\n", $parts);
     }
 
     protected function decodeJson(string $text): array
@@ -47,7 +72,12 @@ class AssessmentAiService
         return $decoded;
     }
 
-    public function generateWrittenItems(Vacancy $vacancy, int $count, array $soloDistribution): array
+    public function generateWrittenItems(
+        Vacancy $vacancy,
+        int $count,
+        array $soloDistribution,
+        array $contextOptions = []
+    ): array
     {
         $system = <<<'PROMPT'
 You are an expert employment-assessment item writer. Generate defensible single-best-answer multiple-choice items aligned to the supplied qualification standards and job description.
@@ -68,7 +98,9 @@ JSON shape:
 {"items":[{"question":"...","options":["...","...","...","..."],"correct_index":0,"solo_level":"relational","difficulty":"moderate","competency_basis":"...","rationale":"..."}]}
 PROMPT;
 
-        $user = $this->vacancyContext($vacancy)
+        $user = $this->vacancyContext($vacancy, $contextOptions)
+            . "\n\nUse only the supplied context as the substantive basis for job-specific content. "
+            . "If the context is insufficient for a defensible item, write a broader job-relevant item rather than inventing a policy, procedure, duty, threshold, or factual requirement."
             . "\n\nGenerate exactly {$count} items."
             . "\nTarget SOLO distribution: " . json_encode($soloDistribution)
             . "\nEnsure the full set broadly follows the requested distribution.";
