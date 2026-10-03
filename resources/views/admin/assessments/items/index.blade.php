@@ -15,9 +15,9 @@
     $bpSolo = $bp['solo_distribution'] ?? [];
 @endphp
 
-<div class="card card-outline {{ $readiness['ready'] ? 'card-success' : 'card-warning' }}">
+<div id="setReadinessCard" class="card card-outline {{ $readiness['ready'] ? 'card-success' : 'card-warning' }}">
     <div class="card-header"><strong>Set Readiness</strong></div>
-    <div class="card-body py-2">
+    <div class="card-body py-2" id="setReadinessBody">
         @if($readiness['ready'])
             <span class="badge badge-success">Ready to publish</span>
             <span class="ml-2 text-muted">{{ $readiness['item_count'] }} active item(s)</span>
@@ -30,13 +30,15 @@
     </div>
 </div>
 
-@if($generationRuns->isNotEmpty())
-<div class="card card-outline card-info">
-    <div class="card-header"><strong>AI Generation Runs</strong></div>
+<div class="card card-outline card-info" id="aiGenerationCard" style="{{ $generationRuns->isEmpty() ? 'display:none;' : '' }}">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>AI Generation Runs</strong>
+        <span id="aiLiveStatus" class="small text-muted"></span>
+    </div>
     <div class="card-body table-responsive p-0">
         <table class="table table-sm mb-0">
             <thead><tr><th>Requested</th><th>Generated</th><th>Batches</th><th>Status</th><th>Updated</th></tr></thead>
-            <tbody>
+            <tbody id="aiGenerationBody">
             @foreach($generationRuns as $run)
                 <tr>
                     <td>{{ $run->requested_count }}</td>
@@ -51,7 +53,6 @@
         </table>
     </div>
 </div>
-@endif
 
 @if(!$locked)
 <div class="card border-primary">
@@ -206,6 +207,125 @@ document.addEventListener('DOMContentLoaded', function () {
     fields.forEach(field => field.addEventListener('input', updateTotal));
     updateTotal();
 
+    const statusUrl = @json(route('admin.assessments.items.generation_status',$exam));
+    const generationCard = document.getElementById('aiGenerationCard');
+    const generationBody = document.getElementById('aiGenerationBody');
+    const liveStatus = document.getElementById('aiLiveStatus');
+    const readinessCard = document.getElementById('setReadinessCard');
+    const readinessBody = document.getElementById('setReadinessBody');
+    let pollTimer = null;
+    let dots = 0;
+
+    function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value ?? '';
+        return div.innerHTML;
+    }
+
+    function prettyStatus(status) {
+        const labels = {
+            queued: 'Queued',
+            processing: 'Processing',
+            completed: 'Completed',
+            completed_partial: 'Completed partially',
+            completed_with_errors: 'Completed with errors'
+        };
+        return labels[status] || String(status || '').replaceAll('_',' ');
+    }
+
+    function badgeClass(status) {
+        if (status === 'completed') return 'success';
+        if (status === 'completed_with_errors') return 'warning';
+        if (status === 'completed_partial') return 'warning';
+        if (status === 'processing') return 'primary';
+        return 'info';
+    }
+
+    function animateLiveText(status) {
+        dots = (dots + 1) % 4;
+        const suffix = '.'.repeat(dots);
+        if (status === 'queued') {
+            liveStatus.innerHTML = '<i class="fas fa-clock mr-1"></i> Queuing' + suffix;
+        } else if (status === 'processing') {
+            liveStatus.innerHTML = '<span class="spinner-border spinner-border-sm mr-1"></span> Processing' + suffix;
+        } else if (status === 'completed') {
+            liveStatus.innerHTML = '<i class="fas fa-check-circle text-success mr-1"></i> Completed';
+        } else if (status === 'completed_partial') {
+            liveStatus.innerHTML = '<i class="fas fa-exclamation-circle text-warning mr-1"></i> Completed partially';
+        } else if (status === 'completed_with_errors') {
+            liveStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-warning mr-1"></i> Completed with errors';
+        } else {
+            liveStatus.textContent = '';
+        }
+    }
+
+    function renderReadiness(readiness) {
+        readinessCard.classList.remove('card-success','card-warning');
+        readinessCard.classList.add(readiness.ready ? 'card-success' : 'card-warning');
+
+        if (readiness.ready) {
+            readinessBody.innerHTML =
+                '<span class="badge badge-success">Ready to publish</span>' +
+                '<span class="ml-2 text-muted">' + readiness.item_count + ' active item(s)</span>';
+        } else {
+            const issues = (readiness.issues || []).slice(0,12)
+                .map(issue => '<li>' + escapeHtml(issue) + '</li>').join('');
+            readinessBody.innerHTML =
+                '<span class="badge badge-warning">Not ready</span>' +
+                '<ul class="mb-0 mt-2">' + issues + '</ul>';
+        }
+    }
+
+    async function refreshGenerationStatus() {
+        try {
+            const response = await fetch(statusUrl, {
+                headers: {'Accept':'application/json'},
+                cache: 'no-store'
+            });
+            if (!response.ok) return;
+
+            const payload = await response.json();
+            const runs = payload.runs || [];
+
+            if (runs.length) {
+                generationCard.style.display = '';
+                generationBody.innerHTML = runs.map(run => {
+                    const errorRow = run.last_error
+                        ? '<tr><td colspan="5" class="small text-danger">' + escapeHtml(run.last_error).slice(0,500) + '</td></tr>'
+                        : '';
+
+                    return '<tr>' +
+                        '<td>' + run.requested_count + '</td>' +
+                        '<td>' + run.generated_count + '</td>' +
+                        '<td>' + run.completed_batches + ' / ' + run.batch_count + '</td>' +
+                        '<td><span class="badge badge-' + badgeClass(run.status) + '">' + escapeHtml(prettyStatus(run.status)) + '</span></td>' +
+                        '<td>' + escapeHtml(run.updated_at || '') + '</td>' +
+                        '</tr>' + errorRow;
+                }).join('');
+
+                animateLiveText(runs[0].status);
+
+                if (['queued','processing'].includes(runs[0].status)) {
+                    if (!pollTimer) {
+                        pollTimer = setInterval(refreshGenerationStatus, 2500);
+                    }
+                } else if (pollTimer) {
+                    clearInterval(pollTimer);
+                    pollTimer = null;
+                }
+            }
+
+            if (payload.readiness) renderReadiness(payload.readiness);
+        } catch (e) {
+            liveStatus.textContent = 'Waiting for status…';
+        }
+    }
+
+    if (document.querySelector('#aiGenerationBody tr')) {
+        refreshGenerationStatus();
+        pollTimer = setInterval(refreshGenerationStatus, 2500);
+    }
+
     form?.addEventListener('submit', function (event) {
         if (updateTotal() !== 100) {
             event.preventDefault();
@@ -225,7 +345,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         button.disabled = true;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm mr-1"></span> Generating…';
+        button.innerHTML = '<span class="spinner-border spinner-border-sm mr-1"></span> Queuing…';
+        generationCard.style.display = '';
+        liveStatus.innerHTML = '<i class="fas fa-clock mr-1"></i> Queuing…';
     });
 });
 </script>
