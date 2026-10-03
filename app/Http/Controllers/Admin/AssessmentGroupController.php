@@ -32,6 +32,11 @@ class AssessmentGroupController extends Controller
         return (int) optional(optional(auth()->user())->role)->level === 1;
     }
 
+    protected function ensureNotArchived(AssessmentGroup $assessmentGroup): void
+    {
+        abort_if($assessmentGroup->archived_at, 403, 'This assessment group is archived and frozen.');
+    }
+
     public function index()
     {
         $groups = AssessmentGroup::with('vacancy:id,position_title')
@@ -237,6 +242,7 @@ class AssessmentGroupController extends Controller
         AssessmentGroup $assessmentGroup,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($assessmentGroup);
         $data = $this->validated($request, $assessmentGroup);
         $blueprint = $this->buildBlueprint($data);
 
@@ -322,6 +328,7 @@ class AssessmentGroupController extends Controller
         AssessmentGroup $assessmentGroup,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($assessmentGroup);
         if ($assessmentGroup->exams()->whereHas('attempts', fn ($q) => $q->whereNotNull('started_at'))->exists()) {
             return back()->with('status', 'Equivalent set structure is locked after attempts exist.');
         }
@@ -477,6 +484,7 @@ class AssessmentGroupController extends Controller
         AssessmentGroup $assessmentGroup,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($assessmentGroup);
         if ($assessmentGroup->score_release_policy !== 'manual') {
             return back()->with('status', 'Manual release is available only when the score release policy is set to Manual.');
         }
@@ -493,6 +501,7 @@ class AssessmentGroupController extends Controller
         AssessmentGroup $assessmentGroup,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($assessmentGroup);
         if (in_array($assessmentGroup->score_release_policy, ['immediate', 'after_close'], true)) {
             return back()->with('status', 'This score policy releases automatically. Change the policy to Manual or Hidden to suppress scores.');
         }
