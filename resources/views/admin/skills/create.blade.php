@@ -4,6 +4,10 @@
 
 @section('content')
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+<div class="alert alert-light border">
+<strong>Creating equivalent Skills Test sets?</strong> Use <a href="{{ route('admin.skill_groups.create') }}">Skills Test Group</a>.
+RMS will create Set A/B/C placeholders and can generate all empty sets with AI in one click using one shared rubric. Use this page mainly for a standalone Skills Test or advanced manual attachment to a group.
+</div>
 
 <form method="post" action="{{ route('admin.skills.store') }}" id="skillCreateForm">@csrf
 <input type="hidden" name="ai_generated_task" id="aiGeneratedTask" value="{{ old('ai_generated_task',0) }}">
@@ -26,7 +30,7 @@
 
         <div class="form-row">
             <div class="form-group col-md-8">
-                <label>Skills Test Group <span class="text-muted font-weight-normal">(optional)</span></label>
+                <label>Skills Test Group <span class="text-muted font-weight-normal">(optional · advanced)</span></label>
                 <select name="skill_test_group_id" id="skillTestGroupId" class="form-control">
                     <option value="">Standalone Skills Test</option>
                     @foreach($groups as $group)
