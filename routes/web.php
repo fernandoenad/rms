@@ -190,6 +190,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/assessment-groups/{assessmentGroup}/analytics', [AdminAssessmentGroup::class, 'analytics'])->name('admin.assessment_groups.analytics');
     Route::get('/admin/assessment-groups/{assessmentGroup}/export', [AdminAssessmentGroup::class, 'exportCsv'])->name('admin.assessment_groups.export');
     Route::post('/admin/assessment-groups/{assessmentGroup}/equivalent-set', [AdminAssessmentGroup::class, 'createEquivalentSet'])->middleware('assessment.capability:author')->name('admin.assessment_groups.equivalent_set');
+    Route::post('/admin/assessment-groups/{assessmentGroup}/generate-all-sets', [AdminAssessmentGroup::class, 'generateAllSets'])->middleware('assessment.capability:author')->name('admin.assessment_groups.generate_all_sets');
     Route::post('/admin/assessment-groups/{assessmentGroup}/accommodations', [AdminAssessmentGroup::class, 'saveAccommodation'])->middleware('assessment.capability:monitor')->name('admin.assessment_groups.accommodations');
     Route::post('/admin/assessment-groups/{assessmentGroup}/pause', [AdminAssessmentGroup::class, 'pause'])->middleware('assessment.capability:monitor')->name('admin.assessment_groups.pause');
     Route::post('/admin/assessment-groups/{assessmentGroup}/resume', [AdminAssessmentGroup::class, 'resume'])->middleware('assessment.capability:monitor')->name('admin.assessment_groups.resume');
@@ -240,6 +241,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/skill-groups/{skillTestGroup}/edit', [AdminSkillTestGroup::class, 'edit'])->name('admin.skill_groups.edit');
     Route::put('/admin/skill-groups/{skillTestGroup}', [AdminSkillTestGroup::class, 'update'])->middleware('assessment.capability:author')->name('admin.skill_groups.update');
     Route::post('/admin/skill-groups/{skillTestGroup}/equivalent-set', [AdminSkillTestGroup::class, 'addEquivalentSet'])->middleware('assessment.capability:author')->name('admin.skill_groups.equivalent_set');
+    Route::post('/admin/skill-groups/{skillTestGroup}/generate-all-sets', [AdminSkillTestGroup::class, 'generateAllSets'])->middleware('assessment.capability:author')->name('admin.skill_groups.generate_all_sets');
     Route::post('/admin/skill-groups/{skillTestGroup}/release-scores', [AdminSkillTestGroup::class, 'releaseScores'])->middleware('assessment.capability:release')->name('admin.skill_groups.release_scores');
     Route::post('/admin/skill-groups/{skillTestGroup}/hide-scores', [AdminSkillTestGroup::class, 'hideScores'])->middleware('assessment.capability:release')->name('admin.skill_groups.hide_scores');
     Route::post('/admin/skill-groups/{skillTestGroup}/pause', [AdminSkillTestGroup::class, 'pause'])->middleware('assessment.capability:monitor')->name('admin.skill_groups.pause');
