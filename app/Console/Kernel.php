@@ -15,6 +15,10 @@ class Kernel extends ConsoleKernel
         $schedule->command('assessments:finalize-expired --limit=1000')
             ->everyMinute()
             ->withoutOverlapping();
+
+        $schedule->command('assessments:finalize-expired-skills --limit=1000')
+            ->everyMinute()
+            ->withoutOverlapping();
     }
 
     /**
