@@ -19,6 +19,10 @@ return new class extends Migration
             $table->text('review_notes')->nullable()->after('reviewed_at');
             $table->string('score_release_policy', 32)->default('manual')->after('ai_scoring');
             $table->dateTime('scores_released_at')->nullable()->after('score_release_policy');
+            $table->longText('ai_context')->nullable()->after('scores_released_at');
+            $table->string('ai_generation_focus', 40)->nullable()->after('ai_context');
+            $table->boolean('ai_use_qualifications')->default(true)->after('ai_generation_focus');
+            $table->boolean('ai_use_job_description')->default(true)->after('ai_use_qualifications');
         });
 
         Schema::table('skill_test_rubric_criteria', function (Blueprint $table) {
@@ -121,6 +125,10 @@ return new class extends Migration
                 'review_notes',
                 'score_release_policy',
                 'scores_released_at',
+                'ai_context',
+                'ai_generation_focus',
+                'ai_use_qualifications',
+                'ai_use_job_description',
             ]);
         });
     }
