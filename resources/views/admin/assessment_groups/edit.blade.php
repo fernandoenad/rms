@@ -49,17 +49,27 @@
                 <input name="reason" class="form-control form-control-sm mr-2" style="min-width:320px" placeholder="Reason for pausing new starts" required>
                 <button class="btn btn-warning btn-sm">Pause New Starts</button>
             </form>
-            <form method="post" action="{{ route('admin.assessment_groups.archive',$assessmentGroup) }}"
-                  onsubmit="return confirm('Archive and freeze this written assessment? This is blocked while attempts are in progress.');">@csrf
-                <button class="btn btn-outline-secondary btn-sm">Archive / Freeze</button>
-            </form>
-            @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1)
-            <form method="post" action="{{ route('admin.assessment_groups.destroy',$assessmentGroup) }}" class="d-inline ml-2"
-                  onsubmit="return confirm('Permanently delete this Written Assessment Group and all of its sets? This is allowed only if no applicant has attempted or been locked to any set.');">
-                @csrf @method('delete')
-                <button class="btn btn-danger btn-sm"><i class="fas fa-trash mr-1"></i> Delete Group</button>
-            </form>
-            @endif
+            <div class="d-flex flex-wrap align-items-center mt-2 assessment-group-actions">
+                <form method="post" action="{{ route('admin.assessment_groups.archive',$assessmentGroup) }}"
+                      class="mr-2 mb-2"
+                      onsubmit="return confirm('Archive and freeze this written assessment? This is blocked while attempts are in progress.');">
+                    @csrf
+                    <button class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-archive mr-1"></i> Archive / Freeze
+                    </button>
+                </form>
+
+                @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1)
+                <form method="post" action="{{ route('admin.assessment_groups.destroy',$assessmentGroup) }}"
+                      class="mb-2"
+                      onsubmit="return confirm('Permanently delete this Written Assessment Group and all of its sets? This is allowed only if no applicant has attempted or been locked to any set.');">
+                    @csrf @method('delete')
+                    <button class="btn btn-danger btn-sm">
+                        <i class="fas fa-trash mr-1"></i> Delete Group
+                    </button>
+                </form>
+                @endif
+            </div>
         @endif
     </div>
 </div>
@@ -356,4 +366,15 @@
     </div>
 </div>
 
+@stop
+
+@section('css')
+<style>
+.assessment-group-actions .btn { min-height: 34px; }
+@media (max-width: 575.98px) {
+    .assessment-group-actions { display:block !important; }
+    .assessment-group-actions form { margin-right:0 !important; }
+    .assessment-group-actions .btn { width:100%; }
+}
+</style>
 @stop
