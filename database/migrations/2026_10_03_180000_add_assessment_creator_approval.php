@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -27,6 +28,20 @@ return new class extends Migration
             $table->dateTime('approved_at')->nullable()->after('approved_by');
             $table->text('approval_notes')->nullable()->after('approved_at');
         });
+
+        // Grandfather existing assessments so this governance upgrade does not
+        // unexpectedly block records that were already in operational use.
+        DB::table('exams')->update([
+            'approval_status'=>'approved',
+            'approved_at'=>now(),
+            'approval_notes'=>'Grandfathered as approved during assessment governance migration.',
+        ]);
+
+        DB::table('skill_tests')->update([
+            'approval_status'=>'approved',
+            'approved_at'=>now(),
+            'approval_notes'=>'Grandfathered as approved during assessment governance migration.',
+        ]);
     }
 
     public function down(): void
