@@ -37,6 +37,13 @@ class ExamAttemptController extends Controller
             abort(403, 'Exam not available for this application.');
         }
 
+        if ($exam->assessment_group_id) {
+            $exam->loadMissing('assessmentGroup');
+            if (!$exam->assessmentGroup || !$exam->assessmentGroup->status) {
+                abort(403, 'This written assessment is not active.');
+            }
+        }
+
         if ($exam->access_mode === 'selected_applicants') {
             $assigned = ExamAssignment::where('exam_id', $exam->id)
                 ->where('application_id', $application->id)
