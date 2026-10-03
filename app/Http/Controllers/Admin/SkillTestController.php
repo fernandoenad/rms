@@ -85,6 +85,12 @@ class SkillTestController extends Controller
             'ai_scoring'=>'required|boolean',
             'score_release_policy'=>'required|in:hidden,manual,after_close,immediate',
             'status'=>'nullable|boolean',
+            'ai_generated_task'=>'nullable|boolean',
+            'generated_rubric'=>'nullable|string|max:50000',
+            'additional_context'=>'nullable|string|max:30000',
+            'generation_focus'=>'nullable|in:mixed,duties,technical,situational',
+            'use_qualifications'=>'nullable|boolean',
+            'use_job_description'=>'nullable|boolean',
         ]);
     }
 
@@ -105,6 +111,35 @@ class SkillTestController extends Controller
     {
         $data = $this->normalize($this->validated($request));
         $requestedPublish = (int) ($data['status'] ?? 0) === 1;
+        $aiGenerated = (bool) ($data['ai_generated_task'] ?? false);
+        $generatedRubricJson = $data['generated_rubric'] ?? null;
+
+        $generatedRubric = [];
+        if ($aiGenerated) {
+            $decoded = json_decode((string) $generatedRubricJson, true);
+
+            if (!is_array($decoded) || empty($decoded)) {
+                return back()->withInput()->withErrors([
+                    'generated_rubric'=>'The AI-generated rubric is missing or invalid. Generate the task again before creating the test.',
+                ]);
+            }
+
+            $rubricData = validator(['criteria'=>$decoded], [
+                'criteria'=>'required|array|min:1|max:20',
+                'criteria.*.criterion'=>'required|string|max:255',
+                'criteria.*.description'=>'nullable|string|max:10000',
+                'criteria.*.max_points'=>'required|numeric|min:0.01|max:100',
+            ])->validate();
+
+            $total = collect($rubricData['criteria'])->sum('max_points');
+            if (abs($total - 100) > 0.01) {
+                return back()->withInput()->withErrors([
+                    'generated_rubric'=>'The AI-generated rubric must total exactly 100 points. Generate the task again.',
+                ]);
+            }
+
+            $generatedRubric = $rubricData['criteria'];
+        }
 
         $data['status'] = 0;
         $data['created_by'] = auth()->id();
@@ -115,20 +150,138 @@ class SkillTestController extends Controller
             ? 'Auto-approved because the creator is an administrator.'
             : null;
 
-        $data['review_status'] = 'approved';
-        $data['reviewed_by'] = auth()->id();
-        $data['reviewed_at'] = now();
+        $data['review_status'] = $aiGenerated ? 'pending_review' : 'approved';
+        $data['reviewed_by'] = $aiGenerated ? null : auth()->id();
+        $data['reviewed_at'] = $aiGenerated ? null : now();
+        $data['review_notes'] = $aiGenerated
+            ? 'AI-generated task requires human review before publication.'
+            : null;
 
-        $test = SkillTest::create($data);
+        $data['ai_context'] = trim((string) ($data['additional_context'] ?? '')) ?: null;
+        $data['ai_generation_focus'] = $data['generation_focus'] ?? 'mixed';
+        $data['ai_use_qualifications'] = (bool) ($data['use_qualifications'] ?? true);
+        $data['ai_use_job_description'] = (bool) ($data['use_job_description'] ?? true);
+
+        unset(
+            $data['ai_generated_task'],
+            $data['generated_rubric'],
+            $data['additional_context'],
+            $data['generation_focus'],
+            $data['use_qualifications'],
+            $data['use_job_description']
+        );
+
+        $test = DB::transaction(function () use ($data, $generatedRubric, $aiGenerated) {
+            $test = SkillTest::create($data);
+
+            if ($aiGenerated) {
+                foreach ($generatedRubric as $i => $criterion) {
+                    $test->allRubricCriteria()->create([
+                        'criterion'=>$criterion['criterion'],
+                        'description'=>$criterion['description'] ?? null,
+                        'max_points'=>$criterion['max_points'],
+                        'sort_order'=>$i,
+                        'criterion_version'=>1,
+                        'review_status'=>'pending_review',
+                        'reviewed_by'=>null,
+                        'reviewed_at'=>null,
+                        'review_notes'=>'AI-generated rubric criterion requires human review.',
+                        'is_active'=>true,
+                    ]);
+                }
+            }
+
+            return $test;
+        });
 
         $governance->log('skill_test_created', [
             'skill_test_id' => $test->id,
         ], [
             'requested_publish' => $requestedPublish,
+            'ai_generated' => $aiGenerated,
+            'generated_rubric_count' => count($generatedRubric),
         ]);
 
         return redirect()->route('admin.skills.edit', $test)
-            ->with('status', 'Skills test created as a draft. Add or generate the rubric, review readiness, then publish.');
+            ->with(
+                'status',
+                $aiGenerated
+                    ? 'AI-assisted skills test created as a draft. Review and approve the generated task and rubric before publishing.'
+                    : 'Skills test created as a draft. Add or generate the rubric, review readiness, then publish.'
+            );
+    }
+
+    public function generateCreateDraft(
+        Request $request,
+        AssessmentAiService $ai
+    ) {
+        $data = $request->validate([
+            'vacancy_id'=>'required|integer|exists:vacancies,id',
+            'duration'=>'required|integer|min:1|max:480',
+            'additional_context'=>'nullable|string|max:30000',
+            'generation_focus'=>'required|in:mixed,duties,technical,situational',
+            'use_qualifications'=>'nullable|boolean',
+            'use_job_description'=>'nullable|boolean',
+        ]);
+
+        $contextOptions = [
+            'use_qualifications'=>$request->boolean('use_qualifications'),
+            'use_job_description'=>$request->boolean('use_job_description'),
+            'additional_context'=>trim((string)($data['additional_context'] ?? '')),
+            'generation_focus'=>$data['generation_focus'],
+        ];
+
+        if (!$contextOptions['use_qualifications']
+            && !$contextOptions['use_job_description']
+            && $contextOptions['additional_context'] === '') {
+            return response()->json([
+                'message'=>'Select at least one vacancy context source or provide additional context.',
+                'errors'=>['context'=>['Select at least one vacancy context source or provide additional context.']],
+            ], 422);
+        }
+
+        $vacancy = Vacancy::findOrFail($data['vacancy_id']);
+
+        try {
+            $payload = $ai->generateSkillsTask(
+                $vacancy,
+                (int)$data['duration'],
+                $contextOptions
+            );
+
+            $rubric = collect($payload['rubric'] ?? [])
+                ->map(fn ($row) => [
+                    'criterion'=>trim((string)($row['criterion'] ?? '')),
+                    'description'=>trim((string)($row['description'] ?? '')),
+                    'max_points'=>is_numeric($row['max_points'] ?? null)
+                        ? (float)$row['max_points']
+                        : null,
+                ])
+                ->filter(fn ($row) => $row['criterion'] !== '' && $row['max_points'] !== null)
+                ->values();
+
+            if ($rubric->isEmpty()
+                || abs((float)$rubric->sum('max_points') - 100.0) > 0.01
+                || blank($payload['title'] ?? null)
+                || blank($payload['instructions'] ?? null)) {
+                return response()->json([
+                    'message'=>'AI returned an incomplete task or a rubric that does not total 100 points. Please generate again.',
+                ], 422);
+            }
+
+            return response()->json([
+                'title'=>trim((string)$payload['title']),
+                'instructions'=>trim((string)$payload['instructions']),
+                'expected_output'=>trim((string)($payload['expected_output'] ?? '')),
+                'rubric'=>$rubric->all(),
+            ]);
+        } catch (\Throwable $e) {
+            report($e);
+
+            return response()->json([
+                'message'=>'AI generation failed. Please try again or enter the task manually.',
+            ], 502);
+        }
     }
 
     public function edit(SkillTest $skillTest, AssessmentGovernanceService $governance)
