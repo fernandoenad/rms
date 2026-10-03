@@ -205,6 +205,7 @@ class AssessmentGroupController extends Controller
         $assessmentGroup->load([
             'exams' => fn ($q) => $q->withCount(['attempts', 'assignments'])->orderBy('set_code'),
             'incidents' => fn ($q) => $q->where('status', 'open')->latest()->limit(20),
+            'auditLogs' => fn ($q) => $q->with('user:id,name,email')->latest()->limit(30),
         ]);
 
         $readiness = $assessmentGroup->exams
