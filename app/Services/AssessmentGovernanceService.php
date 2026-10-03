@@ -187,9 +187,14 @@ class AssessmentGovernanceService
             }
         }
 
-        if ($test->access_mode === 'selected_applicants'
-            && !$test->assignments()->exists()) {
-            $issues[] = 'Selected-applicant mode is enabled but no applicants are assigned.';
+        if ($test->access_mode === 'selected_applicants') {
+            $hasAssignments = $test->relationLoaded('assignments')
+                ? $test->assignments->isNotEmpty()
+                : $test->assignments()->exists();
+
+            if (!$hasAssignments) {
+                $issues[] = 'Selected-applicant mode is enabled but no applicants are assigned.';
+            }
         }
 
         return [
