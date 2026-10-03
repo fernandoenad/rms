@@ -14,6 +14,29 @@
 @endif
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+
+<div class="card card-outline {{ $exam->approval_status==='approved' ? 'card-success' : 'card-warning' }}">
+    <div class="card-header"><strong>Assessment Approval</strong></div>
+    <div class="card-body">
+        <p class="mb-2">
+            Status:
+            @if($exam->approval_status==='approved')
+                <span class="badge badge-success">Approved</span>
+            @else
+                <span class="badge badge-warning">Pending approval</span>
+            @endif
+        </p>
+        @if($exam->approval_notes)
+            <div class="small text-muted mb-2">{{ $exam->approval_notes }}</div>
+        @endif
+        @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1 && $exam->approval_status!=='approved')
+            <form method="post" action="{{ route('admin.assessments.approve',$exam) }}">@csrf
+                <textarea name="approval_notes" class="form-control mb-2" rows="2" placeholder="Approval notes (optional)"></textarea>
+                <button class="btn btn-success btn-sm">Approve Written Test</button>
+            </form>
+        @endif
+    </div>
+</div>
 <form method="post" action="{{ route('admin.assessments.update',$exam) }}">@csrf @method('put')
 <div class="card"><div class="card-body">
 <div class="form-group"><label>Position</label><select name="vacancy_id" class="form-control" required>
