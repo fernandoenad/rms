@@ -345,6 +345,48 @@ class WrittenExamItemController extends Controller
         return back()->with('status', 'Item review decision saved.');
     }
 
+    public function approveGenerated(
+        Exam $exam,
+        AssessmentGovernanceService $governance
+    ) {
+        $this->ensureMutable($exam);
+
+        $items = $exam->writtenExams()
+            ->where('ai_generated', true)
+            ->where('review_status', 'pending_review')
+            ->get();
+
+        if ($items->isEmpty()) {
+            return back()->with('status', 'There are no pending AI-generated items to approve.');
+        }
+
+        $reviewedAt = now();
+        $reviewedBy = auth()->id();
+
+        DB::transaction(function () use ($items, $governance, $reviewedAt, $reviewedBy) {
+            foreach ($items as $item) {
+                $item->update([
+                    'review_status' => 'approved',
+                    'reviewed_by' => $reviewedBy,
+                    'reviewed_at' => $reviewedAt,
+                    'review_notes' => null,
+                ]);
+
+                $governance->syncWrittenItemToBank($item->fresh());
+            }
+        });
+
+        $governance->log('generated_items_bulk_approved', [
+            'assessment_group_id' => $exam->assessment_group_id,
+            'exam_id' => $exam->id,
+        ], [
+            'approved_count' => $items->count(),
+            'written_exam_ids' => $items->pluck('id')->values()->all(),
+        ]);
+
+        return back()->with('status', $items->count() . ' AI-generated item(s) approved.');
+    }
+
     public function toggleStatus(Exam $exam, WrittenExam $item)
     {
         $this->ensureMutable($exam);
