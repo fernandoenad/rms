@@ -272,8 +272,37 @@ class SkillTestController extends Controller
             return back()->with('status', 'Cannot regenerate an administered task. Create a revision instead.');
         }
 
+        $data = $request->validate([
+            'additional_context'=>'nullable|string|max:30000',
+            'generation_focus'=>'required|in:mixed,duties,technical,situational',
+        ]);
+
+        $contextOptions = [
+            'use_qualifications'=>$request->boolean('use_qualifications'),
+            'use_job_description'=>$request->boolean('use_job_description'),
+            'additional_context'=>trim((string)($data['additional_context'] ?? '')),
+            'generation_focus'=>$data['generation_focus'],
+        ];
+
+        if (!$contextOptions['use_qualifications']
+            && !$contextOptions['use_job_description']
+            && $contextOptions['additional_context'] === '') {
+            return back()->withInput()->with('status','Select at least one vacancy context source or paste additional context.');
+        }
+
+        $skillTest->update([
+            'ai_context'=>$contextOptions['additional_context'] ?: null,
+            'ai_generation_focus'=>$contextOptions['generation_focus'],
+            'ai_use_qualifications'=>$contextOptions['use_qualifications'],
+            'ai_use_job_description'=>$contextOptions['use_job_description'],
+        ]);
+
         try {
-            $payload = $ai->generateSkillsTask($skillTest->vacancy, (int) $skillTest->duration);
+            $payload = $ai->generateSkillsTask(
+                $skillTest->vacancy,
+                (int) $skillTest->duration,
+                $contextOptions
+            );
 
             DB::transaction(function () use ($skillTest, $payload) {
                 $oldCriteria = $skillTest->rubricCriteria()->get();
