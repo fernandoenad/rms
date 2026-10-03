@@ -124,7 +124,10 @@ class ApplicationController extends Controller
         $exams = $visibleExams->sortBy('start_date')->values();
 
         $skillTests = \App\Models\SkillTest::where('vacancy_id', $application->vacancy_id)
-            ->where('status', 1)
+            ->where(function ($q) use ($application) {
+                $q->where('status', 1)
+                  ->orWhereHas('attempts', fn ($attempts) => $attempts->where('application_id', $application->id));
+            })
             ->where(function ($q) use ($application) {
                 $q->where('access_mode', 'all_taken_in')
                   ->orWhereExists(function ($sub) use ($application) {
@@ -136,6 +139,7 @@ class ApplicationController extends Controller
             ->with(['attempts' => function($q) use ($application) {
                 $q->where('application_id', $application->id);
             }])
+            ->orderBy('start_date')
             ->get();
 
         if($request->session()->get('guest_email') == $application->email){
