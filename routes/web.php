@@ -98,11 +98,16 @@ Route::post('/assessments/attempts/{attempt}/submit', [\App\Http\Controllers\Gue
     ->middleware('throttle:assessment-submit')->name('guest.assessments.attempts.submit');
 Route::post('/assessments/attempts/{attempt}/event', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'eventLog'])
     ->middleware('throttle:assessment-event')->name('guest.assessments.attempts.event');
-Route::post('/applications/{application}/skills/{skillTest}/start', [GuestSkillTestAttempt::class, 'start'])->name('guest.skills.start');
-Route::get('/skills/attempts/{attempt}', [GuestSkillTestAttempt::class, 'take'])->name('guest.skills.attempts.take');
-Route::post('/skills/attempts/{attempt}/inline', [GuestSkillTestAttempt::class, 'saveInline'])->name('guest.skills.attempts.inline');
-Route::post('/skills/attempts/{attempt}/upload', [GuestSkillTestAttempt::class, 'upload'])->name('guest.skills.attempts.upload');
-Route::post('/skills/attempts/{attempt}/submit', [GuestSkillTestAttempt::class, 'submit'])->name('guest.skills.attempts.submit');
+Route::post('/applications/{application}/skills/{skillTest}/start', [GuestSkillTestAttempt::class, 'start'])
+    ->middleware('throttle:skill-start')->name('guest.skills.start');
+Route::get('/skills/attempts/{attempt}', [GuestSkillTestAttempt::class, 'take'])
+    ->middleware('throttle:skill-take')->name('guest.skills.attempts.take');
+Route::post('/skills/attempts/{attempt}/inline', [GuestSkillTestAttempt::class, 'saveInline'])
+    ->middleware('throttle:skill-save')->name('guest.skills.attempts.inline');
+Route::post('/skills/attempts/{attempt}/upload', [GuestSkillTestAttempt::class, 'upload'])
+    ->middleware('throttle:skill-upload')->name('guest.skills.attempts.upload');
+Route::post('/skills/attempts/{attempt}/submit', [GuestSkillTestAttempt::class, 'submit'])
+    ->middleware('throttle:skill-submit')->name('guest.skills.attempts.submit');
 
 
 // auth routes
@@ -204,11 +209,21 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/skills/create', [AdminSkillTest::class, 'create'])->name('admin.skills.create');
     Route::post('/admin/skills', [AdminSkillTest::class, 'store'])->name('admin.skills.store');
     Route::get('/admin/skills/{skillTest}/edit', [AdminSkillTest::class, 'edit'])->name('admin.skills.edit');
+    Route::put('/admin/skills/{skillTest}', [AdminSkillTest::class, 'update'])->name('admin.skills.update');
+    Route::post('/admin/skills/{skillTest}/revision', [AdminSkillTest::class, 'createRevision'])->name('admin.skills.revision');
     Route::post('/admin/skills/{skillTest}/ai-generate', [AdminSkillTest::class, 'generateAi'])->name('admin.skills.ai_generate');
+    Route::put('/admin/skills/{skillTest}/review-task', [AdminSkillTest::class, 'reviewTask'])->name('admin.skills.review_task');
     Route::post('/admin/skills/{skillTest}/rubric', [AdminSkillTest::class, 'saveRubric'])->name('admin.skills.rubric');
+    Route::put('/admin/skills/{skillTest}/rubric/{criterion}/review', [AdminSkillTest::class, 'reviewCriterion'])->name('admin.skills.rubric.review');
     Route::post('/admin/skills/{skillTest}/assign', [AdminSkillTest::class, 'assignApplicants'])->name('admin.skills.assign');
     Route::post('/admin/skills/{skillTest}/toggle', [AdminSkillTest::class, 'toggleStatus'])->name('admin.skills.toggle');
     Route::get('/admin/skills/{skillTest}/results', [AdminSkillTest::class, 'results'])->name('admin.skills.results');
+    Route::get('/admin/skills/{skillTest}/export', [AdminSkillTest::class, 'exportCsv'])->name('admin.skills.export');
+    Route::post('/admin/skills/{skillTest}/release-scores', [AdminSkillTest::class, 'releaseScores'])->name('admin.skills.release_scores');
+    Route::post('/admin/skills/{skillTest}/hide-scores', [AdminSkillTest::class, 'hideScores'])->name('admin.skills.hide_scores');
+    Route::post('/admin/skills/{skillTest}/incidents', [AdminSkillTest::class, 'incident'])->name('admin.skills.incidents.store');
+    Route::put('/admin/skills/{skillTest}/incidents/{incident}/resolve', [AdminSkillTest::class, 'resolveIncident'])->name('admin.skills.incidents.resolve');
+    Route::post('/admin/skills/{skillTest}/attempts/{attempt}/void-retake', [AdminSkillTest::class, 'voidAndRetake'])->name('admin.skills.attempts.void_retake');
     Route::post('/admin/skills/{skillTest}/attempts/{attempt}/final-score', [AdminSkillTest::class, 'finalizeScore'])->name('admin.skills.final_score');
 
     Route::get('/admin/inquiries', [AdminInquiry::class, 'index'])->name('admin.inquiries.index');
