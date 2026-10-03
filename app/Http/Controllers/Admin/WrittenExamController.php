@@ -196,7 +196,7 @@ class WrittenExamController extends Controller
             ->with('status', 'Written exam settings updated.');
     }
 
-    public function duplicate(Exam $exam)
+    public function duplicate(Exam $exam, AssessmentGovernanceService $governance)
     {
         $exam->load('writtenExams.options');
 
@@ -230,13 +230,22 @@ class WrittenExamController extends Controller
             return $copy;
         });
 
+        $governance->log('exam_duplicated', [
+            'assessment_group_id' => $exam->assessment_group_id,
+            'exam_id' => $copy->id,
+        ], ['source_exam_id' => $exam->id]);
+
         return redirect()->route('admin.assessments.edit', $copy)
-            ->with('status', 'Exam duplicated as a draft. Set its schedule before publishing.');
+            ->with('status', 'Exam duplicated as a standalone draft. Use Add Equivalent Set for governed parallel sets.');
     }
 
 
-    public function generateAi(Request $request, Exam $exam, AssessmentAiService $ai)
-    {
+    public function generateAi(
+        Request $request,
+        Exam $exam,
+        AssessmentAiService $ai,
+        AssessmentGovernanceService $governance
+    ) {
         if ((int) $exam->status === 1) {
             return back()->with('status', 'Return the set to draft before generating or changing items.');
         }
@@ -327,6 +336,15 @@ class WrittenExamController extends Controller
                 $remaining -= $size;
             }
 
+            $governance->log('ai_generation_queued', [
+                'assessment_group_id' => $exam->assessment_group_id,
+                'exam_id' => $exam->id,
+            ], [
+                'run_id' => $run->id,
+                'requested_count' => (int) $data['count'],
+                'batch_count' => $batchCount,
+            ]);
+
             return back()->with(
                 'status',
                 "AI generation queued in {$batchCount} batch(es). Refresh this page to monitor progress."
@@ -398,6 +416,11 @@ class WrittenExamController extends Controller
                 throw new \RuntimeException('The AI response contained no valid assessment items.');
             }
 
+            $governance->log('ai_items_generated', [
+                'assessment_group_id' => $exam->assessment_group_id,
+                'exam_id' => $exam->id,
+            ], ['created' => $created]);
+
             $message = "{$created} AI-generated item(s) were added for review.";
             if ($created < (int) $data['count']) {
                 $message .= " Requested {$data['count']}; some returned items were invalid and were skipped.";
@@ -419,8 +442,11 @@ class WrittenExamController extends Controller
     }
 
 
-    public function assignApplicants(Request $request, Exam $exam)
-    {
+    public function assignApplicants(
+        Request $request,
+        Exam $exam,
+        AssessmentGovernanceService $governance
+    ) {
         $data = $request->validate(['application_codes' => 'required|string']);
         $codes = collect(preg_split('/[\s,;]+/', $data['application_codes']))
             ->map(fn($x) => trim($x))->filter()->unique()->values();
@@ -473,6 +499,15 @@ class WrittenExamController extends Controller
         if ($conflicts) {
             $message .= " {$conflicts} skipped because they are assigned to another set in this assessment group.";
         }
+
+        $governance->log('applicants_assigned', [
+            'assessment_group_id' => $exam->assessment_group_id,
+            'exam_id' => $exam->id,
+        ], [
+            'added' => $assigned,
+            'already_assigned' => $alreadyOnThisSet,
+            'conflicts' => $conflicts,
+        ]);
 
         return back()->with('status', $message);
     }
