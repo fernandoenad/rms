@@ -100,7 +100,19 @@ JSON shape:
 {"items":[{"question":"...","options":["...","...","...","..."],"correct_index":0,"solo_level":"relational","difficulty":"moderate","competency_basis":"...","rationale":"..."}]}
 PROMPT;
 
+        $avoidQuestions = collect($contextOptions['avoid_questions'] ?? [])
+            ->map(fn ($question) => trim((string) $question))
+            ->filter()
+            ->take(250)
+            ->values();
+
+        $avoidBlock = $avoidQuestions->isNotEmpty()
+            ? "\n\nEXISTING QUESTIONS FROM THIS ASSESSMENT FAMILY — DO NOT DUPLICATE OR CLOSELY PARAPHRASE THESE:\n"
+                . $avoidQuestions->map(fn ($q, $i) => ($i + 1).". ".$q)->implode("\n")
+            : '';
+
         $user = $this->vacancyContext($vacancy, $contextOptions)
+            . $avoidBlock
             . "\n\nUse only the supplied context as the substantive basis for job-specific content. "
             . "If the context is insufficient for a defensible item, write a broader job-relevant item rather than inventing a policy, procedure, duty, threshold, or factual requirement."
             . "\n\nGenerate exactly {$count} items."
