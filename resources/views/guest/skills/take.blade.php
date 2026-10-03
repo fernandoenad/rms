@@ -15,7 +15,10 @@
 @php $modes=$attempt->skillTest->submission_modes ?: ['inline']; @endphp
 @if(in_array('inline',$modes,true))
 <div class="card"><div class="card-header"><strong>Write Response</strong><span id="inlineSave" class="float-right small text-muted"></span></div>
-<div class="card-body"><textarea id="inlineResponse" class="form-control" rows="14" placeholder="Type your response here...">{{ optional($submission)->inline_response }}</textarea></div></div>
+<div class="card-body">
+<textarea id="inlineResponse" class="form-control" rows="14" placeholder="Type your response here...">{{ optional($submission)->inline_response }}</textarea>
+<div id="pasteNotice" class="small text-muted mt-2">Paste and drag/drop text are disabled for this skills-test response. Type your response directly in the assessment.</div>
+</div></div>
 @endif
 
 @if(in_array('file',$modes,true))
@@ -134,6 +137,27 @@
     tick();
 
     if(box){
+        function blockImportedText(event){
+            event.preventDefault();
+            const notice=document.getElementById('pasteNotice');
+            if(notice){
+                notice.textContent='Pasting or dropping text is not allowed in this skills-test response.';
+                notice.className='small text-danger font-weight-bold mt-2';
+                setTimeout(()=>{
+                    notice.textContent='Paste and drag/drop text are disabled for this skills-test response. Type your response directly in the assessment.';
+                    notice.className='small text-muted mt-2';
+                },3000);
+            }
+        }
+
+        box.addEventListener('paste',blockImportedText);
+        box.addEventListener('drop',blockImportedText);
+        box.addEventListener('beforeinput',(event)=>{
+            if(event.inputType==='insertFromPaste' || event.inputType==='insertFromDrop'){
+                blockImportedText(event);
+            }
+        });
+
         const recovered=localStorage.getItem(pendingKey);
         if(recovered !== null && recovered !== box.value){
             box.value=recovered;
