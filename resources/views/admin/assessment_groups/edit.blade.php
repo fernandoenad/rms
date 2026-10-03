@@ -103,6 +103,29 @@
 
         <div class="form-row">
             <div class="form-group col-md-6">
+                <label>Applicant score criterion</label>
+                <select name="assessment_score_key" class="form-control">
+                    <option value="">Do not write this assessment into applicant scores</option>
+                    @foreach($scoreCriteria as $key=>$max)
+                        <option value="{{ $key }}" {{ old('assessment_score_key',$assessmentGroup->assessment_score_key)===$key?'selected':'' }}>
+                            {{ $key }} ({{ number_format($max,2) }} pts)
+                        </option>
+                    @endforeach
+                </select>
+                <small class="text-muted">Official written percentages are scaled to the selected recruitment-template criterion.</small>
+                @if($assessmentGroup->scores_synced_at)
+                    <div class="small text-success mt-1">Last applicant-score sync: {{ $assessmentGroup->scores_synced_at->format('M d, Y h:i A') }}</div>
+                @endif
+            </div>
+            <div class="form-group col-md-6">
+                <div class="alert alert-light border small mt-4 mb-0">
+                    This updates only the selected criterion and recalculates the applicant's assessment total. Other criteria are preserved.
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-md-6">
                 <label>Score release policy</label>
                 <select name="score_release_policy" class="form-control" required>
                     @foreach([
