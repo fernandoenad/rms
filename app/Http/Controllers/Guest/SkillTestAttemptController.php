@@ -121,7 +121,8 @@ class SkillTestAttemptController extends Controller
 
             $submission->update(['is_final'=>true,'submitted_at'=>now()]);
             $locked->update(['status'=>2,'submitted_at'=>now()]);
-            $queueAi = (bool) $locked->skillTest->ai_scoring;
+            $queueAi = (bool) $locked->skillTest->ai_scoring
+                && (filled($submission->inline_response) || filled($submission->file_path));
         });
 
         // Never call the AI provider inside the database transaction.
