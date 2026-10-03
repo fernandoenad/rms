@@ -145,6 +145,31 @@
                                     <button class="btn btn-sm btn-outline-info">Record Incident</button>
                                 </form>
 
+                                @if((int)$attempt->status===1)
+                                <form method="post" action="{{ route('admin.assessment_groups.attempts.extend',[$assessmentGroup,$attempt]) }}" class="mb-3">@csrf
+                                    <label class="small">Approved time extension</label>
+                                    <div class="form-row">
+                                        <div class="col-4"><input type="number" min="1" max="240" name="minutes" class="form-control form-control-sm" placeholder="Minutes" required></div>
+                                        <div class="col-8"><input name="reason" class="form-control form-control-sm" placeholder="Reason / accommodation" required></div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-primary mt-1">Add Time</button>
+                                </form>
+                                @endif
+
+                                <details class="mb-3">
+                                    <summary class="small font-weight-bold">Attempt timeline</summary>
+                                    <div class="small mt-2">
+                                        <div><strong>Started:</strong> {{ optional($attempt->started_at)->format('M d, Y h:i:s A') ?: '-' }}</div>
+                                        @foreach($attempt->timeExtensions as $extension)
+                                            <div class="text-primary">+{{ $extension->minutes }} min · {{ $extension->reason }} · {{ $extension->created_at->format('M d, h:i A') }}</div>
+                                        @endforeach
+                                        @foreach($attempt->events as $event)
+                                            <div>{{ $event->event_at->format('M d, h:i:s A') }} · {{ str_replace('_',' ',$event->event_type) }}</div>
+                                        @endforeach
+                                        @if($attempt->ended_at)<div><strong>Ended:</strong> {{ $attempt->ended_at->format('M d, Y h:i:s A') }}</div>@endif
+                                    </div>
+                                </details>
+
                                 @if((int)$attempt->status !== 3)
                                 <form method="post" action="{{ route('admin.assessment_groups.attempts.void_retake',[$assessmentGroup,$attempt]) }}" onsubmit="return confirm('Void this attempt and authorize a retake on another set? The original attempt will remain in the audit trail.');">@csrf
                                     <label class="small">Controlled retake</label>
