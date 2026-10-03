@@ -20,7 +20,40 @@
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
 
-<div class="card border-info">
+<div class="card card-outline card-primary mb-3">
+    <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-start flex-wrap">
+            <div class="mb-2">
+                <div class="small text-uppercase text-muted font-weight-bold">Assessment workflow</div>
+                <div class="mt-1">
+                    @if($assessmentGroup->archived_at)
+                        <span class="badge badge-secondary mr-1">Archived</span>
+                    @elseif($assessmentGroup->is_paused)
+                        <span class="badge badge-warning mr-1">Paused</span>
+                    @elseif($assessmentGroup->status)
+                        <span class="badge badge-success mr-1">Active</span>
+                    @else
+                        <span class="badge badge-secondary mr-1">Inactive</span>
+                    @endif
+                    <span class="badge badge-light border mr-1">{{ $assessmentGroup->exams->count() }} set(s)</span>
+                    <span class="badge badge-light border">Blueprint v{{ $assessmentGroup->blueprint_version }}</span>
+                </div>
+            </div>
+            <div class="btn-group btn-group-sm flex-wrap" role="group" aria-label="Assessment workflow sections">
+                <a href="#groupSettings" class="btn btn-outline-primary">1. Settings</a>
+                <a href="#blueprint" class="btn btn-outline-primary">2. Blueprint</a>
+                <a href="#aiGeneration" class="btn btn-outline-primary">3. Generate</a>
+                <a href="#setManagement" class="btn btn-outline-primary">4. Review Sets</a>
+                <a href="{{ route('admin.assessment_groups.results',$assessmentGroup) }}" class="btn btn-outline-primary">5. Monitor</a>
+            </div>
+        </div>
+        <div class="small text-muted mt-2">
+            Recommended flow: configure the group → confirm the shared blueprint → generate or add equivalent sets → review and publish each set → monitor attempts and release scores.
+        </div>
+    </div>
+</div>
+
+<div id="accommodations" class="card border-info">
     <div class="card-header"><strong>Applicant Accommodation</strong></div>
     <div class="card-body">
         <form method="post" action="{{ route('admin.assessment_groups.accommodations',$assessmentGroup) }}">@csrf
@@ -35,7 +68,7 @@
     </div>
 </div>
 
-<div class="card card-outline {{ $assessmentGroup->is_paused ? 'card-warning' : 'card-secondary' }}">
+<div id="operations" class="card card-outline {{ $assessmentGroup->is_paused ? 'card-warning' : 'card-secondary' }}">
     <div class="card-header"><strong>Operational Control</strong></div>
     <div class="card-body">
         @if($assessmentGroup->archived_at)
@@ -85,7 +118,7 @@
 @endphp
 
 <form method="post" action="{{ route('admin.assessment_groups.update',$assessmentGroup) }}">@csrf @method('put')
-<div class="card">
+<div id="groupSettings" class="card">
     <div class="card-header"><strong>Assessment Structure & Governance</strong></div>
     <div class="card-body">
         <div class="form-group">
@@ -167,7 +200,7 @@
     </div>
 </div>
 
-<div class="card">
+<div id="blueprint" class="card">
     <div class="card-header"><strong>Shared Blueprint / TOS</strong></div>
     <div class="card-body">
         <div class="form-group col-md-3 pl-0">
@@ -200,7 +233,7 @@
 </div>
 </form>
 
-<div class="card card-outline card-info">
+<div id="aiGeneration" class="card card-outline card-info">
     <div class="card-header"><strong><i class="fas fa-magic mr-1"></i> Generate All Empty Sets with AI</strong></div>
     <div class="card-body">
         <p class="small text-muted">
@@ -235,7 +268,7 @@
     </div>
 </div>
 
-<div class="card">
+<div id="setManagement" class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <strong>Equivalent Sets</strong>
         <form method="post" action="{{ route('admin.assessment_groups.equivalent_set',$assessmentGroup) }}" class="form-inline">@csrf
