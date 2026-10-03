@@ -350,7 +350,10 @@ class AssessmentGroupController extends Controller
         AssessmentGroup $assessmentGroup,
         AssessmentAnalyticsService $analytics
     ) {
-        $assessmentGroup->load('vacancy:id,position_title');
+        $assessmentGroup->load([
+            'vacancy:id,position_title',
+            'exams' => fn ($q) => $q->orderBy('set_code'),
+        ]);
 
         $dashboard = ExamAttempt::query()
             ->join('exams', 'exams.id', '=', 'exam_attempts.exam_id')
