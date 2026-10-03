@@ -72,7 +72,11 @@ class WrittenExamItemController extends Controller
                 'difficulty',
                 'competency_basis',
                 'rationale',
-                'ai_generated'
+                'ai_generated',
+                'item_version',
+                'review_status',
+                'review_notes',
+                'reviewed_at'
             )
             ->orderByDesc('id')
             ->get();
