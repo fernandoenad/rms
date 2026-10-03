@@ -237,6 +237,11 @@ class WrittenExamController extends Controller
         }
 
         if ($exam->assessment_group_id) {
+            $exam->loadMissing('assessmentGroup');
+            if ($exam->assessmentGroup?->blueprint) {
+                $contextOptions['blueprint'] = $exam->assessmentGroup->blueprint;
+            }
+
             $contextOptions['avoid_questions'] = WrittenExam::query()
                 ->whereHas('exam', fn ($q) => $q->where('assessment_group_id', $exam->assessment_group_id))
                 ->orderByDesc('id')
