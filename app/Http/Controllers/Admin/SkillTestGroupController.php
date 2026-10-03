@@ -350,6 +350,28 @@ class SkillTestGroupController extends Controller
         );
     }
 
+    public function destroy(SkillTestGroup $skillTestGroup)
+    {
+        abort_unless($this->currentUserIsAdmin(), 403);
+
+        if ($skillTestGroup->skillTests()->whereHas('attempts')->exists()
+            || $skillTestGroup->attemptLocks()->exists()) {
+            return back()->with(
+                'status',
+                'Cannot delete this Skills Test Group because an applicant has already started or been locked to one of its sets. Archive it instead.'
+            );
+        }
+
+        DB::transaction(function () use ($skillTestGroup) {
+            // Sets use nullOnDelete for the group FK, so delete them explicitly.
+            $skillTestGroup->skillTests()->get()->each->delete();
+            $skillTestGroup->delete();
+        });
+
+        return redirect()->route('admin.skill_groups.index')
+            ->with('status','Skills Test Group and all of its unattempted sets were deleted.');
+    }
+
     public function releaseScores(
         SkillTestGroup $skillTestGroup,
         AssessmentScoreSyncService $scoreSync
