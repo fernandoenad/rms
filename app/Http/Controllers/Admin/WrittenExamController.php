@@ -138,6 +138,8 @@ class WrittenExamController extends Controller
             'solo_multistructural' => 'required|integer|min:0|max:100',
             'solo_relational' => 'required|integer|min:0|max:100',
             'solo_extended_abstract' => 'required|integer|min:0|max:100',
+            'additional_context' => 'nullable|string|max:30000',
+            'generation_focus' => 'required|in:mixed,duties,technical,situational',
         ]);
 
         $distribution = [
@@ -148,11 +150,39 @@ class WrittenExamController extends Controller
         ];
 
         if (array_sum($distribution) !== 100) {
-            return back()->with('status', 'SOLO distribution must total 100%.');
+            return back()->withInput()->with('status', 'SOLO distribution must total 100%.');
+        }
+
+        $contextOptions = [
+            'use_qualifications' => $request->boolean('use_qualifications'),
+            'use_job_description' => $request->boolean('use_job_description'),
+            'additional_context' => trim((string) ($data['additional_context'] ?? '')),
+            'generation_focus' => $data['generation_focus'],
+        ];
+
+        if (!$contextOptions['use_qualifications']
+            && !$contextOptions['use_job_description']
+            && $contextOptions['additional_context'] === '') {
+            return back()->withInput()->with(
+                'status',
+                'Select at least one vacancy context source or paste additional context before generating.'
+            );
         }
 
         try {
-            $items = $ai->generateWrittenItems($exam->vacancy, (int)$data['count'], $distribution);
+            $exam->update([
+                'ai_context' => $contextOptions['additional_context'] ?: null,
+                'ai_generation_focus' => $contextOptions['generation_focus'],
+                'ai_use_qualifications' => $contextOptions['use_qualifications'],
+                'ai_use_job_description' => $contextOptions['use_job_description'],
+            ]);
+
+            $items = $ai->generateWrittenItems(
+                $exam->vacancy,
+                (int)$data['count'],
+                $distribution,
+                $contextOptions
+            );
 
             DB::transaction(function () use ($exam, $items) {
                 foreach ($items as $generated) {
@@ -195,7 +225,16 @@ class WrittenExamController extends Controller
 
             return back()->with('status', 'AI-generated items were added as reviewable exam items.');
         } catch (\Throwable $e) {
-            return back()->with('status', 'AI generation failed: '.$e->getMessage());
+            Log::error('Written assessment AI generation failed', [
+                'exam_id' => $exam->id,
+                'vacancy_id' => $exam->vacancy_id,
+                'exception' => $e,
+            ]);
+
+            return back()->withInput()->with(
+                'status',
+                'AI generation failed. No generated items were saved. Please review the context and try again.'
+            );
         }
     }
 
