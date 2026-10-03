@@ -370,6 +370,9 @@ return [
             'active' => [
                 'admin/assessment',
                 'admin/assessment/create',
+                'admin/assessment-groups',
+                'admin/assessment-groups/create',
+                'regex:@^admin/assessment-groups/\\d+/edit$@',
                 'regex:@^admin/assessment/\\d+/edit$@',
                 'regex:@^admin/assessment/\\d+/items/create$@',
                 'regex:@^admin/assessment/\\d+/items$@',
