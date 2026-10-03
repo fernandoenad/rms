@@ -19,6 +19,10 @@
 @stop
 
 @section('content')
+@if(session('status'))
+<div class="alert alert-info py-2">{{ session('status') }}</div>
+@endif
+
 @foreach($alerts as $alert)
 <div class="alert alert-{{ $alert['level'] }} py-2">
     <i class="fas fa-exclamation-triangle mr-1"></i>{{ $alert['message'] }}
@@ -53,7 +57,27 @@
 </div>
 
 <div class="card card-outline card-secondary">
-    <div class="card-header"><strong>Operations Health</strong></div>
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+        <strong>Operations Health</strong>
+        @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1 && ($queue['failed'] ?? 0) > 0)
+        <div class="mt-2 mt-md-0">
+            <form method="post" action="{{ route('admin.assessment_center.failed_jobs.retry') }}" class="d-inline"
+                  onsubmit="return confirm('Retry all failed queue jobs? Jobs will be returned to their original queues.');">
+                @csrf
+                <button class="btn btn-sm btn-outline-primary mr-1">
+                    <i class="fas fa-redo mr-1"></i> Retry Failed Jobs
+                </button>
+            </form>
+            <form method="post" action="{{ route('admin.assessment_center.failed_jobs.clear') }}" class="d-inline"
+                  onsubmit="return confirm('Permanently clear all failed-job records? This cannot be undone.');">
+                @csrf
+                <button class="btn btn-sm btn-outline-danger">
+                    <i class="fas fa-trash mr-1"></i> Clear Failed Jobs
+                </button>
+            </form>
+        </div>
+        @endif
+    </div>
     <div class="card-body">
         <div class="row text-center">
             <div class="col-6 col-md-2"><strong>{{ number_format($written['awaiting_timeout']) }}</strong><br><small class="text-muted">written timeout backlog</small></div>
@@ -63,6 +87,11 @@
             <div class="col-6 col-md-2"><strong>{{ $queue['failed']===null ? 'N/A' : number_format($queue['failed']) }}</strong><br><small class="text-muted">failed jobs</small></div>
             <div class="col-6 col-md-2"><strong>{{ $heartbeat ? $heartbeat->diffForHumans() : 'Never' }}</strong><br><small class="text-muted">scheduler heartbeat</small></div>
         </div>
+        @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1 && ($queue['failed'] ?? 0) > 0)
+            <div class="alert alert-warning py-2 mt-3 mb-0 small">
+                Retry returns failed jobs to their original queue. Clear only removes failed-job records; it does not cancel queued or running jobs.
+            </div>
+        @endif
     </div>
 </div>
 
