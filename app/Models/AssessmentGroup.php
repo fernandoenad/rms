@@ -8,9 +8,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AssessmentGroup extends Model
 {
-    protected $fillable = ['vacancy_id', 'title', 'code', 'status'];
+    protected $fillable = [
+        'vacancy_id', 'title', 'code', 'expected_sets', 'blueprint', 'blueprint_version',
+        'status', 'score_release_policy', 'scores_released_at'
+    ];
 
-    protected $casts = ['status' => 'boolean'];
+    protected $casts = [
+        'status' => 'boolean',
+        'blueprint' => 'array',
+        'scores_released_at' => 'datetime',
+    ];
 
     public function vacancy(): BelongsTo
     {
@@ -26,4 +33,30 @@ class AssessmentGroup extends Model
     {
         return $this->hasMany(AssessmentGroupAttemptLock::class);
     }
+
+    public function incidents(): HasMany
+    {
+        return $this->hasMany(AssessmentIncident::class);
+    }
+
+    public function auditLogs(): HasMany
+    {
+        return $this->hasMany(AssessmentAuditLog::class);
+    }
+
+    public function scoresAreReleased(): bool
+    {
+        if ($this->score_release_policy === 'immediate') {
+            return true;
+        }
+
+        if ($this->score_release_policy === 'after_close') {
+            return !$this->exams()->where(function ($q) {
+                $q->whereNull('end_date')->orWhere('end_date', '>', now());
+            })->exists();
+        }
+
+        return $this->scores_released_at !== null;
+    }
 }
+
