@@ -1,9 +1,16 @@
 @extends('adminlte::page')
 @section('title','Edit Written Exam')
 @section('content_header')
-<div class="d-flex justify-content-between align-items-center">
+<div class="d-flex justify-content-between align-items-center flex-wrap">
     <h1 class="mb-0">Edit Written Exam</h1>
-    <a href="{{ route('admin.assessments.preview',$exam) }}" class="btn btn-outline-info"><i class="fas fa-eye"></i> Preview & Dry Run</a>
+    <div class="mt-2 mt-md-0">
+        @if($exam->assessment_group_id)
+            <a href="{{ route('admin.assessment_groups.edit',$exam->assessment_group_id) }}" class="btn btn-outline-secondary mr-2"><i class="fas fa-arrow-left"></i> Back to Group</a>
+        @else
+            <a href="{{ route('admin.assessment_center.index') }}" class="btn btn-outline-secondary mr-2"><i class="fas fa-arrow-left"></i> Back</a>
+        @endif
+        <a href="{{ route('admin.assessments.preview',$exam) }}" class="btn btn-outline-info"><i class="fas fa-eye"></i> Preview & Dry Run</a>
+    </div>
 </div>
 @stop
 @section('content')
