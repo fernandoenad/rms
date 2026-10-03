@@ -3,13 +3,17 @@
 @section('content_header')<h1>New Written Exam</h1>@stop
 @section('content')
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+<div class="alert alert-light border">
+<strong>Creating equivalent sets?</strong> Use <a href="{{ route('admin.assessment_groups.create') }}">Written Assessment Group</a>.
+RMS will create Set A/B/C placeholders and can now generate all empty sets with AI in one click. Use this page mainly for a standalone Written Test or advanced manual attachment to an existing group.
+</div>
 <form method="post" action="{{ route('admin.assessments.store') }}">@csrf
 <div class="card"><div class="card-body">
 <div class="form-group"><label>Position</label><select name="vacancy_id" id="writtenVacancyId" class="form-control" required>
 <option value="">Select</option>@foreach($vacancies as $v)<option value="{{ $v->id }}" {{ old('vacancy_id', optional($selectedGroup)->vacancy_id)==$v->id?'selected':'' }}>{{ $v->position_title }} ({{ $v->cycle }})</option>@endforeach
 </select></div>
 <div class="form-row">
-<div class="form-group col-md-8"><label>Equivalent Assessment Group <span class="text-muted font-weight-normal">(optional)</span></label>
+<div class="form-group col-md-8"><label>Equivalent Assessment Group <span class="text-muted font-weight-normal">(optional · advanced)</span></label>
 <select name="assessment_group_id" id="writtenGroupId" class="form-control">
 <option value="">Standalone written exam</option>
 @foreach($groups as $group)
