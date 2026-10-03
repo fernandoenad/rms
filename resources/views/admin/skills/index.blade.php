@@ -2,7 +2,7 @@
 @section('title','Skills Tests')
 @section('content_header')
 <div class="d-flex justify-content-between align-items-center">
-    <h1>Skills Tests</h1>
+    <div><h1 class="mb-0">All Skills Tests</h1><small class="text-muted">Individual skills-test sets across all groups and standalone tests.</small></div>
     <div>
         <a href="{{ route('admin.skill_groups.index') }}" class="btn btn-outline-secondary mr-2"><i class="fas fa-layer-group"></i> Skills Test Groups</a>
         <a href="{{ route('admin.skills.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> New Skills Test</a>
