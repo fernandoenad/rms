@@ -46,6 +46,10 @@ class AssessmentGroup extends Model
 
     public function scoresAreReleased(): bool
     {
+        if ($this->score_release_policy === 'hidden') {
+            return false;
+        }
+
         if ($this->score_release_policy === 'immediate') {
             return true;
         }
