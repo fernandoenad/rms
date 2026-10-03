@@ -53,6 +53,13 @@
                   onsubmit="return confirm('Archive and freeze this written assessment? This is blocked while attempts are in progress.');">@csrf
                 <button class="btn btn-outline-secondary btn-sm">Archive / Freeze</button>
             </form>
+            @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1)
+            <form method="post" action="{{ route('admin.assessment_groups.destroy',$assessmentGroup) }}" class="d-inline ml-2"
+                  onsubmit="return confirm('Permanently delete this Written Assessment Group and all of its sets? This is allowed only if no applicant has attempted or been locked to any set.');">
+                @csrf @method('delete')
+                <button class="btn btn-danger btn-sm"><i class="fas fa-trash mr-1"></i> Delete Group</button>
+            </form>
+            @endif
         @endif
     </div>
 </div>
@@ -274,6 +281,13 @@
                     <td class="text-nowrap">
                         <a href="{{ route('admin.assessments.edit',$exam) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
                         <a href="{{ route('admin.assessments.items.index',$exam) }}" class="btn btn-sm btn-info"><i class="fas fa-list"></i></a>
+                        @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1 && $exam->attempts_count===0)
+                        <form method="post" action="{{ route('admin.assessments.destroy',$exam) }}" class="d-inline"
+                              onsubmit="return confirm('Delete Set {{ $exam->set_code }} permanently? No applicant attempt may exist.');">
+                            @csrf @method('delete')
+                            <button class="btn btn-sm btn-outline-danger" title="Delete unattempted set"><i class="fas fa-trash"></i></button>
+                        </form>
+                        @endif
                     </td>
                 </tr>
             @empty
