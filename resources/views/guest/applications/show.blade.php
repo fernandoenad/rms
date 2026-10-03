@@ -476,6 +476,13 @@
                                                                     Do not start until you are ready to complete the assessment.
                                                                 </div>
 
+                                                                <div class="alert alert-danger">
+                                                                    <strong><i class="fas fa-shield-alt mr-1"></i> Assessment integrity notice</strong>
+                                                                    <div class="mt-1">
+                                                                        RMS records and monitors technical and activity information associated with your attempt, including device/browser details, IP address, session activity, tab/app visibility events, connection events, and other assessment-integrity signals. Attempts showing unusual or suspicious patterns may be flagged for investigation and, when validated as a violation of assessment rules, may be invalidated or assigned a score of zero.
+                                                                    </div>
+                                                                </div>
+
                                                                 <h6 class="font-weight-bold">Important instructions</h6>
                                                                 <ol class="pl-4">
                                                                     <li class="mb-2">Use a stable internet connection and, when possible, a fully charged device or a device connected to power.</li>
@@ -563,6 +570,13 @@
                                                                 <div class="alert alert-warning">
                                                                     <strong>Your timer starts only when you click “Start Skills Test Now” below.</strong>
                                                                     Make sure you have enough uninterrupted time to finish.
+                                                                </div>
+
+                                                                <div class="alert alert-danger">
+                                                                    <strong><i class="fas fa-shield-alt mr-1"></i> Assessment integrity notice</strong>
+                                                                    <div class="mt-1">
+                                                                        RMS records and monitors technical and activity information associated with your attempt, including device/browser details, IP address, session activity, tab/app visibility events, connection events, and other assessment-integrity signals. Attempts showing unusual or suspicious patterns may be flagged for investigation and, when validated as a violation of assessment rules, may be invalidated or assigned a score of zero.
+                                                                    </div>
                                                                 </div>
 
                                                                 @if($skillTest->expected_output)
