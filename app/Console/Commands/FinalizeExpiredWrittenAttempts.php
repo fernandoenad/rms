@@ -6,13 +6,14 @@ use App\Models\AssessmentAttemptEvent;
 use App\Models\ExamAttempt;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use App\Services\AssessmentScoreSyncService;
 
 class FinalizeExpiredWrittenAttempts extends Command
 {
     protected $signature = 'assessments:finalize-expired {--limit=500}';
     protected $description = 'Finalize expired in-progress written assessment attempts.';
 
-    public function handle(): int
+    public function handle(AssessmentScoreSyncService $scoreSync): int
     {
         $limit = max(1, min(5000, (int) $this->option('limit')));
         $processed = 0;
@@ -24,8 +25,8 @@ class FinalizeExpiredWrittenAttempts extends Command
             ->orderBy('id')
             ->limit($limit)
             ->pluck('id')
-            ->each(function ($attemptId) use (&$processed) {
-                DB::transaction(function () use ($attemptId, &$processed) {
+            ->each(function ($attemptId) use (&$processed, $scoreSync) {
+                $finalized = DB::transaction(function () use ($attemptId, &$processed) {
                     $attempt = ExamAttempt::whereKey($attemptId)->lockForUpdate()->first();
 
                     if (!$attempt || (int) $attempt->status !== 1 || !$attempt->expires_at || now()->lt($attempt->expires_at)) {
@@ -89,7 +90,12 @@ class FinalizeExpiredWrittenAttempts extends Command
                     ]);
 
                     $processed++;
+                    return $attempt->fresh();
                 });
+
+                if ($finalized) {
+                    $scoreSync->syncWrittenAttempt($finalized);
+                }
             });
 
         $this->info("Finalized {$processed} expired attempt(s).");
