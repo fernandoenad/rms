@@ -129,7 +129,6 @@ PROMPT;
 
         $response = $this->client()->chat()->create([
             'model' => $this->model(),
-            'temperature' => 0.4,
             'messages' => [
                 ['role' => 'system', 'content' => $system],
                 ['role' => 'user', 'content' => $user],
@@ -161,7 +160,6 @@ PROMPT;
 
         $response = $this->client()->chat()->create([
             'model' => $this->model(),
-            'temperature' => 0.4,
             'messages' => [
                 ['role' => 'system', 'content' => $system],
                 ['role' => 'user', 'content' =>
@@ -200,7 +198,6 @@ PROMPT;
 
         $response = $this->client()->chat()->create([
             'model' => $this->model(),
-            'temperature' => 0.1,
             'messages' => [
                 ['role' => 'system', 'content' => $system],
                 ['role' => 'user', 'content' =>
