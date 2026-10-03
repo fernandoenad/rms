@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class SkillTest extends Model
 {
     protected $fillable = [
-        'vacancy_id','created_by','title','code','task_version','supersedes_skill_test_id',
+        'vacancy_id','skill_test_group_id','created_by','title','code','set_code','task_version','supersedes_skill_test_id',
         'review_status','reviewed_by','reviewed_at','review_notes',
         'instructions','expected_output','start_date','end_date',
         'duration','access_mode','submission_modes','allowed_extensions','max_file_size_kb',
@@ -27,6 +27,7 @@ class SkillTest extends Model
     ];
 
     public function vacancy(): BelongsTo { return $this->belongsTo(Vacancy::class); }
+    public function skillTestGroup(): BelongsTo { return $this->belongsTo(SkillTestGroup::class); }
     public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
     public function approver(): BelongsTo { return $this->belongsTo(User::class, 'approved_by'); }
     public function rubricCriteria(): HasMany {
