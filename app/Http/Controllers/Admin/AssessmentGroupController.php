@@ -55,6 +55,25 @@ class AssessmentGroupController extends Controller
             ->with('status', 'Assessment group created. Add written exam sets to this group.');
     }
 
+    public function results(AssessmentGroup $assessmentGroup)
+    {
+        $assessmentGroup->load('vacancy:id,position_title');
+
+        $attempts = \App\Models\ExamAttempt::whereHas('exam', function ($query) use ($assessmentGroup) {
+                $query->where('assessment_group_id', $assessmentGroup->id);
+            })
+            ->with([
+                'application:id,application_code,first_name,middle_name,last_name',
+                'exam:id,assessment_group_id,title,set_code',
+            ])
+            ->where('status', 2)
+            ->orderByDesc('ended_at')
+            ->paginate(50)
+            ->withQueryString();
+
+        return view('admin.assessment_groups.results', compact('assessmentGroup', 'attempts'));
+    }
+
     public function edit(AssessmentGroup $assessmentGroup)
     {
         $vacancies = Vacancy::orderByDesc('cycle')
