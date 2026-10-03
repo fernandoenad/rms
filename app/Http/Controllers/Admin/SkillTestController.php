@@ -10,6 +10,7 @@ use App\Models\AssessmentIncident;
 use App\Models\AssessmentScoreChange;
 use App\Models\AssessmentTimeExtension;
 use App\Models\SkillTest;
+use App\Models\SkillTestGroup;
 use App\Models\SkillTestAssignment;
 use App\Models\SkillTestAttempt;
 use App\Models\SkillTestHumanScore;
@@ -59,7 +60,7 @@ class SkillTestController extends Controller
         return view('admin.skills.index', compact('tests', 'readiness'));
     }
 
-    public function create(AssessmentScoreSyncService $scoreSync)
+    public function create(Request $request, AssessmentScoreSyncService $scoreSync)
     {
         $vacancies = Vacancy::orderByDesc('id')
             ->get(['id','position_title','cycle','template_id']);
@@ -68,13 +69,26 @@ class SkillTestController extends Controller
             fn ($vacancy) => [$vacancy->id => $scoreSync->criteriaForVacancy($vacancy)]
         );
 
-        return view('admin.skills.create', compact('vacancies','scoreCriteriaByVacancy'));
+        $groups = SkillTestGroup::with('vacancy:id,position_title')
+            ->whereNull('archived_at')
+            ->orderByDesc('id')
+            ->get();
+
+        $selectedGroup = $request->filled('skill_test_group_id')
+            ? $groups->firstWhere('id',(int)$request->skill_test_group_id)
+            : null;
+
+        return view('admin.skills.create', compact(
+            'vacancies','scoreCriteriaByVacancy','groups','selectedGroup'
+        ));
     }
 
     protected function validated(Request $request): array
     {
         return $request->validate([
             'vacancy_id'=>'required|exists:vacancies,id',
+            'skill_test_group_id'=>'nullable|exists:skill_test_groups,id',
+            'set_code'=>'nullable|string|max:50',
             'title'=>'required|string|max:255',
             'code'=>'nullable|string|max:100',
             'instructions'=>'required|string|max:100000',
@@ -100,6 +114,45 @@ class SkillTestController extends Controller
         ]);
     }
 
+    protected function validateGroupSelection(array $data): array
+    {
+        if (empty($data['skill_test_group_id'])) {
+            $data['skill_test_group_id'] = null;
+            $data['set_code'] = null;
+            return $data;
+        }
+
+        $group = SkillTestGroup::findOrFail($data['skill_test_group_id']);
+
+        if ((int)$group->vacancy_id !== (int)$data['vacancy_id']) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'skill_test_group_id'=>'The Skills Test group must belong to the selected position.',
+            ]);
+        }
+
+        if (blank($data['set_code'])) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'set_code'=>'A set code is required for a Skills Test inside an equivalent-set group.',
+            ]);
+        }
+
+        $duplicate = SkillTest::where('skill_test_group_id',$group->id)
+            ->where('set_code',$data['set_code'])
+            ->exists();
+
+        if ($duplicate) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'set_code'=>'This set code is already used in the selected Skills Test group.',
+            ]);
+        }
+
+        // Group-level rules control official score release and mapping.
+        $data['score_release_policy'] = $group->score_release_policy;
+        $data['assessment_score_key'] = null;
+
+        return $data;
+    }
+
     protected function normalize(array $data): array
     {
         $data['code'] = $data['code'] ?: 'ST-'.now()->format('Ymd-His');
@@ -118,9 +171,10 @@ class SkillTestController extends Controller
         AssessmentGovernanceService $governance,
         AssessmentScoreSyncService $scoreSync
     ) {
-        $data = $this->normalize($this->validated($request));
+        $data = $this->normalize($this->validateGroupSelection($this->validated($request)));
 
-        if (!$scoreSync->criterionExistsForVacancy((int)$data['vacancy_id'], $data['assessment_score_key'] ?? null)) {
+        if (!$data['skill_test_group_id']
+            && !$scoreSync->criterionExistsForVacancy((int)$data['vacancy_id'], $data['assessment_score_key'] ?? null)) {
             return back()->withInput()->withErrors([
                 'assessment_score_key'=>'The selected applicant-score criterion does not belong to this vacancy template.',
             ]);
@@ -314,7 +368,14 @@ class SkillTestController extends Controller
         $skillTest->load([
             'rubricCriteria',
             'vacancy',
+            'skillTestGroup',
         ]);
+
+        $groups = SkillTestGroup::with('vacancy:id,position_title')
+            ->whereNull('archived_at')
+            ->orWhere('id',$skillTest->skill_test_group_id)
+            ->orderByDesc('id')
+            ->get();
 
         $readiness = $governance->skillReadiness($skillTest);
         $incidents = AssessmentIncident::where('skill_test_id', $skillTest->id)
@@ -339,7 +400,8 @@ class SkillTestController extends Controller
             'incidents',
             'auditLogs',
             'hasStartedAttempts',
-            'scoreCriteria'
+            'scoreCriteria',
+            'groups'
         ));
     }
 
@@ -360,7 +422,37 @@ class SkillTestController extends Controller
 
         $data = $this->normalize($this->validated($request));
 
-        if (!$scoreSync->criterionExistsForVacancy((int)$data['vacancy_id'], $data['assessment_score_key'] ?? null)) {
+        if (!empty($data['skill_test_group_id'])) {
+            $group = SkillTestGroup::findOrFail($data['skill_test_group_id']);
+
+            if ((int)$group->vacancy_id !== (int)$data['vacancy_id']) {
+                return back()->withInput()->withErrors([
+                    'skill_test_group_id'=>'The Skills Test group must belong to the selected position.',
+                ]);
+            }
+
+            if (blank($data['set_code'])) {
+                return back()->withInput()->withErrors(['set_code'=>'Set code is required.']);
+            }
+
+            $duplicate = SkillTest::where('skill_test_group_id',$group->id)
+                ->where('set_code',$data['set_code'])
+                ->whereKeyNot($skillTest->id)
+                ->exists();
+
+            if ($duplicate) {
+                return back()->withInput()->withErrors(['set_code'=>'This set code is already used in the group.']);
+            }
+
+            $data['score_release_policy'] = $group->score_release_policy;
+            $data['assessment_score_key'] = null;
+        } else {
+            $data['skill_test_group_id'] = null;
+            $data['set_code'] = null;
+        }
+
+        if (!$data['skill_test_group_id']
+            && !$scoreSync->criterionExistsForVacancy((int)$data['vacancy_id'], $data['assessment_score_key'] ?? null)) {
             return back()->withInput()->withErrors([
                 'assessment_score_key'=>'The selected applicant-score criterion does not belong to this vacancy template.',
             ]);
