@@ -206,9 +206,14 @@
     const continueFinalConfirmBtn = document.getElementById('continueFinalConfirmBtn');
     const finalSubmitBtn = document.getElementById('finalSubmitBtn');
     let activeSaves = 0;
+    const saveQueues = new Map();
 
     function setSaveState(text, css='text-muted') {
         saveState.innerHTML = '<span class="' + css + '">' + text + '</span>';
+    }
+
+    function updateSubmitAvailability() {
+        submitReviewBtn.disabled = activeSaves > 0;
     }
 
     function showItem(index) {
@@ -278,36 +283,109 @@
         setTimeout(tick, 1000);
     }
 
-    async function saveAnswer(radio) {
-        const itemId = radio.dataset.item;
-        const optionId = radio.value;
-        const navBtn = navButtons[currentIndex];
+    function queueAnswerSave(radio) {
+        const itemId = String(radio.dataset.item);
+        const optionId = String(radio.value);
+        const itemIndex = items.findIndex(item =>
+            item.querySelector('.answer-radio')?.dataset.item === itemId
+        );
+        const navBtn = itemIndex >= 0 ? navButtons[itemIndex] : null;
 
-        activeSaves++;
-        submitReviewBtn.disabled = true;
+        let state = saveQueues.get(itemId);
+        if (!state) {
+            state = {
+                running: false,
+                pending: null,
+                sequence: 0,
+            };
+            saveQueues.set(itemId, state);
+        }
+
+        state.sequence++;
+        state.pending = {
+            itemId,
+            optionId,
+            navBtn,
+            sequence: state.sequence,
+        };
+
         setSaveState('Saving…', 'text-warning');
 
+        if (!state.running) {
+            processAnswerQueue(itemId);
+        }
+    }
+
+    async function processAnswerQueue(itemId) {
+        const state = saveQueues.get(itemId);
+        if (!state || state.running) return;
+
+        state.running = true;
+        activeSaves++;
+        updateSubmitAvailability();
+
         try {
-            const response = await fetch(answerUrl, {
-                method:'POST',
-                headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-                body:JSON.stringify({written_exam_id:itemId, selected_option_id:optionId})
-            });
+            while (state.pending && !finishing) {
+                const current = state.pending;
+                state.pending = null;
 
-            if (response.status === 409) {
-                await finalizeAtTimeout();
-                return;
+                try {
+                    const response = await fetch(answerUrl, {
+                        method:'POST',
+                        headers:{
+                            'Content-Type':'application/json',
+                            'X-CSRF-TOKEN':csrf,
+                            'Accept':'application/json'
+                        },
+                        body:JSON.stringify({
+                            written_exam_id:current.itemId,
+                            selected_option_id:current.optionId
+                        })
+                    });
+
+                    if (response.status === 409) {
+                        state.pending = null;
+                        await finalizeAtTimeout();
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        throw new Error('save failed');
+                    }
+
+                    // Only mark the UI saved when this is still the latest
+                    // selection for the question. If the learner changed the
+                    // answer while this request was running, the newer value
+                    // remains queued and is sent next.
+                    if (!state.pending && current.sequence === state.sequence) {
+                        if (current.navBtn) {
+                            current.navBtn.classList.remove('btn-outline-secondary');
+                            current.navBtn.classList.add('btn-success');
+                        }
+                        setSaveState('✓ Saved', 'text-success font-weight-bold');
+                    }
+                } catch (_) {
+                    // If a newer selection is waiting, continue and try to save
+                    // that latest choice. Otherwise tell the learner this item
+                    // still needs another tap after connectivity is restored.
+                    if (!state.pending) {
+                        setSaveState(
+                            '! Not saved. Check your connection and tap the option again.',
+                            'text-danger font-weight-bold'
+                        );
+                    }
+                }
             }
-            if (!response.ok) throw new Error('save failed');
-
-            navBtn.classList.remove('btn-outline-secondary');
-            navBtn.classList.add('btn-success');
-            setSaveState('✓ Saved', 'text-success font-weight-bold');
-        } catch (_) {
-            setSaveState('! Not saved. Check your connection and tap the option again.', 'text-danger font-weight-bold');
         } finally {
+            state.running = false;
             activeSaves = Math.max(0, activeSaves - 1);
-            submitReviewBtn.disabled = activeSaves > 0;
+            updateSubmitAvailability();
+
+            // A selection may have arrived between the final loop check and
+            // clearing the running flag.
+            if (state.pending && !finishing) {
+                processAnswerQueue(itemId);
+            }
         }
     }
 
@@ -391,6 +469,12 @@
         });
 
         continueFinalConfirmBtn.addEventListener('click', () => {
+            if (activeSaves > 0) {
+                setSaveState('Please wait for your latest answer to finish saving.', 'text-warning font-weight-bold');
+                $('#submitReviewModal').modal('hide');
+                return;
+            }
+
             $('#submitReviewModal').modal('hide');
             setTimeout(() => $('#finalConfirmModal').modal('show'), 200);
         });
@@ -398,7 +482,7 @@
         finalSubmitBtn.addEventListener('click', submitManually);
 
         document.querySelectorAll('.answer-radio').forEach(radio => {
-            radio.addEventListener('change', () => saveAnswer(radio));
+            radio.addEventListener('change', () => queueAnswerSave(radio));
         });
 
         document.addEventListener('visibilitychange', () => {
