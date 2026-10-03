@@ -8,6 +8,7 @@ use App\Models\Application;
 use App\Models\SkillTest;
 use App\Models\SkillTestAssignment;
 use App\Models\SkillTestAttempt;
+use App\Models\SkillTestAttemptEvent;
 use App\Models\SkillTestSubmission;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -16,6 +17,18 @@ use Illuminate\Support\Facades\Storage;
 
 class SkillTestAttemptController extends Controller
 {
+    protected function event(Request $request, SkillTestAttempt $attempt, string $type, array $metadata = []): void
+    {
+        SkillTestAttemptEvent::create([
+            'skill_test_attempt_id'=>$attempt->id,
+            'event_type'=>$type,
+            'event_at'=>now(),
+            'ip_address'=>$request->ip(),
+            'user_agent'=>$request->userAgent(),
+            'metadata'=>$metadata ?: null,
+        ]);
+    }
+
     protected function authorizeAccess(Request $request, Application $application, SkillTest $test): void
     {
         if ($request->session()->get('guest_email') !== $application->email) abort(401);
@@ -72,6 +85,8 @@ class SkillTestAttemptController extends Controller
                 'expires_at'=>$this->expiry($skillTest, Carbon::parse($started)),
                 'status'=>1,
             ]);
+
+            $this->event($request,$attempt,'attempt_started');
         }
 
         return redirect()->route('guest.skills.attempts.take',$attempt);
@@ -151,6 +166,7 @@ class SkillTestAttemptController extends Controller
 
         $submission = $attempt->submissions->sortByDesc('version')->first();
         $remainingSeconds = max(0, now()->diffInSeconds($attempt->expires_at, false));
+        $this->event($request,$attempt,'page_loaded');
 
         return view('guest.skills.take', compact('attempt','submission','remainingSeconds'));
     }
@@ -248,7 +264,25 @@ class SkillTestAttemptController extends Controller
             return back()->with('status_assessment','This skills-test attempt is no longer editable.');
         }
 
+        $this->event($request,$attempt,'file_uploaded',[
+            'filename'=>$file->getClientOriginalName(),
+            'size'=>$file->getSize(),
+        ]);
+
         return back()->with('status_assessment','File uploaded as a new submission version. Previous uploads are retained for audit history.');
+    }
+
+    public function eventLog(Request $request, SkillTestAttempt $attempt)
+    {
+        $attempt = $this->ownedAttempt($request,$attempt);
+
+        $data = $request->validate([
+            'event_type'=>'required|in:tab_hidden,tab_visible,connection_lost,connection_restored,page_refreshed',
+        ]);
+
+        $this->event($request,$attempt,$data['event_type']);
+
+        return response()->json(['message'=>'Recorded']);
     }
 
     public function submit(Request $request, SkillTestAttempt $attempt)
@@ -276,6 +310,7 @@ class SkillTestAttemptController extends Controller
         }
 
         $this->finalize($attempt);
+        $this->event($request,$attempt,'manual_submit');
 
         return redirect()->route('guest.applications.show',$attempt->application)
             ->with('status_assessment','Skills test submitted successfully.');
