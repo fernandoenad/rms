@@ -818,8 +818,27 @@ class SkillTestController extends Controller
             ->whereHas('assessment')
             ->get(['id','application_code']);
 
+        $conflictingApplicationIds = collect();
+
+        if ($skillTest->skill_test_group_id && $applications->isNotEmpty()) {
+            $siblingIds = SkillTest::where('skill_test_group_id',$skillTest->skill_test_group_id)
+                ->whereKeyNot($skillTest->id)
+                ->pluck('id');
+
+            if ($siblingIds->isNotEmpty()) {
+                $conflictingApplicationIds = SkillTestAssignment::whereIn('skill_test_id',$siblingIds)
+                    ->whereIn('application_id',$applications->pluck('id'))
+                    ->pluck('application_id')
+                    ->unique();
+            }
+        }
+
+        $eligible = $applications
+            ->reject(fn ($application) => $conflictingApplicationIds->contains($application->id))
+            ->values();
+
         $now = now();
-        $rows = $applications->map(fn ($application) => [
+        $rows = $eligible->map(fn ($application) => [
             'skill_test_id'=>$skillTest->id,
             'application_id'=>$application->id,
             'created_at'=>$now,
@@ -827,12 +846,18 @@ class SkillTestController extends Controller
         ])->all();
 
         $added = count($rows) ? SkillTestAssignment::query()->insertOrIgnore($rows) : 0;
+        $conflicts = $conflictingApplicationIds->count();
+        $already = max(0,$eligible->count()-$added);
 
         $governance->log('skill_applicants_assigned', [
             'skill_test_id'=>$skillTest->id,
-        ], ['added'=>$added]);
+        ], ['added'=>$added,'conflicts'=>$conflicts,'already_assigned'=>$already]);
 
-        return back()->with('status', "{$added} applicant assignment(s) added.");
+        $message = "{$added} applicant assignment(s) added.";
+        if ($already) $message .= " {$already} were already assigned to this set.";
+        if ($conflicts) $message .= " {$conflicts} skipped because they are assigned to another equivalent set.";
+
+        return back()->with('status',$message);
     }
 
     public function approve(
