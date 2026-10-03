@@ -12,13 +12,16 @@ class SkillTest extends Model
         'review_status','reviewed_by','reviewed_at','review_notes',
         'instructions','expected_output','start_date','end_date',
         'duration','access_mode','submission_modes','allowed_extensions','max_file_size_kb',
-        'ai_scoring','score_release_policy','scores_released_at','status'
+        'ai_scoring','score_release_policy','scores_released_at',
+        'ai_context','ai_generation_focus','ai_use_qualifications','ai_use_job_description',
+        'status'
     ];
 
     protected $casts = [
         'start_date'=>'datetime','end_date'=>'datetime','submission_modes'=>'array',
         'allowed_extensions'=>'array','ai_scoring'=>'boolean',
-        'reviewed_at'=>'datetime','scores_released_at'=>'datetime'
+        'reviewed_at'=>'datetime','scores_released_at'=>'datetime',
+        'ai_use_qualifications'=>'boolean','ai_use_job_description'=>'boolean'
     ];
 
     public function vacancy(): BelongsTo { return $this->belongsTo(Vacancy::class); }
