@@ -41,7 +41,11 @@ class AssessmentAnalyticsService
 
     public function comparabilityWarnings(array $summaries): array
     {
-        $means = collect($summaries)->pluck('mean_score')->filter(fn ($x) => $x !== null);
+        $eligible = collect($summaries)->filter(fn ($set) =>
+            $set['mean_score'] !== null && (int) $set['submitted'] >= 20
+        );
+        $means = $eligible->pluck('mean_score');
+
         if ($means->count() < 2) {
             return [];
         }
@@ -49,8 +53,7 @@ class AssessmentAnalyticsService
         $overallMean = (float) $means->avg();
         $warnings = [];
 
-        foreach ($summaries as $set) {
-            if ($set['mean_score'] === null) continue;
+        foreach ($eligible as $set) {
 
             $difference = abs($set['mean_score'] - $overallMean);
             if ($difference >= 10) {
@@ -75,8 +78,8 @@ class AssessmentAnalyticsService
             ->values();
 
         $count = $attemptScores->count();
-        $lowerCut = $count ? $attemptScores[(int) floor(max(0, ($count - 1) * 0.27))] : null;
-        $upperCut = $count ? $attemptScores[(int) floor(max(0, ($count - 1) * 0.73))] : null;
+        $lowerCut = $count >= 20 ? $attemptScores[(int) floor(max(0, ($count - 1) * 0.27))] : null;
+        $upperCut = $count >= 20 ? $attemptScores[(int) floor(max(0, ($count - 1) * 0.73))] : null;
 
         $items = $exam->writtenExams()->with('options')->where('status', 1)->get();
         $rows = [];
