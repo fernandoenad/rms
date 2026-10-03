@@ -15,6 +15,7 @@ class ExamAttempt extends Model
         'exam_id', 'application_id', 'started_at', 'expires_at', 'ended_at',
         'status', 'correct_answers', 'total_items', 'percentage', 'scored_at',
         'question_order', 'auto_submitted', 'auto_submit_reason',
+        'voided_at', 'voided_by', 'void_reason', 'retake_exam_id',
     ];
 
     protected $casts = [
@@ -23,6 +24,7 @@ class ExamAttempt extends Model
         'ended_at' => 'datetime',
         'scored_at' => 'datetime',
         'auto_submitted' => 'boolean',
+        'voided_at' => 'datetime',
     ];
 
     public function exam(): BelongsTo { return $this->belongsTo(Exam::class); }
