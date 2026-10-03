@@ -7,6 +7,7 @@ use App\Models\Application;
 use App\Models\AssessmentGroup;
 use App\Models\AssessmentGroupAttemptLock;
 use App\Models\AssessmentIncident;
+use App\Models\AssessmentTimeExtension;
 use App\Models\Exam;
 use App\Models\ExamAssignment;
 use App\Models\ExamAttempt;
@@ -414,6 +415,8 @@ class AssessmentGroupController extends Controller
             ->with([
                 'application:id,application_code,first_name,middle_name,last_name',
                 'exam:id,assessment_group_id,title,set_code',
+                'events' => fn ($q) => $q->orderByDesc('event_at')->limit(20),
+                'timeExtensions' => fn ($q) => $q->with('creator:id,name,email')->orderByDesc('id'),
             ])
             ->whereNotNull('started_at')
             ->whereIn('status', [1, 2, 3])
@@ -623,6 +626,126 @@ class AssessmentGroupController extends Controller
         });
 
         return back()->with('status', 'Attempt retained as voided and applicant locked to the selected retake set.');
+    }
+
+    public function pause(
+        Request $request,
+        AssessmentGroup $assessmentGroup,
+        AssessmentGovernanceService $governance
+    ) {
+        $data = $request->validate(['reason'=>'required|string|max:3000']);
+
+        if ($assessmentGroup->archived_at) {
+            return back()->with('status', 'Archived assessments cannot be paused.');
+        }
+
+        $assessmentGroup->update([
+            'is_paused'=>true,
+            'pause_reason'=>$data['reason'],
+            'paused_at'=>now(),
+            'paused_by'=>auth()->id(),
+        ]);
+
+        $governance->log('assessment_group_paused', [
+            'assessment_group_id'=>$assessmentGroup->id,
+        ], ['reason'=>$data['reason'], 'scope'=>'new_starts']);
+
+        return back()->with('status', 'New written-assessment starts are paused. Existing in-progress attempts may continue.');
+    }
+
+    public function resume(
+        AssessmentGroup $assessmentGroup,
+        AssessmentGovernanceService $governance
+    ) {
+        $assessmentGroup->update([
+            'is_paused'=>false,
+            'pause_reason'=>null,
+            'paused_at'=>null,
+            'paused_by'=>null,
+        ]);
+
+        $governance->log('assessment_group_resumed', [
+            'assessment_group_id'=>$assessmentGroup->id,
+        ]);
+
+        return back()->with('status', 'Written assessment resumed for new starts.');
+    }
+
+    public function archive(
+        AssessmentGroup $assessmentGroup,
+        AssessmentGovernanceService $governance
+    ) {
+        $inProgress = ExamAttempt::whereHas('exam', fn ($q) =>
+                $q->where('assessment_group_id',$assessmentGroup->id)
+            )
+            ->where('status',1)
+            ->exists();
+
+        if ($inProgress) {
+            return back()->with('status', 'Cannot archive while written attempts are in progress.');
+        }
+
+        $assessmentGroup->update([
+            'status'=>false,
+            'is_paused'=>false,
+            'archived_at'=>now(),
+            'archived_by'=>auth()->id(),
+        ]);
+
+        $governance->log('assessment_group_archived', [
+            'assessment_group_id'=>$assessmentGroup->id,
+        ]);
+
+        return redirect()->route('admin.assessment_center.index')
+            ->with('status', 'Written assessment archived and frozen.');
+    }
+
+    public function extendAttempt(
+        Request $request,
+        AssessmentGroup $assessmentGroup,
+        ExamAttempt $attempt,
+        AssessmentGovernanceService $governance
+    ) {
+        abort_unless((int) optional($attempt->exam)->assessment_group_id === (int) $assessmentGroup->id, 404);
+
+        $data = $request->validate([
+            'minutes'=>'required|integer|min:1|max:240',
+            'reason'=>'required|string|max:3000',
+        ]);
+
+        $extension = DB::transaction(function () use ($attempt, $data) {
+            $locked = ExamAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
+
+            if ((int) $locked->status !== 1 || !$locked->expires_at) {
+                return null;
+            }
+
+            $locked->update([
+                'expires_at'=>$locked->expires_at->copy()->addMinutes((int)$data['minutes']),
+            ]);
+
+            return AssessmentTimeExtension::create([
+                'exam_attempt_id'=>$locked->id,
+                'minutes'=>(int)$data['minutes'],
+                'reason'=>$data['reason'],
+                'created_by'=>auth()->id(),
+            ]);
+        });
+
+        if (!$extension) {
+            return back()->with('status', 'Only active, timed attempts can receive an extension.');
+        }
+
+        $governance->log('written_attempt_time_extended', [
+            'assessment_group_id'=>$assessmentGroup->id,
+            'exam_id'=>$attempt->exam_id,
+        ], [
+            'attempt_id'=>$attempt->id,
+            'minutes'=>(int)$data['minutes'],
+            'reason'=>$data['reason'],
+        ]);
+
+        return back()->with('status', "Added {$data['minutes']} minute(s) to the selected written attempt.");
     }
 
     public function exportCsv(AssessmentGroup $assessmentGroup)
