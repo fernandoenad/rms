@@ -368,11 +368,17 @@ return [
             'url'  => 'admin/assessment',
             'icon' => 'fas fa-fw fa-pen',
             'active' => [
+                'admin/assessment',
                 'admin/assessment/create',
+                'regex:@^admin/assessment/\\d+/edit$@',
                 'regex:@^admin/assessment/\\d+/items/create$@',
                 'regex:@^admin/assessment/\\d+/items$@',
                 'regex:@^admin/assessment/\\d+/items/\\d+/edit$@',
-                'regex:@^admin/assessment/\\d+/results$@'
+                'regex:@^admin/assessment/\\d+/results$@',
+                'admin/skills',
+                'admin/skills/create',
+                'regex:@^admin/skills/\\d+/edit$@',
+                'regex:@^admin/skills/\\d+/results$@'
 
             ]
         ],
