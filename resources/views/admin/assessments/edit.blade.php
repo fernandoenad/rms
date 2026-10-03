@@ -81,6 +81,21 @@
 </select></div>
 <div class="form-group col-md-4"><label>Set code</label><input name="set_code" value="{{ old('set_code',$exam->set_code) }}" class="form-control" placeholder="e.g. A, B, C"></div>
 </div>
+@if(!$exam->assessment_group_id)
+<div class="form-group">
+<label>Applicant score criterion</label>
+<select name="assessment_score_key" class="form-control">
+<option value="">Do not write this standalone test into applicant scores</option>
+@foreach($scoreCriteria as $key=>$max)
+<option value="{{ $key }}" {{ old('assessment_score_key',$exam->assessment_score_key)===$key?'selected':'' }}>{{ $key }} ({{ number_format($max,2) }} pts)</option>
+@endforeach
+</select>
+<small class="text-muted">Standalone Written scores synchronize immediately after submission. Equivalent-set exams use the Assessment Group's score mapping instead.</small>
+</div>
+@else
+<input type="hidden" name="assessment_score_key" value="">
+<div class="alert alert-light border small">Applicant-score synchronization for this set is controlled by <strong>{{ optional($exam->assessmentGroup)->title }}</strong>.</div>
+@endif
 <div class="form-row">
 <div class="form-group col-md-8"><label>Exam title</label><input name="title" value="{{ old('title',$exam->title) }}" class="form-control" required></div>
 <div class="form-group col-md-4"><label>Exam code</label><input name="code" value="{{ old('code',$exam->code) }}" class="form-control"></div>
