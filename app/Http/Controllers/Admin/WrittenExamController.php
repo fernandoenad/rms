@@ -27,6 +27,11 @@ class WrittenExamController extends Controller
         $this->middleware('auth');
     }
 
+    protected function currentUserIsAdmin(): bool
+    {
+        return (int) optional(optional(auth()->user())->role)->level === 1;
+    }
+
     public function index()
     {
         $exams = Exam::with(['vacancy:id,position_title', 'assessmentGroup:id,title'])
@@ -130,6 +135,11 @@ class WrittenExamController extends Controller
         $data = $this->validateGroupSelection($request, $this->validated($request));
         $requestedPublish = (int) $data['status'] === 1;
         $data['status'] = 0;
+        $data['created_by'] = auth()->id();
+        $data['approval_status'] = $this->currentUserIsAdmin() ? 'approved' : 'pending';
+        $data['approved_by'] = $this->currentUserIsAdmin() ? auth()->id() : null;
+        $data['approved_at'] = $this->currentUserIsAdmin() ? now() : null;
+        $data['approval_notes'] = $this->currentUserIsAdmin() ? 'Auto-approved because the creator is an administrator.' : null;
         $data['enrollment_key'] = strtoupper(Str::random(8));
         $data['code'] = $data['code'] ?: 'WE-' . now()->format('Ymd-His');
 
@@ -165,6 +175,19 @@ class WrittenExamController extends Controller
         $data = $this->validateGroupSelection($request, $this->validated($request), $exam);
         $requestedPublish = (int) $data['status'] === 1;
         $data['status'] = 0;
+
+        if ($this->currentUserIsAdmin()) {
+            $data['approval_status'] = 'approved';
+            $data['approved_by'] = auth()->id();
+            $data['approved_at'] = now();
+            $data['approval_notes'] = 'Approved by administrator after editing the draft.';
+        } else {
+            $data['approval_status'] = 'pending';
+            $data['approved_by'] = null;
+            $data['approved_at'] = null;
+            $data['approval_notes'] = null;
+        }
+
         $exam->update($data);
 
         if ($requestedPublish) {
@@ -209,6 +232,11 @@ class WrittenExamController extends Controller
             // Group "Add Equivalent Set" workflow for governed parallel sets.
             $copy->assessment_group_id = null;
             $copy->set_code = null;
+            $copy->created_by = auth()->id();
+            $copy->approval_status = $this->currentUserIsAdmin() ? 'approved' : 'pending';
+            $copy->approved_by = $this->currentUserIsAdmin() ? auth()->id() : null;
+            $copy->approved_at = $this->currentUserIsAdmin() ? now() : null;
+            $copy->approval_notes = $this->currentUserIsAdmin() ? 'Auto-approved because the creator is an administrator.' : null;
             $copy->status = 0;
             $copy->start_date = null;
             $copy->end_date = null;
@@ -522,6 +550,34 @@ class WrittenExamController extends Controller
 
         return redirect()->route('admin.assessments.index')
             ->with('status', 'Written exam was successfully deleted.');
+    }
+
+    public function approve(
+        Request $request,
+        Exam $exam,
+        AssessmentGovernanceService $governance
+    ) {
+        abort_unless($this->currentUserIsAdmin(), 403);
+
+        $data = $request->validate([
+            'approval_notes'=>'nullable|string|max:5000',
+        ]);
+
+        $exam->update([
+            'approval_status'=>'approved',
+            'approved_by'=>auth()->id(),
+            'approved_at'=>now(),
+            'approval_notes'=>$data['approval_notes'] ?? 'Approved by administrator.',
+        ]);
+
+        $governance->log('exam_approved', [
+            'assessment_group_id'=>$exam->assessment_group_id,
+            'exam_id'=>$exam->id,
+        ], [
+            'creator_id'=>$exam->created_by,
+        ]);
+
+        return back()->with('status', 'Written test approved.');
     }
 
     public function toggleStatus(Exam $exam, AssessmentGovernanceService $governance)
