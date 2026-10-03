@@ -641,6 +641,7 @@ class SkillTestController extends Controller
                 'events' => fn ($q) => $q->orderByDesc('event_at')->limit(20),
                 'timeExtensions' => fn ($q) => $q->with('creator:id,name,email')->orderByDesc('id'),
                 'scoreChanges' => fn ($q) => $q->with('changer:id,name,email')->orderByDesc('id'),
+                'incidents' => fn ($q) => $q->where('status','open')->latest(),
             ])
             ->whereNotNull('started_at')
             ->whereIn('status', [1,2,3])
