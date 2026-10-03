@@ -29,7 +29,9 @@
 4. Confirm OPENAI_API_KEY and OPENAI_MODEL are configured before using AI features. The database ai_model_id remains a fallback.
 5. Do not use QUEUE_CONNECTION=sync for production AI scoring. This deployment can use QUEUE_CONNECTION=database; make sure the jobs table exists.
 6. Start and supervise queue workers using the deployment's process manager.
-7. Test one taken-in applicant on a staging vacancy before opening an assessment to a large batch.
+7. Configure the Laravel scheduler to run every minute so expired written attempts are finalized proactively:
+   * * * * * cd /path/to/rms && php artisan schedule:run >> /dev/null 2>&1
+8. Test one taken-in applicant on a staging vacancy before opening an assessment to a large batch.
 
 ## Recommended production settings
 
@@ -99,3 +101,72 @@ The autosave path is intentionally optimized for high concurrent use:
 - the attempt row is locked only for that applicant during the save, preventing a race between answer persistence and final submission without creating a cross-applicant lock.
 
 Operational audit events such as attempt start, page load/refresh, tab visibility changes, connection changes, timeout, and manual submission remain available.
+
+
+## Assessment governance and equivalence
+
+Assessment Groups now support a configurable number of equivalent sets rather than assuming a fixed five-set structure. When a group is created, RMS can create draft Set A, Set B, Set C, and so on up to the configured count.
+
+A shared blueprint/TOS may define:
+- items per set;
+- SOLO distribution;
+- difficulty distribution;
+- competency/construct coverage.
+
+Every set is checked against the shared blueprint before publication. A set also fails readiness when its schedule/duration is incomplete, an active item does not have exactly four options and one correct answer, an AI/revised item is not approved, or selected-applicant mode has no assignments.
+
+Published sets are treated as immutable. Return an unused set to draft before changing its content/settings. After attempts begin, create a new governed set/version rather than silently altering the administered material.
+
+## AI item governance
+
+AI-generated written items enter Pending Review and cannot satisfy publication readiness until a reviewer approves them. Editing an existing item creates a new item version and retains the superseded version for audit history.
+
+For requests above 20 items, AI generation is queued in 10-item batches. Equivalent-set generation receives the shared blueprint and recent sibling-set questions so the model is instructed not to duplicate or closely paraphrase existing items. The item page shows queued/completed batch progress.
+
+## Live operations and timeout finalization
+
+The Assessment Group results page includes:
+- attempted, taking-now, submitted, and completion counts;
+- per-set monitoring;
+- optional 60-second admin auto-refresh;
+- queue backlog, failed-job count, recent answer activity, and open incidents;
+- in-progress applicants before submission.
+
+The scheduled command `assessments:finalize-expired` finalizes expired attempts without waiting for the applicant to refresh or revisit the page.
+
+## Controlled retakes and incidents
+
+Started attempts are retained for audit integrity and are no longer hard-deleted operationally. An administrator can void an attempt with a required reason and explicitly authorize a retake on another published equivalent set. The original attempt remains marked Voided and the applicant is re-locked to the approved retake set.
+
+Operational incidents can be recorded for connectivity, device, power, proctoring, administrative, or other issues and later marked resolved.
+
+## Score release
+
+Assessment Groups support four score visibility policies:
+- Hidden;
+- Manual release;
+- After all published set schedules close;
+- Immediate after submission.
+
+Until the release rule is satisfied, the applicant portal shows Pending official release instead of the raw/percentage score.
+
+## Submission integrity and offline recovery
+
+The final review modal now asks the server for the authoritative saved-answer count rather than trusting only the browser state.
+
+Unsaved latest selections are also stored temporarily in browser local storage and retried when the page reloads or connectivity returns. The server remains authoritative and rejects saves after expiry.
+
+Assessment endpoint rate limits are keyed to the applicant session/attempt rather than public IP, so many applicants behind the same school/NAT connection are not incorrectly throttled together.
+
+## Analytics and official export
+
+The group analytics page provides:
+- per-set submission counts, mean score, and standard deviation;
+- cross-set comparability warnings when a set mean differs materially from the group mean;
+- item difficulty;
+- upper/lower-group discrimination;
+- distractor response counts.
+
+These are descriptive diagnostics and should be interpreted with adequate sample sizes.
+
+The official CSV export includes application code, applicant, set, start/submission timestamps, attempt status, raw score, total items, percentage, and void reason.
