@@ -4,7 +4,7 @@
 <div class="d-flex justify-content-between align-items-center">
     <div><h1 class="mb-0">{{ $exam->title }}</h1><small class="text-muted">Written exam items</small></div>
     <div><a href="{{ route('admin.assessments.results',$exam) }}" class="btn btn-outline-secondary">Results</a>
-    <a href="{{ $hasAttempts ? '#' : route('admin.assessments.items.create',$exam) }}" class="btn btn-primary {{ $hasAttempts?'disabled':'' }}">Add Item</a></div>
+    <a href="{{ ($hasAttempts || (int)$exam->status===1) ? '#' : route('admin.assessments.items.create',$exam) }}" class="btn btn-primary {{ ($hasAttempts || (int)$exam->status===1)?'disabled':'' }}">Add Item</a></div>
 </div>
 @stop
 @section('content')
