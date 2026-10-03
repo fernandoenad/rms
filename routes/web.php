@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\AssessmentGroupController as AdminAssessmentGroup
 use App\Http\Controllers\Admin\WrittenExamItemController as AdminWrittenExamItem;
 use App\Http\Controllers\Admin\SkillTestController as AdminSkillTest;
 use App\Http\Controllers\Admin\AssessmentCenterController as AdminAssessmentCenter;
+use App\Http\Controllers\Admin\AssessmentContentBankController as AdminAssessmentContentBank;
 use App\Http\Controllers\Guest\SkillTestAttemptController as GuestSkillTestAttempt;
 
 
@@ -168,6 +169,9 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/vacancies/{vacancy}/apply', [AdminVacancy::class, 'apply'])->name('admin.vacancies.apply');
 
     Route::get('/admin/assessment-center', [AdminAssessmentCenter::class, 'index'])->name('admin.assessment_center.index');
+    Route::get('/admin/assessment-bank', [AdminAssessmentContentBank::class, 'index'])->name('admin.assessment_bank.index');
+    Route::post('/admin/assessment-bank/{content}/retire', [AdminAssessmentContentBank::class, 'retire'])->name('admin.assessment_bank.retire');
+    Route::post('/admin/assessment-bank/{content}/restore', [AdminAssessmentContentBank::class, 'restore'])->name('admin.assessment_bank.restore');
 
     Route::get('/admin/assessment-groups', [AdminAssessmentGroup::class, 'index'])->name('admin.assessment_groups.index');
     Route::get('/admin/assessment-groups/create', [AdminAssessmentGroup::class, 'create'])->name('admin.assessment_groups.create');
