@@ -308,12 +308,9 @@
                                                             @elseif($attempt && $attempt->status == 1)
                                                                 <form method="post" action="{{ route('guest.assessments.attempts.start', [$application, $exam]) }}" class="d-inline">
                                                                     @csrf
-                                                                    <div class="input-group input-group-sm">
-                                                                        <input type="text" name="enrollment_key" class="form-control" placeholder="Enrollment key" required>
-                                                                        <div class="input-group-append">
-                                                                            <button type="submit" class="btn btn-primary">Continue</button>
-                                                                        </div>
-                                                                    </div>
+                                                                    <button type="submit" class="btn btn-sm btn-primary">
+                                                                        Continue Assessment
+                                                                    </button>
                                                                 </form>
                                                             @elseif(!$examOpen)
                                                                 <button class="btn btn-sm btn-secondary" disabled>
@@ -322,14 +319,10 @@
                                                             @else
                                                                 <form method="post" action="{{ route('guest.assessments.attempts.start', [$application, $exam]) }}" class="d-inline">
                                                                     @csrf
-                                                                    <div class="input-group input-group-sm">
-                                                                        <input type="text" name="enrollment_key" class="form-control" placeholder="Enrollment key" required>
-                                                                        <div class="input-group-append">
-                                                                            <button type="submit" class="btn btn-primary" onclick="return confirm('This is a single-attempt test. Countdown starts after OK. Proceed?');">
-                                                                                Take test
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
+                                                                    <button type="submit" class="btn btn-sm btn-primary"
+                                                                        onclick="return confirm('Start this assessment now? Your timer begins immediately and you will be locked to this set.');">
+                                                                        Start Assessment
+                                                                    </button>
                                                                 </form>
                                                             @endif
                                                         </td>
