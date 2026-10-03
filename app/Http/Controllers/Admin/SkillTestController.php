@@ -34,6 +34,11 @@ class SkillTestController extends Controller
         return (int) optional(optional(auth()->user())->role)->level === 1;
     }
 
+    protected function ensureNotArchived(SkillTest $skillTest): void
+    {
+        abort_if($skillTest->archived_at, 403, 'This skills test is archived and frozen.');
+    }
+
     public function index(AssessmentGovernanceService $governance)
     {
         $tests = SkillTest::with([
@@ -162,6 +167,7 @@ class SkillTestController extends Controller
         SkillTest $skillTest,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($skillTest);
         if ((int) $skillTest->status === 1) {
             return back()->with('status', 'Return the skills test to draft before changing task settings.');
         }
@@ -238,6 +244,7 @@ class SkillTestController extends Controller
         SkillTest $skillTest,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($skillTest);
         $copy = DB::transaction(function () use ($skillTest) {
             $skillTest->load('rubricCriteria');
 
@@ -299,6 +306,7 @@ class SkillTestController extends Controller
         AssessmentAiService $ai,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($skillTest);
         if ((int) $skillTest->status === 1) {
             return back()->with('status', 'Return the skills test to draft before replacing task content.');
         }
@@ -385,6 +393,7 @@ class SkillTestController extends Controller
         SkillTest $skillTest,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($skillTest);
         if ((int) $skillTest->status === 1 || $skillTest->attempts()->whereNotNull('started_at')->exists()) {
             return back()->with('status', 'Review decisions cannot change after publication/administration.');
         }
@@ -417,6 +426,7 @@ class SkillTestController extends Controller
         SkillTest $skillTest,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($skillTest);
         if ((int) $skillTest->status === 1) {
             return back()->with('status', 'Return the skills test to draft before changing the rubric.');
         }
@@ -505,6 +515,7 @@ class SkillTestController extends Controller
         SkillTest $skillTest,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($skillTest);
         $data = $request->validate(['application_codes'=>'required|string']);
 
         $codes = collect(preg_split('/[\s,;]+/', $data['application_codes']))
@@ -540,6 +551,7 @@ class SkillTestController extends Controller
         SkillTest $skillTest,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($skillTest);
         abort_unless($this->currentUserIsAdmin(), 403);
 
         $data = $request->validate([
@@ -566,6 +578,7 @@ class SkillTestController extends Controller
         SkillTest $skillTest,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($skillTest);
         if (!$skillTest->status) {
             $readiness = $governance->skillReadiness($skillTest);
 
@@ -937,6 +950,7 @@ class SkillTestController extends Controller
         SkillTest $skillTest,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($skillTest);
         if ($skillTest->score_release_policy !== 'manual') {
             return back()->with('status', 'Manual release is available only when the policy is Manual.');
         }
@@ -951,6 +965,7 @@ class SkillTestController extends Controller
         SkillTest $skillTest,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($skillTest);
         if (in_array($skillTest->score_release_policy, ['immediate','after_close'], true)) {
             return back()->with('status', 'This policy releases automatically. Change the policy to Manual or Hidden first.');
         }
