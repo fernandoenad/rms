@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\AssessmentGroup;
 use App\Models\SkillTest;
+use App\Models\SkillTestGroup;
 use App\Services\AssessmentScoreSyncService;
 use Illuminate\Console\Command;
 
@@ -33,7 +34,21 @@ class SyncOfficialAssessmentScores extends Command
                 }
             });
 
+        SkillTestGroup::query()
+            ->whereNotNull('assessment_score_key')
+            ->where('score_release_policy','!=','hidden')
+            ->whereNull('scores_synced_at')
+            ->orderBy('id')
+            ->chunkById(50, function ($groups) use ($sync, &$skillsSynced) {
+                foreach ($groups as $group) {
+                    if (!$group->scoresAreReleased()) continue;
+                    $result = $sync->syncSkillGroup($group);
+                    $skillsSynced += (int)$result['synced'];
+                }
+            });
+
         SkillTest::query()
+            ->whereNull('skill_test_group_id')
             ->whereNotNull('assessment_score_key')
             ->where('score_release_policy','!=','hidden')
             ->whereNull('scores_synced_at')
