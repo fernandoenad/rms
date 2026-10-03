@@ -365,9 +365,10 @@ return [
         ],
         [
             'text' => 'Assessments',
-            'url'  => 'admin/assessment',
+            'url'  => 'admin/assessment-center',
             'icon' => 'fas fa-fw fa-pen',
             'active' => [
+                'admin/assessment-center',
                 'admin/assessment',
                 'admin/assessment/create',
                 'admin/assessment-groups',
