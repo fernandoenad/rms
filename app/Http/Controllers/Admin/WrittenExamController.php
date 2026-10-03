@@ -383,6 +383,20 @@ class WrittenExamController extends Controller
                 ->all();
         }
 
+        // A fresh AI generation replaces the current draft item set. Prior
+        // queued/processing runs are superseded so stale jobs cannot repopulate
+        // the exam after the administrator intentionally regenerates it.
+        DB::transaction(function () use ($exam) {
+            AssessmentAiGenerationRun::where('exam_id',$exam->id)
+                ->whereIn('status',['queued','processing'])
+                ->update([
+                    'status'=>'superseded',
+                    'last_error'=>'Superseded by a newer AI generation request.',
+                ]);
+
+            $exam->writtenExams()->delete();
+        });
+
         // All AI generation is queued so model latency never occupies a web request.
         if ((int) $data['count'] >= 1) {
             $exam->update([
@@ -426,7 +440,7 @@ class WrittenExamController extends Controller
 
             return back()->with(
                 'status',
-                "AI generation queued in {$batchCount} batch(es). Refresh this page to monitor progress."
+                "Current draft items were cleared. AI generation queued in {$batchCount} batch(es); only the new generation will populate this test."
             );
         }
 
