@@ -370,20 +370,21 @@ return [
             'active' => [
                 'admin/assessment-center',
                 'admin/assessment-bank',
+                'admin/assessment-snapshots',
+                'admin/assessment-permissions',
                 'admin/assessment',
                 'admin/assessment/create',
                 'admin/assessment-groups',
                 'admin/assessment-groups/create',
                 'regex:@^admin/assessment-groups/\\d+/(edit|results|analytics)$@',
-                'regex:@^admin/assessment/\\d+/edit$@',
+                'regex:@^admin/assessment/\\d+/(edit|preview)$@',
                 'regex:@^admin/assessment/\\d+/items/create$@',
                 'regex:@^admin/assessment/\\d+/items$@',
                 'regex:@^admin/assessment/\\d+/items/\\d+/edit$@',
                 'regex:@^admin/assessment/\\d+/results$@',
                 'admin/skills',
                 'admin/skills/create',
-                'regex:@^admin/skills/\\d+/edit$@',
-                'regex:@^admin/skills/\\d+/results$@'
+                'regex:@^admin/skills/\\d+/(edit|preview|results)$@'
 
             ]
         ],
