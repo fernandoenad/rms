@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Guest;
 use App\Http\Controllers\Controller;
 use App\Jobs\ScoreSkillTestSubmission;
 use App\Models\Application;
+use App\Models\AssessmentPerformanceSample;
 use App\Models\SkillTest;
 use App\Models\SkillTestAssignment;
 use App\Models\SkillTestAttempt;
@@ -173,6 +174,7 @@ class SkillTestAttemptController extends Controller
 
     public function saveInline(Request $request, SkillTestAttempt $attempt)
     {
+        $startedNs = hrtime(true);
         $attempt = $this->ownedAttempt($request,$attempt);
         if ($this->finalizeIfExpired($attempt)) return response()->json(['expired'=>true],409);
 
@@ -207,6 +209,15 @@ class SkillTestAttemptController extends Controller
                 'message'=>'This attempt is no longer editable.',
                 'expired'=>true,
             ],409);
+        }
+
+        if (random_int(1, 25) === 1) {
+            AssessmentPerformanceSample::create([
+                'operation'=>'skill_inline_save',
+                'skill_test_attempt_id'=>$attempt->id,
+                'latency_ms'=>(int) round((hrtime(true)-$startedNs)/1_000_000),
+                'recorded_at'=>now(),
+            ]);
         }
 
         return response()->json(['message'=>'Saved','saved_at'=>$result['saved_at']]);
