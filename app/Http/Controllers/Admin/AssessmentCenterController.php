@@ -84,7 +84,6 @@ class AssessmentCenterController extends Controller
         ];
 
         $recentSamples = AssessmentPerformanceSample::where('recorded_at','>=',now()->subMinutes(15))
-            ->orderBy('latency_ms')
             ->limit(5000)
             ->get(['operation','latency_ms']);
 
