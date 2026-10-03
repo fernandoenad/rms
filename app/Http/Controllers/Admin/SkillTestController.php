@@ -497,8 +497,8 @@ class SkillTestController extends Controller
             ->selectRaw('SUM(CASE WHEN status = 1 AND expires_at IS NOT NULL AND expires_at <= ? THEN 1 ELSE 0 END) as awaiting_timeout', [now()])
             ->selectRaw('SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as submitted')
             ->selectRaw('SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) as voided')
-            ->selectRaw('SUM(CASE WHEN final_score IS NOT NULL THEN 1 ELSE 0 END) as evaluated')
-            ->selectRaw('AVG(CASE WHEN final_score IS NOT NULL THEN final_score END) as mean_final_score')
+            ->selectRaw('SUM(CASE WHEN status = 2 AND final_score IS NOT NULL THEN 1 ELSE 0 END) as evaluated')
+            ->selectRaw('AVG(CASE WHEN status = 2 AND final_score IS NOT NULL THEN final_score END) as mean_final_score')
             ->first();
 
         $attempts = $skillTest->attempts()
@@ -522,6 +522,7 @@ class SkillTestController extends Controller
 
         $retakeTests = SkillTest::where('vacancy_id', $skillTest->vacancy_id)
             ->where('status',1)
+            ->where('access_mode','selected_applicants')
             ->where('end_date','>',now())
             ->whereKeyNot($skillTest->id)
             ->orderBy('start_date')
@@ -715,6 +716,7 @@ class SkillTestController extends Controller
 
         $retake = SkillTest::where('vacancy_id', $skillTest->vacancy_id)
             ->where('status',1)
+            ->where('access_mode','selected_applicants')
             ->findOrFail($data['retake_skill_test_id']);
 
         if ((int) $retake->id === (int) $skillTest->id) {
