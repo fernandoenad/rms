@@ -240,6 +240,11 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/skill-groups/{skillTestGroup}/edit', [AdminSkillTestGroup::class, 'edit'])->name('admin.skill_groups.edit');
     Route::put('/admin/skill-groups/{skillTestGroup}', [AdminSkillTestGroup::class, 'update'])->middleware('assessment.capability:author')->name('admin.skill_groups.update');
     Route::post('/admin/skill-groups/{skillTestGroup}/equivalent-set', [AdminSkillTestGroup::class, 'addEquivalentSet'])->middleware('assessment.capability:author')->name('admin.skill_groups.equivalent_set');
+    Route::post('/admin/skill-groups/{skillTestGroup}/release-scores', [AdminSkillTestGroup::class, 'releaseScores'])->middleware('assessment.capability:release')->name('admin.skill_groups.release_scores');
+    Route::post('/admin/skill-groups/{skillTestGroup}/hide-scores', [AdminSkillTestGroup::class, 'hideScores'])->middleware('assessment.capability:release')->name('admin.skill_groups.hide_scores');
+    Route::post('/admin/skill-groups/{skillTestGroup}/pause', [AdminSkillTestGroup::class, 'pause'])->middleware('assessment.capability:monitor')->name('admin.skill_groups.pause');
+    Route::post('/admin/skill-groups/{skillTestGroup}/resume', [AdminSkillTestGroup::class, 'resume'])->middleware('assessment.capability:monitor')->name('admin.skill_groups.resume');
+    Route::post('/admin/skill-groups/{skillTestGroup}/archive', [AdminSkillTestGroup::class, 'archive'])->middleware('assessment.capability:release')->name('admin.skill_groups.archive');
 
     Route::get('/admin/skills', [AdminSkillTest::class, 'index'])->name('admin.skills.index');
     Route::get('/admin/skills/create', [AdminSkillTest::class, 'create'])->name('admin.skills.create');
