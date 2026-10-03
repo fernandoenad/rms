@@ -14,7 +14,8 @@ class SkillTest extends Model
         'duration','access_mode','submission_modes','allowed_extensions','max_file_size_kb',
         'ai_scoring','score_release_policy','scores_released_at',
         'ai_context','ai_generation_focus','ai_use_qualifications','ai_use_job_description',
-        'status','approval_status','approved_by','approved_at','approval_notes'
+        'status','approval_status','approved_by','approved_at','approval_notes',
+        'is_paused','pause_reason','paused_at','paused_by','archived_at','archived_by'
     ];
 
     protected $casts = [
@@ -22,7 +23,7 @@ class SkillTest extends Model
         'allowed_extensions'=>'array','ai_scoring'=>'boolean',
         'reviewed_at'=>'datetime','scores_released_at'=>'datetime',
         'ai_use_qualifications'=>'boolean','ai_use_job_description'=>'boolean',
-        'approved_at'=>'datetime'
+        'approved_at'=>'datetime','is_paused'=>'boolean','paused_at'=>'datetime','archived_at'=>'datetime'
     ];
 
     public function vacancy(): BelongsTo { return $this->belongsTo(Vacancy::class); }
