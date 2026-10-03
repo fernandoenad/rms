@@ -104,8 +104,12 @@ class WrittenExamItemController extends Controller
         return view('admin.assessments.items.edit', compact('exam', 'item'));
     }
 
-    public function update(Request $request, Exam $exam, WrittenExam $item)
-    {
+    public function update(
+        Request $request,
+        Exam $exam,
+        WrittenExam $item,
+        AssessmentGovernanceService $governance
+    ) {
         $this->ensureMutable($exam);
         abort_unless((int) $item->exam_id === (int) $exam->id, 404);
 
@@ -143,6 +147,15 @@ class WrittenExamItemController extends Controller
             return $newItem;
         });
 
+        $governance->log('item_version_created', [
+            'assessment_group_id' => $exam->assessment_group_id,
+            'exam_id' => $exam->id,
+            'written_exam_id' => $newItem->id,
+        ], [
+            'supersedes_item_id' => $item->id,
+            'version' => $newItem->item_version,
+        ]);
+
         return redirect()->route('admin.assessments.items.index', $exam)
             ->with('status', "Item revised as version {$newItem->item_version}. Review and approve the new version before publishing.");
     }
@@ -157,8 +170,11 @@ class WrittenExamItemController extends Controller
             ->with('status', 'Item deleted.');
     }
 
-    public function store(Request $request, Exam $exam)
-    {
+    public function store(
+        Request $request,
+        Exam $exam,
+        AssessmentGovernanceService $governance
+    ) {
         $this->ensureMutable($exam);
 
         $data = $request->validate([
@@ -170,7 +186,7 @@ class WrittenExamItemController extends Controller
             'answer_key' => 'required|in:A,B,C,D,a,b,c,d',
         ]);
 
-        DB::transaction(function () use ($exam, $data) {
+        $item = DB::transaction(function () use ($exam, $data) {
             $item = WrittenExam::create([
                 'exam_id' => $exam->id,
                 'enrollment_key' => $exam->enrollment_key,
@@ -186,14 +202,24 @@ class WrittenExamItemController extends Controller
                 'status' => 1,
             ]);
             $this->syncOptions($item, $data);
+            return $item;
         });
+
+        $governance->log('item_created', [
+            'assessment_group_id' => $exam->assessment_group_id,
+            'exam_id' => $exam->id,
+            'written_exam_id' => $item->id,
+        ]);
 
         return redirect()->route('admin.assessments.items.index', $exam)
             ->with('status', 'Item added to written exam.');
     }
 
-    public function import(Request $request, Exam $exam)
-    {
+    public function import(
+        Request $request,
+        Exam $exam,
+        AssessmentGovernanceService $governance
+    ) {
         $this->ensureMutable($exam);
 
         $data = $request->validate(['file' => 'required|file|mimes:csv,txt']);
@@ -234,6 +260,11 @@ class WrittenExamItemController extends Controller
         });
 
         fclose($handle);
+
+        $governance->log('items_imported', [
+            'assessment_group_id' => $exam->assessment_group_id,
+            'exam_id' => $exam->id,
+        ], ['created' => $created]);
 
         return redirect()->route('admin.assessments.items.index', $exam)
             ->with('status', "Imported {$created} items.");
