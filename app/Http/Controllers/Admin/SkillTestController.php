@@ -738,6 +738,12 @@ class SkillTestController extends Controller
             $rules['notes.'.$criterion->id] = 'nullable|string|max:3000';
         }
 
+        if ($attempt->final_score !== null) {
+            $rules['change_reason'] = 'required|string|max:3000';
+        } else {
+            $rules['change_reason'] = 'nullable|string|max:3000';
+        }
+
         $data = $request->validate($rules);
         $total = 0;
 
@@ -772,7 +778,9 @@ class SkillTestController extends Controller
                 'previous_score'=>$previous,
                 'new_score'=>round($total,2),
                 'source'=>'human',
-                'reason'=>$previous === null ? 'Initial human rubric finalization.' : 'Human rubric score updated.',
+                'reason'=>$previous === null
+                    ? ($data['change_reason'] ?? 'Initial human rubric finalization.')
+                    : $data['change_reason'],
                 'changed_by'=>auth()->id(),
             ]);
         });
