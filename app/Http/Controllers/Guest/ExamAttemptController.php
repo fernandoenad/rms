@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Guest;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\AssessmentAttemptEvent;
+use App\Models\AssessmentGroupAttemptLock;
 use App\Models\Exam;
 use App\Models\ExamAssignment;
 use App\Models\ExamAttempt;
@@ -205,6 +206,44 @@ class ExamAttemptController extends Controller
             return back()->with('status_assessment', 'Invalid enrollment key.');
         }
 
+        if ($exam->assessment_group_id) {
+            $existingLock = AssessmentGroupAttemptLock::where('assessment_group_id', $exam->assessment_group_id)
+                ->where('application_id', $application->id)
+                ->first();
+
+            if ($existingLock && (int) $existingLock->exam_id !== (int) $exam->id) {
+                $lockedExam = Exam::find($existingLock->exam_id);
+
+                return back()->with(
+                    'status_assessment',
+                    'You already started another set in this written assessment'
+                    . ($lockedExam?->set_code ? ' (Set '.$lockedExam->set_code.')' : '.')
+                    . ' You cannot start a second equivalent set.'
+                );
+            }
+
+            if (!$existingLock) {
+                try {
+                    AssessmentGroupAttemptLock::create([
+                        'assessment_group_id' => $exam->assessment_group_id,
+                        'application_id' => $application->id,
+                        'exam_id' => $exam->id,
+                    ]);
+                } catch (\Illuminate\Database\QueryException $e) {
+                    $existingLock = AssessmentGroupAttemptLock::where('assessment_group_id', $exam->assessment_group_id)
+                        ->where('application_id', $application->id)
+                        ->first();
+
+                    if ($existingLock && (int) $existingLock->exam_id !== (int) $exam->id) {
+                        return back()->with(
+                            'status_assessment',
+                            'Another equivalent set has already been locked to this application.'
+                        );
+                    }
+                }
+            }
+        }
+
         try {
             $attempt = ExamAttempt::firstOrCreate(
                 ['exam_id' => $exam->id, 'application_id' => $application->id],
@@ -215,6 +254,13 @@ class ExamAttemptController extends Controller
             $attempt = ExamAttempt::where('exam_id', $exam->id)
                 ->where('application_id', $application->id)
                 ->firstOrFail();
+        }
+
+        if ($exam->assessment_group_id) {
+            AssessmentGroupAttemptLock::where('assessment_group_id', $exam->assessment_group_id)
+                ->where('application_id', $application->id)
+                ->where('exam_id', $exam->id)
+                ->update(['exam_attempt_id' => $attempt->id]);
         }
 
         if ((int) $attempt->status === 2) {
