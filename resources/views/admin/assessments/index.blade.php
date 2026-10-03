@@ -18,7 +18,7 @@
 <tbody>
 @forelse($exams as $exam)
 <tr>
-<td><strong>{{ $exam->title }}</strong><div class="small text-muted">{{ $exam->code }} · Key: {{ $exam->enrollment_key }}</div></td>
+<td><strong>{{ $exam->title }}</strong><div class="small text-muted">{{ $exam->code }}</div></td>
 <td>
 @if($exam->assessmentGroup)
 <strong>{{ $exam->assessmentGroup->title }}</strong><br>
