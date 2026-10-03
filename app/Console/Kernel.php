@@ -23,6 +23,10 @@ class Kernel extends ConsoleKernel
             ->everyMinute()
             ->withoutOverlapping();
 
+        $schedule->command('assessments:sync-official-scores')
+            ->everyMinute()
+            ->withoutOverlapping();
+
         $schedule->command('assessments:prune-telemetry')
             ->dailyAt('02:30')
             ->withoutOverlapping();
