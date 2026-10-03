@@ -257,3 +257,131 @@ Written tests and Skills Tests now carry assessment-level creator/approval metad
 This assessment-level approval is separate from item/task/rubric review. AI-generated written items and AI-generated/revised Skills content still follow their specific review requirements.
 
 For inline Skills Test responses, browser paste and drag/drop text insertion are disabled. Applicants are instructed to type the response directly into the assessment. This is a browser-side integrity control and should be treated as deterrence rather than proof that external assistance was impossible.
+
+
+## Shared Assessment Center operations upgrade
+
+The Assessment Center now has a unified operations page at `/admin/assessment-center` covering both Written Assessment and Skills Test activity.
+
+It surfaces:
+- applicants currently taking each assessment type;
+- timeout-finalization backlog;
+- pending written-item review and pending skills human evaluation;
+- the dedicated assessment AI queue backlog;
+- failed jobs;
+- scheduler heartbeat;
+- sampled autosave average and P95 latency;
+- assessment-content exposure health.
+
+### Dedicated AI queue
+
+All written AI generation and Skills AI scoring use the named queue:
+
+`assessment-ai`
+
+Run this separately from normal RMS background work. For example, production can supervise several workers such as:
+
+`php artisan queue:work database --queue=assessment-ai --tries=3 --timeout=600`
+
+Keep at least one normal/default queue worker as well for unrelated RMS jobs. Scale assessment-AI worker count conservatively against provider rate limits, database capacity, and server resources rather than starting hundreds of simultaneous provider calls.
+
+### Pause, extensions, incidents, and archive/freeze
+
+Written groups, standalone Written Tests, and Skills Tests can pause **new starts** without interrupting applicants already in progress. This is the safe emergency behavior because current attempt timers and autosave remain intact.
+
+Authorized monitors may add documented time extensions to an active attempt. Each extension records minutes, reason, approving user, and timestamp.
+
+Attempt timelines include relevant start, visibility/connectivity, upload/submission, extension, and scoring events.
+
+Archive/Freeze is blocked while attempts are in progress. Once archived, assessment mutation actions are rejected and the assessment remains available only as historical/audit material.
+
+### Applicant accommodations
+
+Approved accommodations can be recorded by application code:
+- extra time;
+- large-text presentation;
+- documentation note.
+
+A Written Assessment Group accommodation applies across its equivalent sets. A Skills Test accommodation applies to that specific task.
+
+### Assessment role separation
+
+Assessment Center capabilities are configurable for non-admin users:
+- Author;
+- Reviewer;
+- Monitor;
+- Evaluator;
+- Release.
+
+Role-level administrators retain all capabilities. To preserve existing installations, non-admin users with no explicit Assessment Center capability rows continue to use their existing access until permissions are intentionally configured.
+
+Administrator-created Written and Skills assessments continue to be automatically assessment-approved, as required. This does not bypass item/task/rubric review requirements for AI-generated or revised content.
+
+### Assessment content bank and exposure tracking
+
+Approved Written items and Skills tasks are added to the Assessment Content Bank. The bank tracks:
+- position;
+- normalized fingerprint;
+- review status;
+- usage/exposure count;
+- retirement status;
+- selected metadata such as SOLO, difficulty, competency, or task version.
+
+Publication increments exposure. Readiness performs same-position similarity checking against recent bank content and blocks highly similar content at the configured implementation threshold.
+
+The bank can retire content from future reuse without deleting historical records.
+
+### Preview and deployment dry run
+
+Written Tests and Skills Tests now have a Preview & Dry Run page. It shows the applicant-facing material together with:
+- assessment readiness issues;
+- configured queue connection;
+- scheduler heartbeat;
+- failed-job warnings.
+
+This is a no-attempt preview and does not affect official attempts, locks, analytics, or scores.
+
+### Save-latency monitoring
+
+RMS samples a small fraction of successful autosaves rather than logging every request:
+- Written answers: approximately 1 in 50;
+- Skills inline saves: approximately 1 in 25.
+
+The Assessment Center displays recent average and P95 save latency. Sampling avoids turning monitoring itself into a high-volume database bottleneck.
+
+### Score history
+
+Skills final-score changes are append-only in the score-change history. Once a final score exists, changing it requires a documented reason. Bulk approval of AI-proposed rubric scores also creates score-history records.
+
+### Recovery snapshots
+
+Immutable JSON configuration snapshots are created at important governance events such as publication, score release, and archive. Administrators can view/download them from Assessment Snapshots.
+
+Snapshots are recovery/audit checkpoints; RMS does not automatically overwrite live assessment data from an old snapshot.
+
+### Telemetry retention
+
+Optional retention settings:
+
+`ASSESSMENT_PERFORMANCE_RETENTION_DAYS=30`
+
+`ASSESSMENT_EVENT_RETENTION_DAYS=365`
+
+`ASSESSMENT_AI_RAW_RETENTION_DAYS=0`
+
+The scheduled `assessments:prune-telemetry` command removes expired performance/event telemetry. A raw-AI retention value of 0 preserves raw responses indefinitely; configure a positive value only after an explicit organizational retention policy is adopted.
+
+Official attempts, final scores, submissions, governance audit records, score-change history, and assessment snapshots are not treated as disposable telemetry by this command.
+
+### Production scheduler
+
+The Laravel scheduler must continue running every minute:
+
+`* * * * * cd /path/to/rms && php artisan schedule:run >> /dev/null 2>&1`
+
+It now supports:
+- written timeout finalization;
+- skills timeout finalization;
+- Assessment Center health heartbeat;
+- scheduled telemetry retention.
+
