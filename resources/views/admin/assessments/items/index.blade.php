@@ -13,6 +13,7 @@
     $locked = $hasAttempts || (int)$exam->status === 1;
     $bp = optional($exam->assessmentGroup)->blueprint ?: [];
     $bpSolo = $bp['solo_distribution'] ?? [];
+    $pendingGeneratedCount = $items->where('ai_generated', true)->where('review_status', 'pending_review')->count();
 @endphp
 
 <div id="setReadinessCard" class="card card-outline {{ $readiness['ready'] ? 'card-success' : 'card-warning' }}">
@@ -131,6 +132,22 @@
 @endif
 
 <div class="card"><div class="card-body">
+@if(!$locked && $pendingGeneratedCount > 0)
+<div class="alert alert-warning d-flex flex-column flex-md-row justify-content-between align-items-md-center">
+    <div class="mb-2 mb-md-0">
+        <strong>{{ $pendingGeneratedCount }} AI-generated item(s) are pending review.</strong>
+        <div class="small">Use bulk approval only after you have reviewed the generated set.</div>
+    </div>
+    <form method="post"
+          action="{{ route('admin.assessments.items.approve_generated',$exam) }}"
+          onsubmit="return confirm('Approve all {{ $pendingGeneratedCount }} pending AI-generated items? This will mark them approved and add/update them in the Assessment Content Bank.');">
+        @csrf
+        <button type="submit" class="btn btn-success text-nowrap">
+            <i class="fas fa-check-double mr-1"></i> Approve All Generated Items
+        </button>
+    </form>
+</div>
+@endif
 <div class="mb-3">
 <form method="post" action="{{ route('admin.assessments.items.import',$exam) }}" enctype="multipart/form-data">
     @csrf
