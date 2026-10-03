@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AssessmentContentBank extends Model
 {
@@ -18,4 +19,10 @@ class AssessmentContentBank extends Model
         'metadata'=>'array',
         'retired_at'=>'datetime',
     ];
+
+    public function vacancy(): BelongsTo
+    {
+        return $this->belongsTo(Vacancy::class);
+    }
 }
+
