@@ -47,19 +47,81 @@ class ApplicationController extends Controller
     {
         $applicationInquiries = $application->inquiries;
         $exams = \App\Models\Exam::where('vacancy_id', $application->vacancy_id)
-            ->where('status', 1)
+            ->where(function ($q) use ($application) {
+                $q->where('status', 1)
+                  ->orWhereHas('attempts', fn ($attempts) => $attempts->where('application_id', $application->id));
+            })
             ->where(function ($q) use ($application) {
                 $q->where('access_mode', 'all_taken_in')
                   ->orWhereExists(function ($sub) use ($application) {
                       $sub->selectRaw('1')->from('exam_assignments')
                           ->whereColumn('exam_assignments.exam_id', 'exams.id')
                           ->where('exam_assignments.application_id', $application->id);
-                  });
+                  })
+                  ->orWhereHas('attempts', fn ($attempts) => $attempts->where('application_id', $application->id));
             })
-            ->with(['attempts' => function($q) use ($application) {
-                $q->where('application_id', $application->id);
-            }])
+            ->with([
+                'assessmentGroup:id,title,status',
+                'attempts' => function($q) use ($application) {
+                    $q->where('application_id', $application->id);
+                },
+            ])
+            ->orderBy('start_date')
             ->get();
+
+        $groupLocks = \App\Models\AssessmentGroupAttemptLock::where('application_id', $application->id)
+            ->get()
+            ->keyBy('assessment_group_id');
+
+        $visibleExams = collect();
+
+        foreach ($exams->whereNull('assessment_group_id') as $standaloneExam) {
+            $visibleExams->push($standaloneExam);
+        }
+
+        foreach ($exams->whereNotNull('assessment_group_id')->groupBy('assessment_group_id') as $groupId => $sets) {
+            $lock = $groupLocks->get($groupId);
+
+            if ($lock) {
+                $lockedSet = $sets->firstWhere('id', $lock->exam_id);
+
+                if (!$lockedSet) {
+                    $lockedSet = \App\Models\Exam::with([
+                            'assessmentGroup:id,title,status',
+                            'attempts' => fn ($q) => $q->where('application_id', $application->id),
+                        ])
+                        ->whereKey($lock->exam_id)
+                        ->where('vacancy_id', $application->vacancy_id)
+                        ->first();
+                }
+
+                if ($lockedSet) {
+                    $visibleExams->push($lockedSet);
+                }
+
+                continue;
+            }
+
+            $sets = $sets->filter(fn ($set) => !$set->assessmentGroup || $set->assessmentGroup->status);
+
+            $openSet = $sets->first(function ($set) {
+                return $set->status == 1
+                    && (!$set->start_date || now()->gte($set->start_date))
+                    && (!$set->end_date || now()->lt($set->end_date));
+            });
+
+            $upcomingSet = $sets->first(function ($set) {
+                return $set->status == 1 && $set->start_date && now()->lt($set->start_date);
+            });
+
+            $selectedSet = $openSet ?: $upcomingSet ?: $sets->first();
+
+            if ($selectedSet) {
+                $visibleExams->push($selectedSet);
+            }
+        }
+
+        $exams = $visibleExams->sortBy('start_date')->values();
 
         $skillTests = \App\Models\SkillTest::where('vacancy_id', $application->vacancy_id)
             ->where('status', 1)
