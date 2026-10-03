@@ -230,6 +230,7 @@ class SkillTestController extends Controller
 
             $skillTest->update(['status' => 1]);
             $governance->recordSkillExposure($skillTest->fresh());
+            $governance->snapshotSkill($skillTest->fresh(),'published');
 
             $governance->log('skill_test_published', [
                 'skill_test_id' => $skillTest->id,
@@ -589,6 +590,7 @@ class SkillTestController extends Controller
 
             $skillTest->update(['status'=>1]);
             $governance->recordSkillExposure($skillTest->fresh());
+            $governance->snapshotSkill($skillTest->fresh(),'published');
             $governance->log('skill_test_published', ['skill_test_id'=>$skillTest->id]);
 
             return back()->with('status', 'Skills test published after readiness validation.');
@@ -965,6 +967,7 @@ class SkillTestController extends Controller
         }
 
         $skillTest->update(['scores_released_at'=>now()]);
+        $governance->snapshotSkill($skillTest->fresh(),'scores_released');
         $governance->log('skill_scores_released', ['skill_test_id'=>$skillTest->id]);
 
         return back()->with('status', 'Skills test scores released to applicants.');
@@ -1234,6 +1237,7 @@ class SkillTestController extends Controller
             'archived_by'=>auth()->id(),
         ]);
 
+        $governance->snapshotSkill($skillTest->fresh(),'archived');
         $governance->log('skill_test_archived', ['skill_test_id'=>$skillTest->id]);
 
         return redirect()->route('admin.assessment_center.index')
