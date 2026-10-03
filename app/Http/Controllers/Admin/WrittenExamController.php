@@ -8,10 +8,13 @@ use App\Models\ExamAttempt;
 use App\Models\ExamAssignment;
 use App\Models\Application;
 use App\Models\AssessmentGroup;
+use App\Models\AssessmentAiGenerationRun;
 use App\Models\Vacancy;
 use App\Models\WrittenExam;
 use App\Models\WrittenExamOption;
+use App\Jobs\GenerateWrittenExamItemsBatch;
 use App\Services\AssessmentAiService;
+use App\Services\AssessmentGovernanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -226,6 +229,52 @@ class WrittenExamController extends Controller
             );
         }
 
+        if ($exam->assessment_group_id) {
+            $contextOptions['avoid_questions'] = WrittenExam::query()
+                ->whereHas('exam', fn ($q) => $q->where('assessment_group_id', $exam->assessment_group_id))
+                ->orderByDesc('id')
+                ->limit(250)
+                ->pluck('question')
+                ->all();
+        }
+
+        if ((int) $data['count'] > 20) {
+            $exam->update([
+                'ai_context' => $contextOptions['additional_context'] ?: null,
+                'ai_generation_focus' => $contextOptions['generation_focus'],
+                'ai_use_qualifications' => $contextOptions['use_qualifications'],
+                'ai_use_job_description' => $contextOptions['use_job_description'],
+            ]);
+
+            $batchSize = 10;
+            $batchCount = (int) ceil(((int) $data['count']) / $batchSize);
+
+            $run = AssessmentAiGenerationRun::create([
+                'exam_id' => $exam->id,
+                'requested_count' => (int) $data['count'],
+                'generated_count' => 0,
+                'failed_batches' => 0,
+                'batch_count' => $batchCount,
+                'completed_batches' => 0,
+                'solo_distribution' => $distribution,
+                'context_options' => collect($contextOptions)->except('avoid_questions')->all(),
+                'status' => 'queued',
+                'requested_by' => auth()->id(),
+            ]);
+
+            $remaining = (int) $data['count'];
+            while ($remaining > 0) {
+                $size = min($batchSize, $remaining);
+                GenerateWrittenExamItemsBatch::dispatch($run->id, $size);
+                $remaining -= $size;
+            }
+
+            return back()->with(
+                'status',
+                "AI generation queued in {$batchCount} batch(es). Refresh this page to monitor progress."
+            );
+        }
+
         try {
             $exam->update([
                 'ai_context' => $contextOptions['additional_context'] ?: null,
@@ -268,6 +317,7 @@ class WrittenExamController extends Controller
                         'competency_basis' => $generated['competency_basis'] ?? null,
                         'rationale' => $generated['rationale'] ?? null,
                         'ai_generated' => true,
+                        'review_status' => 'pending_review',
                         'status' => 1,
                     ]);
 
@@ -381,13 +431,34 @@ class WrittenExamController extends Controller
             ->with('status', 'Written exam was successfully deleted.');
     }
 
-    public function toggleStatus(Exam $exam)
+    public function toggleStatus(Exam $exam, AssessmentGovernanceService $governance)
     {
+        if ((int) $exam->status !== 1) {
+            $readiness = $governance->readiness($exam);
+
+            if (!$readiness['ready']) {
+                return back()->with(
+                    'status',
+                    'Cannot publish this set yet: '.implode(' ', array_slice($readiness['issues'], 0, 8))
+                );
+            }
+        }
+
         $exam->status = $exam->status == 1 ? 0 : 1;
         $exam->save();
 
-        return redirect()->route('admin.assessments.index')
-            ->with('status', 'Written exam status updated.');
+        $governance->log(
+            $exam->status ? 'exam_published' : 'exam_unpublished',
+            [
+                'assessment_group_id' => $exam->assessment_group_id,
+                'exam_id' => $exam->id,
+            ]
+        );
+
+        return back()->with(
+            'status',
+            $exam->status ? 'Written exam published after readiness validation.' : 'Written exam returned to draft.'
+        );
     }
 
     public function results(Exam $exam)
@@ -406,16 +477,15 @@ class WrittenExamController extends Controller
     {
         if ((int) $attempt->exam_id !== (int) $exam->id) abort(404);
 
-        Log::warning('Exam attempt hard-deleted', [
-            'exam_id' => $exam->id,
-            'attempt_id' => $attempt->id,
-            'deleted_by_id' => auth()->id(),
-            'deleted_by_email' => optional(auth()->user())->email,
-        ]);
+        if ($attempt->started_at) {
+            return back()->with(
+                'status',
+                'Started attempts are retained for audit integrity. Use the assessment-group void/retake workflow instead.'
+            );
+        }
 
         $attempt->delete();
 
-        return redirect()->route('admin.assessments.results', $exam)
-            ->with('status', 'Attempt deleted. Consider using void/retake workflow for operational use.');
+        return back()->with('status', 'Unused attempt record deleted.');
     }
 }
