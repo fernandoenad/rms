@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AssessmentContentBank;
 use App\Models\AssessmentGroup;
+use App\Models\AssessmentPerformanceSample;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\SkillTest;
@@ -62,6 +64,32 @@ class AssessmentCenterController extends Controller
             'failed' => Schema::hasTable('failed_jobs') ? DB::table('failed_jobs')->count() : null,
         ];
 
+        $recentSamples = AssessmentPerformanceSample::where('recorded_at','>=',now()->subMinutes(15))
+            ->orderBy('latency_ms')
+            ->limit(5000)
+            ->get(['operation','latency_ms']);
+
+        $performance = [];
+        foreach (['written_answer_save','skill_inline_save'] as $operation) {
+            $values = $recentSamples->where('operation',$operation)->pluck('latency_ms')->sort()->values();
+            $count = $values->count();
+            $p95 = $count
+                ? $values->get(max(0, (int) ceil($count * 0.95) - 1))
+                : null;
+
+            $performance[$operation] = [
+                'samples'=>$count,
+                'avg_ms'=>$count ? round((float)$values->avg()) : null,
+                'p95_ms'=>$p95,
+            ];
+        }
+
+        $bank = [
+            'active'=>AssessmentContentBank::whereNull('retired_at')->count(),
+            'retired'=>AssessmentContentBank::whereNotNull('retired_at')->count(),
+            'high_exposure'=>AssessmentContentBank::whereNull('retired_at')->where('usage_count','>=',4)->count(),
+        ];
+
         $heartbeatRaw = Cache::get('assessment-center:scheduler-heartbeat');
         $heartbeat = $heartbeatRaw ? now()->parse($heartbeatRaw) : null;
         $schedulerHealthy = $heartbeat && $heartbeat->gte(now()->subMinutes(3));
@@ -92,6 +120,8 @@ class AssessmentCenterController extends Controller
             'written',
             'skills',
             'queue',
+            'performance',
+            'bank',
             'heartbeat',
             'schedulerHealthy',
             'groups',
