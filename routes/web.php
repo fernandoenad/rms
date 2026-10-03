@@ -251,7 +251,10 @@ Route::group(['middleware' => ['active']], function () {
     Route::post('/admin/skill-groups/{skillTestGroup}/resume', [AdminSkillTestGroup::class, 'resume'])->middleware('assessment.capability:monitor')->name('admin.skill_groups.resume');
     Route::post('/admin/skill-groups/{skillTestGroup}/archive', [AdminSkillTestGroup::class, 'archive'])->middleware('assessment.capability:release')->name('admin.skill_groups.archive');
 
-    Route::get('/admin/skills', [AdminSkillTest::class, 'index'])->name('admin.skills.index');
+    Route::get('/admin/skills', function () {
+        return redirect()->route('admin.skill_groups.index');
+    })->name('admin.skills.index');
+    Route::get('/admin/skills/tests', [AdminSkillTest::class, 'index'])->name('admin.skills.tests.index');
     Route::get('/admin/skills/create', [AdminSkillTest::class, 'create'])->name('admin.skills.create');
     Route::post('/admin/skills/ai-draft', [AdminSkillTest::class, 'generateCreateDraft'])->middleware('assessment.capability:author')->name('admin.skills.ai_draft');
     Route::post('/admin/skills', [AdminSkillTest::class, 'store'])->middleware('assessment.capability:author')->name('admin.skills.store');
