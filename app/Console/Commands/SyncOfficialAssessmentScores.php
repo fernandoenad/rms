@@ -19,7 +19,7 @@ class SyncOfficialAssessmentScores extends Command
 
         AssessmentGroup::query()
             ->whereNotNull('assessment_score_key')
-            ->where('score_release_policy','after_close')
+            ->where('score_release_policy','!=','hidden')
             ->whereNull('scores_synced_at')
             ->orderBy('id')
             ->chunkById(50, function ($groups) use ($sync, &$writtenSynced) {
@@ -35,7 +35,7 @@ class SyncOfficialAssessmentScores extends Command
 
         SkillTest::query()
             ->whereNotNull('assessment_score_key')
-            ->where('score_release_policy','after_close')
+            ->where('score_release_policy','!=','hidden')
             ->whereNull('scores_synced_at')
             ->orderBy('id')
             ->chunkById(50, function ($tests) use ($sync, &$skillsSynced) {
