@@ -246,6 +246,15 @@ class ExamAttemptController extends Controller
     {
         $this->authorizeApplication($request, $application);
         $this->authorizeExam($application, $exam);
+
+        $exam->loadMissing('assessmentGroup');
+        if ($exam->archived_at || $exam->is_paused || $exam->assessmentGroup?->archived_at || $exam->assessmentGroup?->is_paused) {
+            return back()->with(
+                'status_assessment',
+                'New starts are temporarily unavailable for this written assessment.'
+            );
+        }
+
         $this->assertStartWindow($exam);
 
         if ($exam->assessment_group_id) {
