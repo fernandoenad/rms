@@ -51,7 +51,23 @@ class WrittenExamItemController extends Controller
     {
         $items = $exam->writtenExams()
             ->with('options')
-            ->select('id','question','option_a','option_b','option_c','option_d','answer_key','attempts','status')
+            ->select(
+                'id',
+                'exam_id',
+                'question',
+                'option_a',
+                'option_b',
+                'option_c',
+                'option_d',
+                'answer_key',
+                'attempts',
+                'status',
+                'solo_level',
+                'difficulty',
+                'competency_basis',
+                'rationale',
+                'ai_generated'
+            )
             ->orderByDesc('id')
             ->get();
 
