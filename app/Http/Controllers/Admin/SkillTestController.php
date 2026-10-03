@@ -590,6 +590,17 @@ class SkillTestController extends Controller
         return back()->with('status', 'Skills test returned to draft.');
     }
 
+    public function preview(
+        SkillTest $skillTest,
+        AssessmentGovernanceService $governance
+    ) {
+        $skillTest->load(['vacancy','rubricCriteria']);
+        $readiness = $governance->skillReadiness($skillTest);
+        $infrastructure = $governance->infrastructureReadiness();
+
+        return view('admin.skills.preview', compact('skillTest','readiness','infrastructure'));
+    }
+
     public function results(
         SkillTest $skillTest,
         AssessmentGovernanceService $governance
