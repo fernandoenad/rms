@@ -258,6 +258,7 @@
                                                     @php
                                                         $attempt = $exam->attempts->first();
                                                         $submitted = $attempt && $attempt->status == 2;
+                                                        $scoresReleased = !$exam->assessmentGroup || $exam->assessmentGroup->scoresAreReleased();
                                                         $examOpen = (!$exam->start_date || now()->gte($exam->start_date))
                                                             && (!$exam->end_date || now()->lt($exam->end_date));
                                                         $examUpcoming = $exam->start_date && now()->lt($exam->start_date);
@@ -272,8 +273,12 @@
                                                         <td>{{ $exam->duration }} min</td>
                                                         <td>
                                                             @if(isset($attempt) && $attempt->status == 2)
-                                                                {{ $attempt->correct_answers ?? '-' }} / {{ $attempt->total_items ?? '-' }}
-                                                                @if($attempt->percentage !== null) ({{ $attempt->percentage }}%) @endif
+                                                                @if($scoresReleased)
+                                                                    {{ $attempt->correct_answers ?? '-' }} / {{ $attempt->total_items ?? '-' }}
+                                                                    @if($attempt->percentage !== null) ({{ $attempt->percentage }}%) @endif
+                                                                @else
+                                                                    <span class="text-muted">Pending official release</span>
+                                                                @endif
                                                             @else
                                                                 -
                                                             @endif
