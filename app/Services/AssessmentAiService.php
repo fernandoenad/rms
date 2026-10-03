@@ -112,7 +112,14 @@ PROMPT;
                 . $avoidQuestions->map(fn ($q, $i) => ($i + 1).". ".$q)->implode("\n")
             : '';
 
+        $blueprint = $contextOptions['blueprint'] ?? null;
+        $blueprintBlock = $blueprint
+            ? "\n\nSHARED ASSESSMENT BLUEPRINT / TOS:\n" . json_encode($blueprint)
+                . "\nFollow this blueprint as closely as possible across the complete generated set, including competency coverage and difficulty distribution."
+            : '';
+
         $user = $this->vacancyContext($vacancy, $contextOptions)
+            . $blueprintBlock
             . $avoidBlock
             . "\n\nUse only the supplied context as the substantive basis for job-specific content. "
             . "If the context is insufficient for a defensible item, write a broader job-relevant item rather than inventing a policy, procedure, duty, threshold, or factual requirement."
