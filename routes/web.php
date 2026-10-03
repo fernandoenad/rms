@@ -234,6 +234,7 @@ Route::group(['middleware' => ['active']], function () {
 
     Route::get('/admin/skills', [AdminSkillTest::class, 'index'])->name('admin.skills.index');
     Route::get('/admin/skills/create', [AdminSkillTest::class, 'create'])->name('admin.skills.create');
+    Route::post('/admin/skills/ai-draft', [AdminSkillTest::class, 'generateCreateDraft'])->middleware('assessment.capability:author')->name('admin.skills.ai_draft');
     Route::post('/admin/skills', [AdminSkillTest::class, 'store'])->middleware('assessment.capability:author')->name('admin.skills.store');
     Route::get('/admin/skills/{skillTest}/edit', [AdminSkillTest::class, 'edit'])->name('admin.skills.edit');
     Route::get('/admin/skills/{skillTest}/preview', [AdminSkillTest::class, 'preview'])->name('admin.skills.preview');
