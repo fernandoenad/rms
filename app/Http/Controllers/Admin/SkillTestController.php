@@ -773,7 +773,7 @@ class SkillTestController extends Controller
                     continue;
                 }
 
-                DB::transaction(function () use ($attempt, $rows, $total) {
+                $didApprove = DB::transaction(function () use ($attempt, $rows, $total) {
                     $locked = SkillTestAttempt::whereKey($attempt->id)
                         ->where('status', 2)
                         ->whereNull('final_score')
@@ -781,7 +781,7 @@ class SkillTestController extends Controller
                         ->first();
 
                     if (!$locked) {
-                        return;
+                        return false;
                     }
 
                     foreach ($rows as $row) {
@@ -803,9 +803,15 @@ class SkillTestController extends Controller
                         'finalized_by'=>auth()->id(),
                         'evaluated_at'=>now(),
                     ]);
+
+                    return true;
                 });
 
-                $approved++;
+                if ($didApprove) {
+                    $approved++;
+                } else {
+                    $skipped++;
+                }
             }
         });
 
