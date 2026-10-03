@@ -1,0 +1,53 @@
+name: Refresh PHP 8.2 Composer Lock
+
+on:
+  push:
+    branches:
+      - feature/assessment-center-upgrade
+    paths:
+      - composer.json
+      - .github/workflows/refresh-php82-lock.yml
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-lock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/assessment-center-upgrade
+
+      - name: Setup PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, json, tokenizer, zip, pdo_sqlite, curl
+          coverage: none
+
+      - name: Show PHP and Composer versions
+        run: |
+          php -v
+          composer --version
+
+      - name: Resolve dependencies for production PHP 8.2.14
+        run: composer update --with-all-dependencies --no-interaction --prefer-dist --no-progress
+
+      - name: Verify lock installs on PHP 8.2
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Commit regenerated lock
+        run: |
+          if git diff --quiet composer.lock; then
+            echo "composer.lock already compatible; no commit needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add composer.lock
+          git commit -m "Regenerate Composer lock for PHP 8.2.14"
+          git push origin HEAD:feature/assessment-center-upgrade
