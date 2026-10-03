@@ -58,6 +58,11 @@ class Application extends Model
         return $this->hasMany(ExamAttempt::class);
     }
 
+    public function assessmentGroupLocks(): HasMany
+    {
+        return $this->hasMany(AssessmentGroupAttemptLock::class);
+    }
+
     public function getFullname()
     {
         return $this->last_name . ', ' . $this->first_name . ' ' . substr($this->middle_name, 0, 1);
