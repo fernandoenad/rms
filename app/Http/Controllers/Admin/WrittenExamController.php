@@ -8,6 +8,7 @@ use App\Models\ExamAttempt;
 use App\Models\ExamAssignment;
 use App\Models\Application;
 use App\Models\AssessmentGroup;
+use App\Models\AssessmentGroupAttemptLock;
 use App\Models\AssessmentAiGenerationRun;
 use App\Models\Vacancy;
 use App\Models\WrittenExam;
@@ -593,14 +594,34 @@ class WrittenExamController extends Controller
 
     public function destroy(Exam $exam)
     {
+        abort_unless($this->currentUserIsAdmin(), 403);
+
         if ($exam->attempts()->exists()) {
-            return back()->with('status', 'Cannot delete an exam with attempts. Archive it instead.');
+            return back()->with('status', 'Cannot delete a Written Test after any applicant has attempted it. Archive it instead.');
         }
 
-        $exam->delete();
+        if (AssessmentGroupAttemptLock::where('exam_id',$exam->id)->exists()) {
+            return back()->with('status', 'Cannot delete this set because an applicant is already locked to it.');
+        }
+
+        $group = $exam->assessmentGroup;
+
+        if ($group && $group->exams()->count() <= 1) {
+            return back()->with('status', 'This is the last set in the group. Delete the Written Assessment Group instead.');
+        }
+
+        DB::transaction(function () use ($exam,$group) {
+            $exam->delete();
+
+            if ($group) {
+                $group->update([
+                    'expected_sets'=>$group->exams()->count(),
+                ]);
+            }
+        });
 
         return redirect()->route('admin.assessments.index')
-            ->with('status', 'Written exam was successfully deleted.');
+            ->with('status', 'Written Test deleted. No applicant attempts were affected.');
     }
 
     public function approve(
