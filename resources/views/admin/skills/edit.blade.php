@@ -17,6 +17,29 @@
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
 
+<div class="card card-outline {{ $skillTest->approval_status==='approved' ? 'card-success' : 'card-warning' }}">
+    <div class="card-header"><strong>Assessment Approval</strong></div>
+    <div class="card-body">
+        <p class="mb-2">
+            Status:
+            @if($skillTest->approval_status==='approved')
+                <span class="badge badge-success">Approved</span>
+            @else
+                <span class="badge badge-warning">Pending approval</span>
+            @endif
+        </p>
+        @if($skillTest->approval_notes)
+            <div class="small text-muted mb-2">{{ $skillTest->approval_notes }}</div>
+        @endif
+        @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1 && $skillTest->approval_status!=='approved')
+            <form method="post" action="{{ route('admin.skills.approve',$skillTest) }}">@csrf
+                <textarea name="approval_notes" class="form-control mb-2" rows="2" placeholder="Approval notes (optional)"></textarea>
+                <button class="btn btn-success btn-sm">Approve Skills Test</button>
+            </form>
+        @endif
+    </div>
+</div>
+
 <div class="card card-outline {{ $readiness['ready'] ? 'card-success' : 'card-warning' }}">
     <div class="card-header"><strong>Readiness</strong></div>
     <div class="card-body py-2">
