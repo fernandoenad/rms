@@ -9,6 +9,9 @@ use App\Models\Exam;
 use App\Models\SkillTest;
 use App\Models\WrittenExam;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class AssessmentGovernanceService
 {
@@ -142,6 +145,42 @@ class AssessmentGovernanceService
         }
 
         return $issues;
+    }
+
+    public function infrastructureReadiness(): array
+    {
+        $issues = [];
+        $warnings = [];
+
+        $queueConnection = (string) config('queue.default');
+        if ($queueConnection === 'sync') {
+            $issues[] = 'Queue connection is set to sync; AI/background work would run inside web requests.';
+        }
+
+        if ($queueConnection === 'database' && !Schema::hasTable('jobs')) {
+            $issues[] = 'Database queue is configured but the jobs table is missing.';
+        }
+
+        if (Schema::hasTable('failed_jobs')) {
+            $failed = DB::table('failed_jobs')->count();
+            if ($failed > 0) {
+                $warnings[] = "{$failed} failed queue job(s) require review.";
+            }
+        }
+
+        $heartbeatRaw = Cache::get('assessment-center:scheduler-heartbeat');
+        $heartbeat = $heartbeatRaw ? now()->parse($heartbeatRaw) : null;
+        if (!$heartbeat || $heartbeat->lt(now()->subMinutes(3))) {
+            $issues[] = 'Laravel scheduler heartbeat is missing or stale.';
+        }
+
+        return [
+            'ready'=>empty($issues),
+            'issues'=>$issues,
+            'warnings'=>$warnings,
+            'queue_connection'=>$queueConnection,
+            'scheduler_heartbeat'=>$heartbeat,
+        ];
     }
 
     public function readiness(Exam $exam): array
