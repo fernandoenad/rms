@@ -684,6 +684,15 @@ class WrittenExamController extends Controller
             ->with('status', 'Written test archived and frozen.');
     }
 
+    public function preview(Exam $exam, AssessmentGovernanceService $governance)
+    {
+        $exam->load(['vacancy','assessmentGroup','writtenExams.options']);
+        $readiness = $governance->readiness($exam);
+        $infrastructure = $governance->infrastructureReadiness();
+
+        return view('admin.assessments.preview', compact('exam','readiness','infrastructure'));
+    }
+
     public function results(Exam $exam)
     {
         $exam->load(['writtenExams.options']);
