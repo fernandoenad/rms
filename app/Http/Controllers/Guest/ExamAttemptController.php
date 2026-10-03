@@ -55,6 +55,49 @@ class ExamAttemptController extends Controller
         }
     }
 
+    /**
+     * Lightweight authorization path used by high-volume answer autosaves.
+     * It preserves the same applicant, eligibility, exam, assignment, and
+     * assessment-group rules without loading several Eloquent relationships
+     * for every answer click.
+     */
+    protected function authorizeAnswerSave(Request $request, ExamAttempt $attempt): void
+    {
+        $guestEmail = $request->session()->get('guest_email');
+
+        if (!$guestEmail) {
+            abort(401);
+        }
+
+        $authorized = ExamAttempt::query()
+            ->join('applications', 'applications.id', '=', 'exam_attempts.application_id')
+            ->join('assessments', 'assessments.application_id', '=', 'applications.id')
+            ->join('exams', 'exams.id', '=', 'exam_attempts.exam_id')
+            ->leftJoin('assessment_groups', 'assessment_groups.id', '=', 'exams.assessment_group_id')
+            ->where('exam_attempts.id', $attempt->id)
+            ->where('applications.email', $guestEmail)
+            ->whereColumn('exams.vacancy_id', 'applications.vacancy_id')
+            ->where('exams.status', 1)
+            ->where(function ($query) {
+                $query->whereNull('exams.assessment_group_id')
+                    ->orWhere('assessment_groups.status', 1);
+            })
+            ->where(function ($query) use ($attempt) {
+                $query->where('exams.access_mode', 'all_taken_in')
+                    ->orWhereExists(function ($assignment) use ($attempt) {
+                        $assignment->selectRaw('1')
+                            ->from('exam_assignments')
+                            ->whereColumn('exam_assignments.exam_id', 'exams.id')
+                            ->where('exam_assignments.application_id', $attempt->application_id);
+                    });
+            })
+            ->exists();
+
+        if (!$authorized) {
+            abort(403, 'Assessment access is no longer available for this application.');
+        }
+    }
+
     protected function assertStartWindow(Exam $exam): void
     {
         if ($exam->start_date && now()->lt($exam->start_date)) {
@@ -335,38 +378,85 @@ class ExamAttemptController extends Controller
 
     public function saveAnswer(Request $request, ExamAttempt $attempt)
     {
-        $application = $attempt->application;
-        $this->authorizeApplication($request, $application);
-        $this->authorizeExam($application, $attempt->exam);
+        $this->authorizeAnswerSave($request, $attempt);
 
-        if (!$this->ensureNotExpired($request, $attempt->fresh())) {
-            return response()->json(['message' => 'Assessment time has expired.', 'expired' => true], 409);
-        }
-
+        // Avoid Laravel exists: rules here because the same relationship must be
+        // checked against the attempt's exam anyway. One joined validation query
+        // below replaces multiple existence/model lookups.
         $data = $request->validate([
-            'written_exam_id' => 'required|exists:written_exams,id',
-            'selected_option_id' => 'required|exists:written_exam_options,id',
+            'written_exam_id' => 'required|integer|min:1',
+            'selected_option_id' => 'required|integer|min:1',
         ]);
 
-        $item = WrittenExam::whereKey($data['written_exam_id'])->firstOrFail();
-        $option = WrittenExamOption::whereKey($data['selected_option_id'])->firstOrFail();
+        $result = DB::transaction(function () use ($attempt, $data) {
+            // A per-attempt row lock prevents an answer save from racing a final
+            // submission. Different applicants lock different rows, so this does
+            // not create a global assessment bottleneck.
+            $locked = ExamAttempt::whereKey($attempt->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-        if ((int) $item->exam_id !== (int) $attempt->exam_id || (int) $option->written_exam_id !== (int) $item->id) {
-            return response()->json(['message' => 'Invalid assessment option.'], 422);
+            if ((int) $locked->status !== 1) {
+                return ['status' => 'closed'];
+            }
+
+            if ($locked->expires_at && now()->gte(Carbon::parse($locked->expires_at))) {
+                return ['status' => 'expired'];
+            }
+
+            $optionId = DB::table('written_exam_options')
+                ->join('written_exams', 'written_exams.id', '=', 'written_exam_options.written_exam_id')
+                ->where('written_exam_options.id', (int) $data['selected_option_id'])
+                ->where('written_exams.id', (int) $data['written_exam_id'])
+                ->where('written_exams.exam_id', $locked->exam_id)
+                ->where('written_exams.status', 1)
+                ->value('written_exam_options.id');
+
+            if (!$optionId) {
+                return ['status' => 'invalid'];
+            }
+
+            $timestamp = now();
+
+            ExamAttemptAnswer::upsert([[
+                'exam_attempt_id' => $locked->id,
+                'written_exam_id' => (int) $data['written_exam_id'],
+                'selected_option_id' => (int) $optionId,
+                'selected_option' => null,
+                'created_at' => $timestamp,
+                'updated_at' => $timestamp,
+            ]], ['exam_attempt_id', 'written_exam_id'], ['selected_option_id', 'selected_option', 'updated_at']);
+
+            return ['status' => 'saved', 'saved_at' => $timestamp->toIso8601String()];
+        });
+
+        if ($result['status'] === 'expired') {
+            $this->finalizeExpiredAttempt($request, $attempt);
+
+            return response()->json([
+                'message' => 'Assessment time has expired.',
+                'expired' => true,
+            ], 409);
         }
 
-        ExamAttemptAnswer::upsert([[
-            'exam_attempt_id' => $attempt->id,
-            'written_exam_id' => $item->id,
-            'selected_option_id' => $option->id,
-            'selected_option' => null,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]], ['exam_attempt_id', 'written_exam_id'], ['selected_option_id', 'selected_option', 'updated_at']);
+        if ($result['status'] === 'closed') {
+            return response()->json([
+                'message' => 'This assessment attempt is already closed.',
+            ], 409);
+        }
 
-        $this->event($request, $attempt, 'answer_saved', ['written_exam_id' => $item->id]);
+        if ($result['status'] === 'invalid') {
+            return response()->json([
+                'message' => 'Invalid assessment option.',
+            ], 422);
+        }
 
-        return response()->json(['message' => 'Saved', 'saved_at' => now()->toIso8601String()]);
+        // No per-answer audit-event insert: the answer row and its updated_at
+        // timestamp are already the authoritative persistence record.
+        return response()->json([
+            'message' => 'Saved',
+            'saved_at' => $result['saved_at'],
+        ]);
     }
 
     public function eventLog(Request $request, ExamAttempt $attempt)
