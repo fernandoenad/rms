@@ -9,11 +9,13 @@ class SkillTestAttempt extends Model
 {
     protected $fillable = [
         'skill_test_id','application_id','started_at','expires_at','submitted_at','status',
-        'ai_proposed_score','final_score','finalized_by','evaluated_at'
+        'ai_proposed_score','final_score','finalized_by','evaluated_at',
+        'voided_at','voided_by','void_reason','retake_skill_test_id'
     ];
 
     protected $casts = [
-        'started_at'=>'datetime','expires_at'=>'datetime','submitted_at'=>'datetime','evaluated_at'=>'datetime'
+        'started_at'=>'datetime','expires_at'=>'datetime','submitted_at'=>'datetime',
+        'evaluated_at'=>'datetime','voided_at'=>'datetime'
     ];
 
     public function skillTest(): BelongsTo { return $this->belongsTo(SkillTest::class); }
