@@ -32,7 +32,10 @@
             @endphp
             <article class="card shadow-sm exam-item" data-index="{{ $index }}" style="display:none">
                 <div class="card-body">
-                    <p class="mb-3 exam-question"><strong>{{ $index + 1 }}.</strong> {{ $item->question }}</p>
+                    <div class="mb-3 exam-question d-flex align-items-start">
+    <strong class="mr-1">{{ $index + 1 }}.</strong>
+    <div class="exam-question-text">{{ $item->question }}</div>
+</div>
 
                     @foreach($displayOptions as $optionIndex => $option)
                         @php $letter = chr(65 + $optionIndex); @endphp
@@ -169,6 +172,7 @@
     .assessment-page { background:#f8f9fa; min-height:100vh; }
     .assessment-toolbar { z-index:1020; }
     .exam-question { font-size:1.08rem; line-height:1.55; }
+    .exam-question-text { white-space:pre-line; }
     .option-card { cursor:pointer; background:#fff; min-height:56px; font-size:1rem; line-height:1.45; }
     .option-card:has(input:checked) { border-color:#007bff !important; background:#f0f7ff; }
     .answer-radio { transform:scale(1.25); }
