@@ -12,7 +12,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        $schedule->command('assessments:finalize-expired --limit=1000')
+            ->everyMinute()
+            ->withoutOverlapping();
     }
 
     /**
