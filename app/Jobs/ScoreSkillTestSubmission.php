@@ -44,6 +44,10 @@ class ScoreSkillTestSubmission implements ShouldQueue
             'submissions'
         ])->findOrFail($this->attemptId);
 
+        if ((int) $attempt->status !== 2 || $attempt->voided_at) {
+            return;
+        }
+
         $submission = $attempt->submissions->where('is_final', true)->sortByDesc('version')->first();
         if (!$submission) {
             return;
@@ -59,19 +63,40 @@ class ScoreSkillTestSubmission implements ShouldQueue
 
         try {
             $text = trim((string) $submission->inline_response);
+            $flags = [];
 
-            if ($submission->file_path && strtolower(pathinfo($submission->original_filename, PATHINFO_EXTENSION)) === 'docx') {
-                $text .= "\n\nDOCUMENT CONTENT:\n" . $this->docxText($submission->file_path);
+            if ($submission->file_path) {
+                $extension = strtolower(pathinfo((string) $submission->original_filename, PATHINFO_EXTENSION));
+
+                if ($extension === 'docx') {
+                    $documentText = $this->docxText($submission->file_path);
+
+                    if ($documentText !== '') {
+                        $text .= "\n\nDOCUMENT CONTENT:\n" . $documentText;
+                    } else {
+                        $flags[] = 'DOCX file could not be extracted for AI review.';
+                    }
+                } else {
+                    $flags[] = "Uploaded {$extension} file is retained for human evaluation but is not text-extracted by the current AI scorer.";
+                }
+            }
+
+            if (trim($text) === '') {
+                throw new \RuntimeException(
+                    'No machine-readable response was available for AI scoring. Human rubric evaluation remains available.'
+                );
             }
 
             $result = $ai->scoreSkillsSubmission($attempt->skillTest, $text);
+            $resultFlags = is_array($result['flags'] ?? null) ? $result['flags'] : [];
+            $flags = array_values(array_unique(array_merge($flags, $resultFlags)));
 
             $evaluation->update([
                 'status' => 'completed',
                 'model' => $result['model'],
                 'criterion_scores' => $result['criterion_scores'],
                 'proposed_total' => $result['proposed_total'],
-                'flags' => json_encode($result['flags']),
+                'flags' => $flags,
                 'raw_response' => $result['raw_response'],
                 'completed_at' => now(),
             ]);
