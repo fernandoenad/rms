@@ -11,6 +11,7 @@ class SkillTestAiEvaluation extends Model
     ];
 
     protected $casts = [
-        'criterion_scores'=>'array','started_at'=>'datetime','completed_at'=>'datetime'
+        'criterion_scores'=>'array','flags'=>'array',
+        'started_at'=>'datetime','completed_at'=>'datetime'
     ];
 }
