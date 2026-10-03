@@ -25,34 +25,53 @@ class AssessmentCenterController extends Controller
 
     public function index()
     {
+        $now = now();
+
+        $writtenAttempts = ExamAttempt::query()
+            ->selectRaw('SUM(CASE WHEN status = 1 AND (expires_at IS NULL OR expires_at > ?) THEN 1 ELSE 0 END) as taking_now', [$now])
+            ->selectRaw('SUM(CASE WHEN status = 1 AND expires_at IS NOT NULL AND expires_at <= ? THEN 1 ELSE 0 END) as awaiting_timeout', [$now])
+            ->selectRaw('SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as submitted')
+            ->first();
+
+        $writtenGroups = AssessmentGroup::query()
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw('SUM(CASE WHEN status = 1 AND archived_at IS NULL THEN 1 ELSE 0 END) as active')
+            ->selectRaw('SUM(CASE WHEN is_paused = 1 AND archived_at IS NULL THEN 1 ELSE 0 END) as paused')
+            ->first();
+
         $written = [
-            'groups' => AssessmentGroup::count(),
-            'active_groups' => AssessmentGroup::where('status',1)->whereNull('archived_at')->count(),
-            'paused_groups' => AssessmentGroup::where('is_paused',true)->whereNull('archived_at')->count(),
+            'groups' => (int) ($writtenGroups->total ?? 0),
+            'active_groups' => (int) ($writtenGroups->active ?? 0),
+            'paused_groups' => (int) ($writtenGroups->paused ?? 0),
             'sets' => Exam::whereNull('archived_at')->count(),
-            'taking_now' => ExamAttempt::where('status',1)
-                ->where(function ($q) {
-                    $q->whereNull('expires_at')->orWhere('expires_at','>',now());
-                })->count(),
-            'awaiting_timeout' => ExamAttempt::where('status',1)
-                ->whereNotNull('expires_at')->where('expires_at','<=',now())->count(),
-            'submitted' => ExamAttempt::where('status',2)->count(),
+            'taking_now' => (int) ($writtenAttempts->taking_now ?? 0),
+            'awaiting_timeout' => (int) ($writtenAttempts->awaiting_timeout ?? 0),
+            'submitted' => (int) ($writtenAttempts->submitted ?? 0),
             'pending_item_review' => WrittenExam::where('status',1)
                 ->where('review_status','!=','approved')->count(),
         ];
 
+        $skillAttempts = SkillTestAttempt::query()
+            ->selectRaw('SUM(CASE WHEN status = 1 AND (expires_at IS NULL OR expires_at > ?) THEN 1 ELSE 0 END) as taking_now', [$now])
+            ->selectRaw('SUM(CASE WHEN status = 1 AND expires_at IS NOT NULL AND expires_at <= ? THEN 1 ELSE 0 END) as awaiting_timeout', [$now])
+            ->selectRaw('SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as submitted')
+            ->selectRaw('SUM(CASE WHEN status = 2 AND final_score IS NULL THEN 1 ELSE 0 END) as pending_human')
+            ->first();
+
+        $skillStatus = SkillTest::query()
+            ->selectRaw('SUM(CASE WHEN archived_at IS NULL THEN 1 ELSE 0 END) as total')
+            ->selectRaw('SUM(CASE WHEN status = 1 AND archived_at IS NULL THEN 1 ELSE 0 END) as published')
+            ->selectRaw('SUM(CASE WHEN is_paused = 1 AND archived_at IS NULL THEN 1 ELSE 0 END) as paused')
+            ->first();
+
         $skills = [
-            'tests' => SkillTest::whereNull('archived_at')->count(),
-            'published' => SkillTest::where('status',1)->whereNull('archived_at')->count(),
-            'paused' => SkillTest::where('is_paused',true)->whereNull('archived_at')->count(),
-            'taking_now' => SkillTestAttempt::where('status',1)
-                ->where(function ($q) {
-                    $q->whereNull('expires_at')->orWhere('expires_at','>',now());
-                })->count(),
-            'awaiting_timeout' => SkillTestAttempt::where('status',1)
-                ->whereNotNull('expires_at')->where('expires_at','<=',now())->count(),
-            'submitted' => SkillTestAttempt::where('status',2)->count(),
-            'pending_human' => SkillTestAttempt::where('status',2)->whereNull('final_score')->count(),
+            'tests' => (int) ($skillStatus->total ?? 0),
+            'published' => (int) ($skillStatus->published ?? 0),
+            'paused' => (int) ($skillStatus->paused ?? 0),
+            'taking_now' => (int) ($skillAttempts->taking_now ?? 0),
+            'awaiting_timeout' => (int) ($skillAttempts->awaiting_timeout ?? 0),
+            'submitted' => (int) ($skillAttempts->submitted ?? 0),
+            'pending_human' => (int) ($skillAttempts->pending_human ?? 0),
             'pending_ai' => SkillTestAiEvaluation::whereIn('status',['pending','processing'])->count(),
         ];
 
