@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\Setting;
 use App\Models\Vacancy;
 use OpenAI;
 use RuntimeException;
@@ -20,9 +19,10 @@ class AssessmentAiService
 
     protected function model(): string
     {
-        return config('services.openai.model')
-            ?: optional(Setting::where('item', 'ai_model_id')->first())->value
-            ?: 'gpt-4o-mini';
+        // Assessment generation/scoring must not silently inherit the legacy
+        // AI Tool fine-tuned model. Use the assessment/OpenAI environment
+        // configuration so an unrelated legacy model cannot break assessment AI.
+        return (string) (config('services.openai.model') ?: 'gpt-4o-mini');
     }
 
     protected function vacancyContext(Vacancy $vacancy, array $options = []): string
