@@ -32,6 +32,7 @@ class Exam extends Model
     public function assessmentGroup(): BelongsTo { return $this->belongsTo(AssessmentGroup::class); }
     public function writtenExams(): HasMany { return $this->hasMany(WrittenExam::class); }
     public function attempts(): HasMany { return $this->hasMany(ExamAttempt::class); }
+    public function assignments(): HasMany { return $this->hasMany(ExamAssignment::class); }
 
     public function getStatus(): string
     {
