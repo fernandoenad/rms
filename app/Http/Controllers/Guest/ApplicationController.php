@@ -134,13 +134,75 @@ class ApplicationController extends Controller
                       $sub->selectRaw('1')->from('skill_test_assignments')
                           ->whereColumn('skill_test_assignments.skill_test_id', 'skill_tests.id')
                           ->where('skill_test_assignments.application_id', $application->id);
-                  });
+                  })
+                  ->orWhereHas('attempts', fn ($attempts) => $attempts->where('application_id', $application->id));
             })
-            ->with(['attempts' => function($q) use ($application) {
-                $q->where('application_id', $application->id);
-            }])
+            ->with([
+                'skillTestGroup:id,title,status,is_paused,archived_at,score_release_policy,scores_released_at',
+                'attempts' => function($q) use ($application) {
+                    $q->where('application_id', $application->id);
+                },
+            ])
             ->orderBy('start_date')
             ->get();
+
+        $skillGroupLocks = \App\Models\SkillTestGroupAttemptLock::where('application_id',$application->id)
+            ->get()
+            ->keyBy('skill_test_group_id');
+
+        $visibleSkillTests = collect();
+
+        foreach ($skillTests->whereNull('skill_test_group_id') as $standalone) {
+            $visibleSkillTests->push($standalone);
+        }
+
+        foreach ($skillTests->whereNotNull('skill_test_group_id')->groupBy('skill_test_group_id') as $groupId => $sets) {
+            $lock = $skillGroupLocks->get($groupId);
+
+            if ($lock) {
+                $lockedSet = $sets->firstWhere('id',$lock->skill_test_id);
+
+                if (!$lockedSet) {
+                    $lockedSet = \App\Models\SkillTest::with([
+                            'skillTestGroup:id,title,status,is_paused,archived_at,score_release_policy,scores_released_at',
+                            'attempts'=>fn($q)=>$q->where('application_id',$application->id),
+                        ])
+                        ->whereKey($lock->skill_test_id)
+                        ->where('vacancy_id',$application->vacancy_id)
+                        ->first();
+                }
+
+                if ($lockedSet) $visibleSkillTests->push($lockedSet);
+                continue;
+            }
+
+            $sets = $sets->filter(fn ($set) =>
+                !$set->skillTestGroup
+                || (
+                    $set->skillTestGroup->status
+                    && !$set->skillTestGroup->archived_at
+                    && !$set->skillTestGroup->is_paused
+                )
+            );
+
+            $openSet = $sets->first(fn ($set) =>
+                $set->status == 1
+                && (!$set->start_date || now()->gte($set->start_date))
+                && (!$set->end_date || now()->lt($set->end_date))
+            );
+
+            $upcomingSet = $sets->first(fn ($set) =>
+                $set->status == 1
+                && $set->start_date
+                && now()->lt($set->start_date)
+            );
+
+            if ($openSet ?: $upcomingSet) {
+                $visibleSkillTests->push($openSet ?: $upcomingSet);
+            }
+        }
+
+        $skillTests = $visibleSkillTests->sortBy('start_date')->values();
 
         if($request->session()->get('guest_email') == $application->email){
             $oldDate = Carbon::parse($application->updated_at);
