@@ -45,6 +45,11 @@ class SkillTest extends Model
 
     public function scoresAreReleased(): bool
     {
+        if ($this->skill_test_group_id) {
+            $this->loadMissing('skillTestGroup');
+            return (bool) $this->skillTestGroup?->scoresAreReleased();
+        }
+
         if ($this->score_release_policy === 'hidden') return false;
         if ($this->score_release_policy === 'immediate') return true;
         if ($this->score_release_policy === 'after_close') {
