@@ -248,6 +248,13 @@ class SkillTestController extends Controller
             $copy->reviewed_at = null;
             $copy->review_notes = null;
             $copy->scores_released_at = null;
+            $copy->created_by = auth()->id();
+            $copy->approval_status = $this->currentUserIsAdmin() ? 'approved' : 'pending';
+            $copy->approved_by = $this->currentUserIsAdmin() ? auth()->id() : null;
+            $copy->approved_at = $this->currentUserIsAdmin() ? now() : null;
+            $copy->approval_notes = $this->currentUserIsAdmin()
+                ? 'Auto-approved because the creator is an administrator.'
+                : null;
             // Draft revisions default to selected-applicant access so they cannot
             // accidentally appear to every taken-in applicant before review.
             $copy->access_mode = 'selected_applicants';
