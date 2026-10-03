@@ -5,7 +5,7 @@
 @overwrite
 
 @section('main')
-<section class="content assessment-page">
+<section class="content assessment-page {{ !empty($largeText) ? 'assessment-large-text' : '' }}">
     <div class="container py-2">
         <div class="sticky-top bg-white border-bottom py-2 mb-3 assessment-toolbar">
             <div class="d-flex justify-content-between align-items-center">
@@ -172,6 +172,9 @@
     .option-card { cursor:pointer; background:#fff; min-height:56px; font-size:1rem; line-height:1.45; }
     .option-card:has(input:checked) { border-color:#007bff !important; background:#f0f7ff; }
     .answer-radio { transform:scale(1.25); }
+    .assessment-large-text .exam-question { font-size:1.35rem; }
+    .assessment-large-text .option-card { font-size:1.2rem; }
+    .assessment-large-text .btn { font-size:1.05rem; }
     @media (max-width:576px) {
         .container { padding-left:12px; padding-right:12px; }
         .btn-lg { padding:.65rem .8rem; font-size:.95rem; }
