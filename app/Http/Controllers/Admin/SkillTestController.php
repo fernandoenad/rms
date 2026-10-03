@@ -165,10 +165,13 @@ class SkillTestController extends Controller
             || $skillTest->expected_output !== ($data['expected_output'] ?? null);
 
         if ($taskChanged) {
-            $data['task_version'] = ((int) $skillTest->task_version) + 1;
-            $data['review_status'] = 'approved';
-            $data['reviewed_by'] = auth()->id();
-            $data['reviewed_at'] = now();
+            // Draft edits stay within the same administered version, but must
+            // be reviewed again before publication. Version numbers advance
+            // only through the explicit Create Revision workflow.
+            $data['review_status'] = 'pending_review';
+            $data['reviewed_by'] = null;
+            $data['reviewed_at'] = null;
+            $data['review_notes'] = null;
         }
 
         $skillTest->update($data);
@@ -276,7 +279,6 @@ class SkillTestController extends Controller
                     'title'=>$payload['title'],
                     'instructions'=>$payload['instructions'],
                     'expected_output'=>$payload['expected_output'] ?? null,
-                    'task_version'=>((int) $skillTest->task_version) + 1,
                     'review_status'=>'pending_review',
                     'reviewed_by'=>null,
                     'reviewed_at'=>null,
