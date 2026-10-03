@@ -191,6 +191,18 @@ class SkillTestController extends Controller
             $data['review_notes'] = null;
         }
 
+        if ($this->currentUserIsAdmin()) {
+            $data['approval_status'] = 'approved';
+            $data['approved_by'] = auth()->id();
+            $data['approved_at'] = now();
+            $data['approval_notes'] = 'Approved by administrator after editing the draft.';
+        } else {
+            $data['approval_status'] = 'pending';
+            $data['approved_by'] = null;
+            $data['approved_at'] = null;
+            $data['approval_notes'] = null;
+        }
+
         $skillTest->update($data);
 
         $governance->log('skill_test_updated', [
