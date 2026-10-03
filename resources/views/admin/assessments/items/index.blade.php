@@ -3,8 +3,15 @@
 @section('content_header')
 <div class="d-flex justify-content-between align-items-center">
     <div><h1 class="mb-0">{{ $exam->title }}</h1><small class="text-muted">Written exam items</small></div>
-    <div><a href="{{ route('admin.assessments.results',$exam) }}" class="btn btn-outline-secondary">Results</a>
-    <a href="{{ ($hasAttempts || (int)$exam->status===1) ? '#' : route('admin.assessments.items.create',$exam) }}" class="btn btn-primary {{ ($hasAttempts || (int)$exam->status===1)?'disabled':'' }}">Add Item</a></div>
+    <div>
+        @if($exam->assessment_group_id)
+            <a href="{{ route('admin.assessment_groups.edit',$exam->assessment_group_id) }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back to Group</a>
+        @else
+            <a href="{{ route('admin.assessments.edit',$exam) }}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left"></i> Back</a>
+        @endif
+        <a href="{{ route('admin.assessments.results',$exam) }}" class="btn btn-outline-secondary">Results</a>
+        <a href="{{ ($hasAttempts || (int)$exam->status===1) ? '#' : route('admin.assessments.items.create',$exam) }}" class="btn btn-primary {{ ($hasAttempts || (int)$exam->status===1)?'disabled':'' }}">Add Item</a>
+    </div>
 </div>
 @stop
 @section('content')
