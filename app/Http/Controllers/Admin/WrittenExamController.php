@@ -201,6 +201,7 @@ class WrittenExamController extends Controller
             }
 
             $exam->update(['status' => 1]);
+            $governance->recordWrittenExposure($exam->fresh());
             $governance->log('exam_published', [
                 'assessment_group_id' => $exam->assessment_group_id,
                 'exam_id' => $exam->id,
@@ -595,6 +596,10 @@ class WrittenExamController extends Controller
 
         $exam->status = $exam->status == 1 ? 0 : 1;
         $exam->save();
+
+        if ((int)$exam->status === 1) {
+            $governance->recordWrittenExposure($exam->fresh());
+        }
 
         $governance->log(
             $exam->status ? 'exam_published' : 'exam_unpublished',
