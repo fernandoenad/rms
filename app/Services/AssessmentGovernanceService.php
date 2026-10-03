@@ -31,6 +31,10 @@ class AssessmentGovernanceService
         $issues = [];
         $items = $exam->writtenExams->where('status', 1)->values();
 
+        if ($exam->approval_status !== 'approved') {
+            $issues[] = 'The written test has not received assessment-level approval.';
+        }
+
         if (!$exam->start_date || !$exam->end_date) {
             $issues[] = 'Schedule is incomplete.';
         } elseif ($exam->end_date->lte($exam->start_date)) {
@@ -144,6 +148,10 @@ class AssessmentGovernanceService
 
         $issues = [];
         $rubric = $test->rubricCriteria;
+
+        if ($test->approval_status !== 'approved') {
+            $issues[] = 'The skills test has not received assessment-level approval.';
+        }
 
         if (!$test->start_date || !$test->end_date) {
             $issues[] = 'Schedule is incomplete.';
