@@ -523,8 +523,10 @@ class SkillTestController extends Controller
         return back()->with('status', 'Skills test returned to draft.');
     }
 
-    public function results(SkillTest $skillTest)
-    {
+    public function results(
+        SkillTest $skillTest,
+        AssessmentGovernanceService $governance
+    ) {
         $dashboard = $skillTest->attempts()
             ->whereNotNull('started_at')
             ->selectRaw('COUNT(*) as attempted')
@@ -556,12 +558,25 @@ class SkillTestController extends Controller
             ->get();
 
         $retakeTests = SkillTest::where('vacancy_id', $skillTest->vacancy_id)
-            ->where('status',1)
+            ->whereIn('status',[0,1])
             ->where('access_mode','selected_applicants')
             ->where('end_date','>',now())
             ->where('id','!=',$skillTest->id)
+            ->with(['rubricCriteria','assignments:id,skill_test_id'])
             ->orderBy('start_date')
-            ->get(['id','title','code','start_date','end_date']);
+            ->get()
+            ->filter(function ($candidate) use ($governance) {
+                if ((int) $candidate->status === 1) {
+                    return true;
+                }
+
+                $readiness = $governance->skillReadiness($candidate);
+                $blocking = collect($readiness['issues'])
+                    ->reject(fn ($issue) => $issue === 'Selected-applicant mode is enabled but no applicants are assigned.');
+
+                return $blocking->isEmpty();
+            })
+            ->values();
 
         $health = [
             'queue_jobs'=>Schema::hasTable('jobs') ? DB::table('jobs')->count() : null,
@@ -750,12 +765,26 @@ class SkillTestController extends Controller
         ]);
 
         $retake = SkillTest::where('vacancy_id', $skillTest->vacancy_id)
-            ->where('status',1)
+            ->whereIn('status',[0,1])
             ->where('access_mode','selected_applicants')
+            ->where('end_date','>',now())
             ->findOrFail($data['retake_skill_test_id']);
 
         if ((int) $retake->id === (int) $skillTest->id) {
-            return back()->with('status', 'Choose a different published skills test/revision for the retake.');
+            return back()->with('status', 'Choose a different skills test/revision for the retake.');
+        }
+
+        if ((int) $retake->status === 0) {
+            $readiness = $governance->skillReadiness($retake);
+            $blocking = collect($readiness['issues'])
+                ->reject(fn ($issue) => $issue === 'Selected-applicant mode is enabled but no applicants are assigned.');
+
+            if ($blocking->isNotEmpty()) {
+                return back()->with(
+                    'status',
+                    'Retake task is not ready: '.$blocking->take(6)->implode(' ')
+                );
+            }
         }
 
         if ((int) $attempt->status === 3) {
@@ -768,6 +797,30 @@ class SkillTestController extends Controller
 
         DB::transaction(function () use ($attempt, $retake, $data, $skillTest, $governance) {
             $locked = SkillTestAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
+            $retakeLocked = SkillTest::whereKey($retake->id)->lockForUpdate()->firstOrFail();
+
+            SkillTestAssignment::firstOrCreate([
+                'skill_test_id'=>$retakeLocked->id,
+                'application_id'=>$locked->application_id,
+            ]);
+
+            if ((int) $retakeLocked->status === 0) {
+                $readiness = $governance->skillReadiness($retakeLocked->fresh());
+
+                if (!$readiness['ready']) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'retake_skill_test_id'=>'Retake task failed readiness after applicant assignment: '.implode(' ', array_slice($readiness['issues'],0,6)),
+                    ]);
+                }
+
+                $retakeLocked->update(['status'=>1]);
+
+                $governance->log('skill_retake_task_published', [
+                    'skill_test_id'=>$retakeLocked->id,
+                ], [
+                    'authorized_application_id'=>$locked->application_id,
+                ]);
+            }
 
             $locked->update([
                 'status'=>3,
@@ -776,13 +829,6 @@ class SkillTestController extends Controller
                 'void_reason'=>$data['reason'],
                 'retake_skill_test_id'=>$retake->id,
             ]);
-
-            if ($retake->access_mode === 'selected_applicants') {
-                SkillTestAssignment::firstOrCreate([
-                    'skill_test_id'=>$retake->id,
-                    'application_id'=>$locked->application_id,
-                ]);
-            }
 
             AssessmentIncident::create([
                 'skill_test_id'=>$skillTest->id,
