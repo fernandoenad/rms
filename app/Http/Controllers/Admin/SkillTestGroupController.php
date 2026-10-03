@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SkillTest;
+use App\Jobs\GenerateSkillTestSetTask;
 use App\Models\SkillTestGroup;
 use App\Models\Vacancy;
 use App\Services\AssessmentGovernanceService;
 use App\Services\AssessmentScoreSyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
@@ -275,6 +277,77 @@ class SkillTestGroupController extends Controller
         });
 
         return back()->with('status','Skills Test group settings updated.');
+    }
+
+    public function generateAllSets(
+        Request $request,
+        SkillTestGroup $skillTestGroup
+    ) {
+        abort_if($skillTestGroup->archived_at,403,'This Skills Test group is archived and frozen.');
+
+        $data = $request->validate([
+            'additional_context'=>'nullable|string|max:30000',
+            'generation_focus'=>'required|in:mixed,duties,technical,situational',
+        ]);
+
+        $contextOptions = [
+            'use_qualifications'=>$request->boolean('use_qualifications'),
+            'use_job_description'=>$request->boolean('use_job_description'),
+            'additional_context'=>trim((string)($data['additional_context'] ?? '')),
+            'generation_focus'=>$data['generation_focus'],
+        ];
+
+        if (!$contextOptions['use_qualifications']
+            && !$contextOptions['use_job_description']
+            && $contextOptions['additional_context'] === '') {
+            return back()->with('status','Select at least one vacancy context source or provide additional context.');
+        }
+
+        $sets = $skillTestGroup->skillTests()
+            ->where('status',0)
+            ->whereDoesntHave('attempts',fn($q)=>$q->whereNotNull('started_at'))
+            ->withCount('rubricCriteria')
+            ->orderBy('set_code')
+            ->get();
+
+        $targets = $sets->filter(function($set){
+            $placeholder = str_starts_with((string)$set->instructions,'Draft placeholder');
+            return $placeholder || (int)$set->rubric_criteria_count === 0;
+        })->values();
+
+        if ($targets->isEmpty()) {
+            return back()->with(
+                'status',
+                'No empty draft Skills sets are available. Existing generated/manual tasks were left untouched.'
+            );
+        }
+
+        $source = $targets->first();
+        $jobs = [];
+
+        foreach ($targets as $index=>$set) {
+            $set->update([
+                'review_status'=>'pending_review',
+                'review_notes'=>'AI generation queued...',
+                'ai_context'=>$contextOptions['additional_context'] ?: null,
+                'ai_generation_focus'=>$contextOptions['generation_focus'],
+                'ai_use_qualifications'=>$contextOptions['use_qualifications'],
+                'ai_use_job_description'=>$contextOptions['use_job_description'],
+            ]);
+
+            $jobs[] = new GenerateSkillTestSetTask(
+                $set->id,
+                $contextOptions,
+                $index === 0 ? null : $source->id
+            );
+        }
+
+        Bus::chain($jobs)->onQueue('assessment-ai')->dispatch();
+
+        return back()->with(
+            'status',
+            'AI generation queued for '.$targets->count().' Skills Test set(s). Set '.$source->set_code.' will establish the shared rubric; the remaining sets will receive distinct but equivalent tasks using that same rubric. Review and approve each set before publishing.'
+        );
     }
 
     public function releaseScores(
