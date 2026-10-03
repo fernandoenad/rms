@@ -19,6 +19,21 @@
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
 
+<div class="card border-info">
+    <div class="card-header"><strong>Applicant Accommodation</strong></div>
+    <div class="card-body">
+        <form method="post" action="{{ route('admin.assessment_groups.accommodations',$assessmentGroup) }}">@csrf
+            <div class="form-row">
+                <div class="form-group col-md-3"><label>Application code</label><input name="application_code" class="form-control" required></div>
+                <div class="form-group col-md-2"><label>Extra minutes</label><input type="number" min="0" max="240" name="extra_minutes" value="0" class="form-control" required></div>
+                <div class="form-group col-md-2"><label>Large text</label><select name="large_text" class="form-control"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="form-group col-md-5"><label>Approval note</label><input name="notes" class="form-control" placeholder="Document the approved accommodation"></div>
+            </div>
+            <button class="btn btn-sm btn-info">Save Accommodation for All Sets</button>
+        </form>
+    </div>
+</div>
+
 <div class="card card-outline {{ $assessmentGroup->is_paused ? 'card-warning' : 'card-secondary' }}">
     <div class="card-header"><strong>Operational Control</strong></div>
     <div class="card-body">
