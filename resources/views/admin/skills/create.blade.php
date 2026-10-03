@@ -24,6 +24,27 @@
             </select>
         </div>
 
+        <div class="form-row">
+            <div class="form-group col-md-8">
+                <label>Skills Test Group <span class="text-muted font-weight-normal">(optional)</span></label>
+                <select name="skill_test_group_id" id="skillTestGroupId" class="form-control">
+                    <option value="">Standalone Skills Test</option>
+                    @foreach($groups as $group)
+                        <option value="{{ $group->id }}"
+                            data-vacancy="{{ $group->vacancy_id }}"
+                            {{ old('skill_test_group_id',optional($selectedGroup)->id)==$group->id?'selected':'' }}>
+                            {{ $group->title }} — {{ optional($group->vacancy)->position_title }}
+                        </option>
+                    @endforeach
+                </select>
+                <small class="text-muted">For governed equivalent sets, the recommended workflow is Skills Test Groups → Manage Sets.</small>
+            </div>
+            <div class="form-group col-md-4">
+                <label>Set code</label>
+                <input name="set_code" value="{{ old('set_code') }}" class="form-control" placeholder="e.g. A">
+            </div>
+        </div>
+
         <div class="form-group">
             <label>Applicant score criterion</label>
             <select name="assessment_score_key" id="skillScoreKey" class="form-control">
