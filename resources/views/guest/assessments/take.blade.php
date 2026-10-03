@@ -58,8 +58,12 @@
             <button type="button" class="btn btn-primary btn-lg" id="nextBtn">Next</button>
         </div>
 
+        <button type="button" class="btn btn-success btn-lg btn-block mb-3" id="submitReviewBtn" data-toggle="modal" data-target="#submitReviewModal">
+            <i class="fas fa-check-circle mr-1"></i> Submit Assessment
+        </button>
+
         <div class="text-center text-muted small mb-5">
-            There is no early-submit button. Your saved responses will be finalized automatically when time expires.
+            You may submit early when you are finished. Your saved responses are also finalized automatically when time expires.
         </div>
     </div>
 </section>
@@ -89,6 +93,75 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="submitReviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Review Before Submission</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <div class="border rounded p-3">
+                            <div class="h4 mb-0 text-success" id="answeredCount">0</div>
+                            <small class="text-muted">Answered</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-3">
+                            <div class="h4 mb-0 text-danger" id="unansweredCount">0</div>
+                            <small class="text-muted">Unanswered</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <strong>Answered items</strong>
+                    <div class="d-flex flex-wrap mt-2" id="answeredItems"></div>
+                </div>
+
+                <div class="mb-3">
+                    <strong>Unanswered items</strong>
+                    <div class="d-flex flex-wrap mt-2" id="unansweredItems"></div>
+                </div>
+
+                <div class="alert alert-warning mb-0" id="unansweredWarning" style="display:none;">
+                    You still have unanswered items. You may return to the exam, or continue if you intentionally want to submit them unanswered.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Return to Exam</button>
+                <button type="button" class="btn btn-danger" id="continueFinalConfirmBtn">
+                    Continue to Final Confirmation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="finalConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Final Confirmation</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2"><strong>This action is final.</strong></p>
+                <p class="mb-0">
+                    Once submitted, you cannot reopen or change your answers. Are you sure you want to submit this assessment now?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">No, Go Back</button>
+                <button type="button" class="btn btn-danger" id="finalSubmitBtn">Yes, Submit Now</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @overwrite
 
 @section('css')
@@ -129,6 +202,10 @@
     const saveState = document.getElementById('saveState');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
+    const submitReviewBtn = document.getElementById('submitReviewBtn');
+    const continueFinalConfirmBtn = document.getElementById('continueFinalConfirmBtn');
+    const finalSubmitBtn = document.getElementById('finalSubmitBtn');
+    let activeSaves = 0;
 
     function setSaveState(text, css='text-muted') {
         saveState.innerHTML = '<span class="' + css + '">' + text + '</span>';
@@ -206,6 +283,8 @@
         const optionId = radio.value;
         const navBtn = navButtons[currentIndex];
 
+        activeSaves++;
+        submitReviewBtn.disabled = true;
         setSaveState('Saving…', 'text-warning');
 
         try {
@@ -226,6 +305,72 @@
             setSaveState('✓ Saved', 'text-success font-weight-bold');
         } catch (_) {
             setSaveState('! Not saved. Check your connection and tap the option again.', 'text-danger font-weight-bold');
+        } finally {
+            activeSaves = Math.max(0, activeSaves - 1);
+            submitReviewBtn.disabled = activeSaves > 0;
+        }
+    }
+
+    function buildSubmissionReview() {
+        const answered = [];
+        const unanswered = [];
+
+        items.forEach((item, index) => {
+            const checked = item.querySelector('.answer-radio:checked');
+            (checked ? answered : unanswered).push(index + 1);
+        });
+
+        document.getElementById('answeredCount').textContent = answered.length;
+        document.getElementById('unansweredCount').textContent = unanswered.length;
+
+        const answeredItems = document.getElementById('answeredItems');
+        const unansweredItems = document.getElementById('unansweredItems');
+
+        answeredItems.innerHTML = answered.length
+            ? answered.map(n => '<span class="badge badge-success p-2 m-1">Q' + n + '</span>').join('')
+            : '<span class="text-muted small">None</span>';
+
+        unansweredItems.innerHTML = unanswered.length
+            ? unanswered.map(n => '<span class="badge badge-danger p-2 m-1">Q' + n + '</span>').join('')
+            : '<span class="text-success small">All items are answered.</span>';
+
+        document.getElementById('unansweredWarning').style.display = unanswered.length ? 'block' : 'none';
+    }
+
+    async function submitManually() {
+        if (finishing) return;
+        finishing = true;
+        finalSubmitBtn.disabled = true;
+        finalSubmitBtn.textContent = 'Submitting…';
+
+        try {
+            const response = await fetch(submitUrl, {
+                method:'POST',
+                headers:{
+                    'Content-Type':'application/json',
+                    'X-CSRF-TOKEN':csrf,
+                    'Accept':'application/json'
+                },
+                body:JSON.stringify({confirmed:true})
+            });
+
+            if (!response.ok && !response.redirected) {
+                const data = await response.json().catch(() => ({}));
+                throw new Error(data.message || 'Unable to submit assessment.');
+            }
+
+            if (response.redirected) {
+                window.location.href = response.url;
+                return;
+            }
+
+            window.location.reload();
+        } catch (error) {
+            finishing = false;
+            finalSubmitBtn.disabled = false;
+            finalSubmitBtn.textContent = 'Yes, Submit Now';
+            setSaveState(error.message || 'Submission failed. Please try again.', 'text-danger font-weight-bold');
+            $('#finalConfirmModal').modal('hide');
         }
     }
 
@@ -240,6 +385,17 @@
             showItem(parseInt(btn.dataset.index,10));
             $('#questionModal').modal('hide');
         }));
+
+        $('#submitReviewModal').on('show.bs.modal', () => {
+            buildSubmissionReview();
+        });
+
+        continueFinalConfirmBtn.addEventListener('click', () => {
+            $('#submitReviewModal').modal('hide');
+            setTimeout(() => $('#finalConfirmModal').modal('show'), 200);
+        });
+
+        finalSubmitBtn.addEventListener('click', submitManually);
 
         document.querySelectorAll('.answer-radio').forEach(radio => {
             radio.addEventListener('change', () => saveAnswer(radio));
