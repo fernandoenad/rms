@@ -184,7 +184,9 @@ class WrittenExamController extends Controller
                 $contextOptions
             );
 
-            DB::transaction(function () use ($exam, $items) {
+            $created = DB::transaction(function () use ($exam, $items) {
+                $created = 0;
+
                 foreach ($items as $generated) {
                     if (!isset($generated['question'], $generated['options'], $generated['correct_index'])
                         || count($generated['options']) !== 4
@@ -220,10 +222,23 @@ class WrittenExamController extends Controller
                             'source_position' => $index + 1,
                         ]);
                     }
+
+                    $created++;
                 }
+
+                return $created;
             });
 
-            return back()->with('status', 'AI-generated items were added as reviewable exam items.');
+            if ($created === 0) {
+                throw new \RuntimeException('The AI response contained no valid assessment items.');
+            }
+
+            $message = "{$created} AI-generated item(s) were added for review.";
+            if ($created < (int) $data['count']) {
+                $message .= " Requested {$data['count']}; some returned items were invalid and were skipped.";
+            }
+
+            return back()->with('status', $message);
         } catch (\Throwable $e) {
             Log::error('Written assessment AI generation failed', [
                 'exam_id' => $exam->id,
