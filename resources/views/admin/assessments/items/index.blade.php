@@ -158,7 +158,7 @@
 </tr>
 <tr class="bg-light"><td></td><td colspan="7">
 <details><summary>Review item details</summary>
-<div class="mt-2"><strong>{{ $item->question }}</strong></div>
+<div class="mt-2"><strong class="written-stem">{{ $item->question }}</strong></div>
 <ol type="A" class="mt-2">@foreach($item->options->sortBy('source_position') as $option)<li class="{{ $option->is_correct?'text-success font-weight-bold':'' }}">{{ $option->option_text }}</li>@endforeach</ol>
 @if($item->competency_basis)<div><strong>Basis:</strong> {{ $item->competency_basis }}</div>@endif
 @if($item->rationale)<div><strong>Rationale:</strong> {{ $item->rationale }}</div>@endif
@@ -188,6 +188,12 @@
 @if($locked)<div class="alert alert-warning">Items are locked because the set is published or attempts exist. Return an unused published set to draft, or create a new equivalent/versioned set after attempts begin.</div>@endif
 @stop
 
+
+@section('css')
+<style>
+.written-stem { white-space: pre-line; display:block; line-height:1.55; }
+</style>
+@stop
 
 @section('js')
 <script>
