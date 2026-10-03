@@ -524,7 +524,7 @@ class SkillTestController extends Controller
             ->where('status',1)
             ->where('access_mode','selected_applicants')
             ->where('end_date','>',now())
-            ->whereKeyNot($skillTest->id)
+            ->where('id','!=',$skillTest->id)
             ->orderBy('start_date')
             ->get(['id','title','code','start_date','end_date']);
 
