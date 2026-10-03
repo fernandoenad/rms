@@ -44,6 +44,20 @@ return new class extends Migration
             $table->index(['status', 'voided_at'], 'skill_attempts_status_voided_idx');
         });
 
+        Schema::create('skill_test_human_scores', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('skill_test_attempt_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('skill_test_rubric_criterion_id')->constrained()->cascadeOnDelete();
+            $table->decimal('score', 7, 2);
+            $table->text('notes')->nullable();
+            $table->foreignId('evaluator_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamps();
+            $table->unique(
+                ['skill_test_attempt_id', 'skill_test_rubric_criterion_id'],
+                'skill_human_score_unique'
+            );
+        });
+
         Schema::table('assessment_incidents', function (Blueprint $table) {
             $table->foreignId('skill_test_id')->nullable()->after('exam_attempt_id')
                 ->constrained('skill_tests')->cascadeOnDelete();
@@ -63,6 +77,8 @@ return new class extends Migration
 
     public function down(): void
     {
+        Schema::dropIfExists('skill_test_human_scores');
+
         Schema::table('assessment_audit_logs', function (Blueprint $table) {
             $table->dropIndex('assessment_audit_skill_action_idx');
             $table->dropConstrainedForeignId('skill_test_rubric_criterion_id');
