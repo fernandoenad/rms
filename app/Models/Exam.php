@@ -16,7 +16,7 @@ class Exam extends Model
         'start_date', 'end_date', 'duration', 'access_mode',
         'shuffle_items', 'shuffle_options', 'status',
         'is_paused', 'pause_reason', 'paused_at', 'paused_by', 'archived_at', 'archived_by',
-        'approval_status', 'approved_by', 'approved_at', 'approval_notes',
+        'approval_status', 'approved_by', 'approved_at', 'approval_notes', 'assessment_score_key',
         'ai_context', 'ai_generation_focus',
         'ai_use_qualifications', 'ai_use_job_description',
     ];
