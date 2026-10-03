@@ -18,8 +18,13 @@ class ScoreSkillTestSubmission implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 3;
+    public int $timeout = 240;
+    public array $backoff = [30, 120, 300];
 
-    public function __construct(public int $attemptId) {}
+    public function __construct(public int $attemptId)
+    {
+        $this->onQueue('assessment-ai');
+    }
 
     protected function docxText(string $path): string
     {
