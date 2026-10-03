@@ -46,10 +46,20 @@ class SkillTestAttemptController extends Controller
             return back()->with('status_assessment','This skills test is not currently open.');
         }
 
-        $attempt = SkillTestAttempt::firstOrCreate(
-            ['skill_test_id'=>$skillTest->id,'application_id'=>$application->id],
-            ['status'=>0]
-        );
+        try {
+            $attempt = SkillTestAttempt::firstOrCreate(
+                ['skill_test_id'=>$skillTest->id,'application_id'=>$application->id],
+                ['status'=>0]
+            );
+        } catch (\Illuminate\Database\QueryException $e) {
+            $attempt = SkillTestAttempt::where('skill_test_id',$skillTest->id)
+                ->where('application_id',$application->id)
+                ->firstOrFail();
+        }
+
+        if ((int)$attempt->status === 3) {
+            return back()->with('status_assessment','This skills-test attempt was voided. Use the specifically authorized retake task.');
+        }
 
         if ((int)$attempt->status === 0) {
             $started = now();
@@ -72,7 +82,7 @@ class SkillTestAttemptController extends Controller
 
     protected function finalizeIfExpired(SkillTestAttempt $attempt): bool
     {
-        if ((int)$attempt->status === 2) return true;
+        if (in_array((int)$attempt->status, [2,3], true)) return true;
         if ($attempt->expires_at && now()->gte($attempt->expires_at)) {
             $this->finalize($attempt);
             return true;
@@ -85,13 +95,30 @@ class SkillTestAttemptController extends Controller
         $queueAi = false;
 
         DB::transaction(function () use ($attempt, &$queueAi) {
-            $locked = SkillTestAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
-            if ((int)$locked->status === 2) return;
+            $locked = SkillTestAttempt::with('skillTest')
+                ->whereKey($attempt->id)
+                ->lockForUpdate()
+                ->firstOrFail();
 
-            $submission = SkillTestSubmission::firstOrCreate(
-                ['skill_test_attempt_id'=>$locked->id,'version'=>1],
-                []
-            );
+            if ((int)$locked->status === 2) return;
+            if ((int)$locked->status === 3) {
+                throw new \RuntimeException('Voided attempts cannot be finalized.');
+            }
+
+            $submission = SkillTestSubmission::where('skill_test_attempt_id',$locked->id)
+                ->orderByDesc('version')
+                ->first();
+
+            if (!$submission) {
+                $submission = SkillTestSubmission::create([
+                    'skill_test_attempt_id'=>$locked->id,
+                    'version'=>1,
+                ]);
+            }
+
+            SkillTestSubmission::where('skill_test_attempt_id',$locked->id)
+                ->update(['is_final'=>false]);
+
             $submission->update(['is_final'=>true,'submitted_at'=>now()]);
             $locked->update(['status'=>2,'submitted_at'=>now()]);
             $queueAi = (bool) $locked->skillTest->ai_scoring;
@@ -106,6 +133,11 @@ class SkillTestAttemptController extends Controller
     public function take(Request $request, SkillTestAttempt $attempt)
     {
         $attempt = $this->ownedAttempt($request,$attempt);
+
+        if ((int)$attempt->status === 3) {
+            return redirect()->route('guest.applications.show',$attempt->application)
+                ->with('status_assessment','This skills-test attempt was voided. Use the authorized retake task.');
+        }
 
         if ($this->finalizeIfExpired($attempt)) {
             return redirect()->route('guest.applications.show',$attempt->application)
@@ -124,13 +156,32 @@ class SkillTestAttemptController extends Controller
         if ($this->finalizeIfExpired($attempt)) return response()->json(['expired'=>true],409);
 
         $data = $request->validate(['inline_response'=>'nullable|string|max:100000']);
-        $submission = SkillTestSubmission::firstOrCreate(
-            ['skill_test_attempt_id'=>$attempt->id,'version'=>1],
-            []
-        );
-        $submission->update(['inline_response'=>$data['inline_response'] ?? null]);
 
-        return response()->json(['message'=>'Saved','saved_at'=>now()->toIso8601String()]);
+        $savedAt = DB::transaction(function () use ($attempt, $data) {
+            $locked = SkillTestAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
+
+            if ((int)$locked->status !== 1) {
+                throw new \RuntimeException('Attempt is no longer editable.');
+            }
+
+            $submission = SkillTestSubmission::where('skill_test_attempt_id',$locked->id)
+                ->where('is_final',false)
+                ->orderByDesc('version')
+                ->first();
+
+            if (!$submission) {
+                $submission = SkillTestSubmission::create([
+                    'skill_test_attempt_id'=>$locked->id,
+                    'version'=>1,
+                ]);
+            }
+
+            $submission->update(['inline_response'=>$data['inline_response'] ?? null]);
+
+            return now()->toIso8601String();
+        });
+
+        return response()->json(['message'=>'Saved','saved_at'=>$savedAt]);
     }
 
     public function upload(Request $request, SkillTestAttempt $attempt)
@@ -144,23 +195,37 @@ class SkillTestAttemptController extends Controller
             'file'=>'required|file|max:'.$test->max_file_size_kb.'|mimes:'.implode(',',$extensions),
         ]);
 
-        $submission = SkillTestSubmission::firstOrCreate(
-            ['skill_test_attempt_id'=>$attempt->id,'version'=>1],
-            []
-        );
-
-        if ($submission->file_path) Storage::disk('local')->delete($submission->file_path);
-
         $file = $data['file'];
         $path = $file->store('skill-tests/'.$test->id.'/'.$attempt->id,'local');
-        $submission->update([
-            'file_path'=>$path,
-            'original_filename'=>$file->getClientOriginalName(),
-            'mime_type'=>$file->getMimeType(),
-            'file_size'=>$file->getSize(),
-        ]);
 
-        return back()->with('status_assessment','File uploaded and saved.');
+        DB::transaction(function () use ($attempt, $file, $path) {
+            $locked = SkillTestAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
+
+            if ((int)$locked->status !== 1) {
+                Storage::disk('local')->delete($path);
+                throw new \RuntimeException('Attempt is no longer editable.');
+            }
+
+            $latest = SkillTestSubmission::where('skill_test_attempt_id',$locked->id)
+                ->where('is_final',false)
+                ->orderByDesc('version')
+                ->first();
+
+            $nextVersion = ((int) optional($latest)->version) + 1;
+
+            SkillTestSubmission::create([
+                'skill_test_attempt_id'=>$locked->id,
+                'version'=>$nextVersion,
+                'inline_response'=>optional($latest)->inline_response,
+                'file_path'=>$path,
+                'original_filename'=>$file->getClientOriginalName(),
+                'mime_type'=>$file->getMimeType(),
+                'file_size'=>$file->getSize(),
+                'is_final'=>false,
+            ]);
+        });
+
+        return back()->with('status_assessment','File uploaded as a new submission version. Previous uploads are retained for audit history.');
     }
 
     public function submit(Request $request, SkillTestAttempt $attempt)
@@ -169,6 +234,11 @@ class SkillTestAttemptController extends Controller
         if ((int)$attempt->status === 2) {
             return redirect()->route('guest.applications.show',$attempt->application)
                 ->with('status_assessment','Skills test already submitted.');
+        }
+
+        if ((int)$attempt->status === 3) {
+            return redirect()->route('guest.applications.show',$attempt->application)
+                ->with('status_assessment','This attempt was voided and cannot be submitted.');
         }
 
         $submission = $attempt->submissions->sortByDesc('version')->first();
