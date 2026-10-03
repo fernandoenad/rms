@@ -90,6 +90,23 @@ class AssessmentCenterController extends Controller
             'high_exposure'=>AssessmentContentBank::whereNull('retired_at')->where('usage_count','>=',4)->count(),
         ];
 
+        $alerts = [];
+
+        if (($queue['assessment_ai'] ?? 0) >= 500) {
+            $alerts[] = ['level'=>'warning','message'=>'Assessment AI queue backlog is 500 or more jobs. Consider adding assessment-ai workers within provider/server limits.'];
+        }
+        if (($queue['failed'] ?? 0) > 0) {
+            $alerts[] = ['level'=>'danger','message'=>'Failed background jobs require review before a high-stakes assessment window.'];
+        }
+        if (($written['awaiting_timeout'] + $skills['awaiting_timeout']) > 0) {
+            $alerts[] = ['level'=>'warning','message'=>'Expired attempts are waiting for finalization. Confirm the scheduler is healthy.'];
+        }
+        foreach ($performance as $label=>$metrics) {
+            if (($metrics['p95_ms'] ?? 0) >= 2000 && ($metrics['samples'] ?? 0) >= 5) {
+                $alerts[] = ['level'=>'warning','message'=>str_replace('_',' ',$label).' P95 save latency is at least 2 seconds.'];
+            }
+        }
+
         $heartbeatRaw = Cache::get('assessment-center:scheduler-heartbeat');
         $heartbeat = $heartbeatRaw ? now()->parse($heartbeatRaw) : null;
         $schedulerHealthy = $heartbeat && $heartbeat->gte(now()->subMinutes(3));
@@ -122,6 +139,7 @@ class AssessmentCenterController extends Controller
             'queue',
             'performance',
             'bank',
+            'alerts',
             'heartbeat',
             'schedulerHealthy',
             'groups',
