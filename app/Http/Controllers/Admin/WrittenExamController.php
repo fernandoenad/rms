@@ -32,6 +32,11 @@ class WrittenExamController extends Controller
         return (int) optional(optional(auth()->user())->role)->level === 1;
     }
 
+    protected function ensureNotArchived(Exam $exam): void
+    {
+        abort_if($exam->archived_at, 403, 'This assessment is archived and frozen.');
+    }
+
     public function index()
     {
         $exams = Exam::with(['vacancy:id,position_title', 'assessmentGroup:id,title'])
@@ -164,6 +169,7 @@ class WrittenExamController extends Controller
         Exam $exam,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($exam);
         if ($exam->attempts()->whereNotNull('started_at')->exists()) {
             return back()->with('status', 'Exam settings are locked after an attempt has started. Create a new governed set/version instead.');
         }
@@ -275,6 +281,7 @@ class WrittenExamController extends Controller
         AssessmentAiService $ai,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($exam);
         if ((int) $exam->status === 1) {
             return back()->with('status', 'Return the set to draft before generating or changing items.');
         }
@@ -476,6 +483,7 @@ class WrittenExamController extends Controller
         Exam $exam,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($exam);
         $data = $request->validate(['application_codes' => 'required|string']);
         $codes = collect(preg_split('/[\s,;]+/', $data['application_codes']))
             ->map(fn($x) => trim($x))->filter()->unique()->values();
@@ -558,6 +566,7 @@ class WrittenExamController extends Controller
         Exam $exam,
         AssessmentGovernanceService $governance
     ) {
+        $this->ensureNotArchived($exam);
         abort_unless($this->currentUserIsAdmin(), 403);
 
         $data = $request->validate([
@@ -583,6 +592,7 @@ class WrittenExamController extends Controller
 
     public function toggleStatus(Exam $exam, AssessmentGovernanceService $governance)
     {
+        $this->ensureNotArchived($exam);
         if ((int) $exam->status !== 1) {
             $readiness = $governance->readiness($exam);
 
