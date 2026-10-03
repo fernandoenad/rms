@@ -20,7 +20,7 @@ class GenerateWrittenExamItemsBatch implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $tries = 2;
-    public int $timeout = 240;
+    public int $timeout = 600;
 
     public function __construct(
         public int $runId,
@@ -37,7 +37,7 @@ class GenerateWrittenExamItemsBatch implements ShouldQueue
             return;
         }
 
-        Cache::lock('assessment-ai-generation-exam-'.$exam->id, 300)->block(30, function () use ($run, $exam, $ai) {
+        Cache::lock('assessment-ai-generation-exam-'.$exam->id, 600)->block(480, function () use ($run, $exam, $ai) {
             $run->refresh();
 
             if (!in_array($run->status, ['queued', 'processing'], true)) {
@@ -149,9 +149,15 @@ class GenerateWrittenExamItemsBatch implements ShouldQueue
         $run->refresh();
 
         if ((int) $run->completed_batches >= (int) $run->batch_count) {
-            $run->update([
-                'status' => (int) $run->failed_batches > 0 ? 'completed_with_errors' : 'completed',
-            ]);
+            $status = 'completed';
+
+            if ((int) $run->failed_batches > 0) {
+                $status = 'completed_with_errors';
+            } elseif ((int) $run->generated_count < (int) $run->requested_count) {
+                $status = 'completed_partial';
+            }
+
+            $run->update(['status' => $status]);
         }
     }
 }
