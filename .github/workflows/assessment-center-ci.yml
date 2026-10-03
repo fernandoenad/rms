@@ -51,3 +51,8 @@ jobs:
 
       - name: Validate Laravel route boot
         run: php artisan route:list > /tmp/routes.txt
+
+      - name: Validate k6 script syntax
+        run: |
+          node --check loadtests/k6/written-assessment.js
+          node --check loadtests/k6/skills-test.js
