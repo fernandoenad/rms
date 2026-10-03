@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\AssessmentAuditLog;
 use App\Models\AssessmentContentBank;
 use App\Models\AssessmentGroup;
+use App\Models\AssessmentSnapshot;
 use App\Models\Exam;
 use App\Models\SkillTest;
 use App\Models\WrittenExam;
@@ -26,6 +27,68 @@ class AssessmentGovernanceService
             'user_id' => auth()->id(),
             'action' => $action,
             'metadata' => $metadata ?: null,
+        ]);
+    }
+
+    public function snapshotExam(Exam $exam, string $event): AssessmentSnapshot
+    {
+        $exam->loadMissing(['vacancy','assessmentGroup','writtenExams.options']);
+
+        return AssessmentSnapshot::create([
+            'target_type'=>'written_exam',
+            'assessment_group_id'=>$exam->assessment_group_id,
+            'exam_id'=>$exam->id,
+            'event'=>$event,
+            'snapshot'=>[
+                'exam'=>$exam->only([
+                    'id','vacancy_id','assessment_group_id','title','code','set_code',
+                    'start_date','end_date','duration','access_mode','shuffle_items',
+                    'shuffle_options','status','approval_status'
+                ]),
+                'group'=>$exam->assessmentGroup?->only(['id','title','code','blueprint','blueprint_version']),
+                'items'=>$exam->writtenExams->map(fn ($item) => [
+                    'id'=>$item->id,
+                    'question'=>$item->question,
+                    'solo_level'=>$item->solo_level,
+                    'difficulty'=>$item->difficulty,
+                    'competency_basis'=>$item->competency_basis,
+                    'review_status'=>$item->review_status,
+                    'options'=>$item->options->map(fn ($option) => [
+                        'id'=>$option->id,
+                        'text'=>$option->option_text,
+                        'is_correct'=>(bool)$option->is_correct,
+                    ])->values()->all(),
+                ])->values()->all(),
+            ],
+            'created_by'=>auth()->id(),
+        ]);
+    }
+
+    public function snapshotSkill(SkillTest $test, string $event): AssessmentSnapshot
+    {
+        $test->loadMissing(['vacancy','rubricCriteria']);
+
+        return AssessmentSnapshot::create([
+            'target_type'=>'skill_test',
+            'skill_test_id'=>$test->id,
+            'event'=>$event,
+            'snapshot'=>[
+                'test'=>$test->only([
+                    'id','vacancy_id','title','code','task_version','instructions','expected_output',
+                    'start_date','end_date','duration','access_mode','submission_modes',
+                    'allowed_extensions','max_file_size_kb','ai_scoring','score_release_policy',
+                    'status','approval_status','review_status'
+                ]),
+                'rubric'=>$test->rubricCriteria->map(fn ($criterion) => [
+                    'id'=>$criterion->id,
+                    'criterion'=>$criterion->criterion,
+                    'description'=>$criterion->description,
+                    'max_points'=>$criterion->max_points,
+                    'criterion_version'=>$criterion->criterion_version,
+                    'review_status'=>$criterion->review_status,
+                ])->values()->all(),
+            ],
+            'created_by'=>auth()->id(),
         ]);
     }
 
