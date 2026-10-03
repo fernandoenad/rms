@@ -1,0 +1,41 @@
+name: Assessment Center CI
+
+on:
+  push:
+    branches:
+      - feature/assessment-center-upgrade
+  pull_request:
+
+jobs:
+  php-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, json, tokenizer, zip, pdo_sqlite
+          coverage: none
+
+      - name: Validate Composer files
+        run: composer validate --no-check-publish
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan optimize:clear
+
+      - name: PHP syntax check
+        run: find app routes database config -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Validate Laravel route boot
+        run: php artisan route:list > /tmp/routes.txt
