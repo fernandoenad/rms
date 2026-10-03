@@ -1295,6 +1295,12 @@ class SkillTestController extends Controller
         AssessmentScoreSyncService $scoreSync
     ) {
         $this->ensureNotArchived($skillTest);
+
+        if ($skillTest->skill_test_group_id) {
+            return redirect()->route('admin.skill_groups.edit',$skillTest->skill_test_group_id)
+                ->with('status','Equivalent-set score release is controlled at the Skills Test Group level.');
+        }
+
         if ($skillTest->score_release_policy !== 'manual') {
             return back()->with('status', 'Manual release is available only when the policy is Manual.');
         }
@@ -1320,6 +1326,11 @@ class SkillTestController extends Controller
         AssessmentGovernanceService $governance
     ) {
         $this->ensureNotArchived($skillTest);
+
+        if ($skillTest->skill_test_group_id) {
+            return redirect()->route('admin.skill_groups.edit',$skillTest->skill_test_group_id)
+                ->with('status','Equivalent-set score release is controlled at the Skills Test Group level.');
+        }
         if (in_array($skillTest->score_release_policy, ['immediate','after_close'], true)) {
             return back()->with('status', 'This policy releases automatically. Change the policy to Manual or Hidden first.');
         }
