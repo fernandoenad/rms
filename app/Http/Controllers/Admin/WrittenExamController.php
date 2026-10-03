@@ -159,6 +159,9 @@ class WrittenExamController extends Controller
             $copy->title = $exam->title . ' - Copy';
             $copy->code = ($exam->code ?: 'WE-' . $exam->id) . '-COPY-' . now()->format('His');
             $copy->enrollment_key = strtoupper(Str::random(8));
+            // Generic duplication creates a standalone draft. Use the Assessment
+            // Group "Add Equivalent Set" workflow for governed parallel sets.
+            $copy->assessment_group_id = null;
             $copy->set_code = null;
             $copy->status = 0;
             $copy->start_date = null;
@@ -188,7 +191,11 @@ class WrittenExamController extends Controller
 
     public function generateAi(Request $request, Exam $exam, AssessmentAiService $ai)
     {
-        if ($exam->attempts()->exists()) {
+        if ((int) $exam->status === 1) {
+            return back()->with('status', 'Return the set to draft before generating or changing items.');
+        }
+
+        if ($exam->attempts()->whereNotNull('started_at')->exists()) {
             return back()->with('status', 'Cannot generate items after attempts exist. Duplicate the exam as a new set.');
         }
 
