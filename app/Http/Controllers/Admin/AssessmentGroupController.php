@@ -463,6 +463,29 @@ class AssessmentGroupController extends Controller
         );
     }
 
+    public function destroy(AssessmentGroup $assessmentGroup)
+    {
+        abort_unless($this->currentUserIsAdmin(), 403);
+
+        if ($assessmentGroup->exams()->whereHas('attempts')->exists()
+            || $assessmentGroup->attemptLocks()->exists()) {
+            return back()->with(
+                'status',
+                'Cannot delete this Written Assessment Group because an applicant has already started or been locked to one of its sets. Archive it instead.'
+            );
+        }
+
+        DB::transaction(function () use ($assessmentGroup) {
+            // Exams use nullOnDelete for the group FK, so delete the empty sets
+            // explicitly to avoid leaving orphaned standalone tests.
+            $assessmentGroup->exams()->get()->each->delete();
+            $assessmentGroup->delete();
+        });
+
+        return redirect()->route('admin.assessment_groups.index')
+            ->with('status','Written Assessment Group and all of its unattempted sets were deleted.');
+    }
+
     public function createEquivalentSet(
         Request $request,
         AssessmentGroup $assessmentGroup,
