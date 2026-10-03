@@ -12,7 +12,7 @@ class SkillTest extends Model
         'review_status','reviewed_by','reviewed_at','review_notes',
         'instructions','expected_output','start_date','end_date',
         'duration','access_mode','submission_modes','allowed_extensions','max_file_size_kb',
-        'ai_scoring','score_release_policy','assessment_score_key','scores_released_at',
+        'ai_scoring','score_release_policy','assessment_score_key','scores_synced_at','scores_released_at',
         'ai_context','ai_generation_focus','ai_use_qualifications','ai_use_job_description',
         'status','approval_status','approved_by','approved_at','approval_notes',
         'is_paused','pause_reason','paused_at','paused_by','archived_at','archived_by'
@@ -21,7 +21,7 @@ class SkillTest extends Model
     protected $casts = [
         'start_date'=>'datetime','end_date'=>'datetime','submission_modes'=>'array',
         'allowed_extensions'=>'array','ai_scoring'=>'boolean',
-        'reviewed_at'=>'datetime','scores_released_at'=>'datetime',
+        'reviewed_at'=>'datetime','scores_released_at'=>'datetime','scores_synced_at'=>'datetime',
         'ai_use_qualifications'=>'boolean','ai_use_job_description'=>'boolean',
         'approved_at'=>'datetime','is_paused'=>'boolean','paused_at'=>'datetime','archived_at'=>'datetime'
     ];
