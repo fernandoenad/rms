@@ -102,6 +102,33 @@ class SkillTestAttemptController extends Controller
             }
 
             if (!$existingLock) {
+                $candidates = SkillTest::where('skill_test_group_id',$skillTest->skill_test_group_id)
+                    ->where('vacancy_id',$application->vacancy_id)
+                    ->where('status',1)
+                    ->where(function($q){
+                        $q->whereNull('start_date')->orWhere('start_date','<=',now());
+                    })
+                    ->where(function($q){
+                        $q->whereNull('end_date')->orWhere('end_date','>',now());
+                    })
+                    ->where(function($q) use ($application) {
+                        $q->where('access_mode','all_taken_in')
+                          ->orWhereExists(function($sub) use ($application) {
+                              $sub->selectRaw('1')->from('skill_test_assignments')
+                                  ->whereColumn('skill_test_assignments.skill_test_id','skill_tests.id')
+                                  ->where('skill_test_assignments.application_id',$application->id);
+                          });
+                    })
+                    ->orderBy('set_code')
+                    ->get(['id']);
+
+                if ($candidates->isNotEmpty()) {
+                    $index = abs(crc32($skillTest->skill_test_group_id.':'.$application->id)) % $candidates->count();
+                    if ((int)$candidates[$index]->id !== (int)$skillTest->id) {
+                        abort(403,'This application is assigned to another equivalent Skills Test set.');
+                    }
+                }
+
                 try {
                     SkillTestGroupAttemptLock::create([
                         'skill_test_group_id'=>$skillTest->skill_test_group_id,
