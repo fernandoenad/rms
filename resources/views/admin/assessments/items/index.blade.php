@@ -120,7 +120,10 @@
     <div class="form-group col-md-2 d-flex align-items-end"><button id="generateAiBtn" class="btn btn-primary btn-block"><i class="fas fa-magic mr-1"></i> Generate</button></div>
 </div>
 <div class="d-flex justify-content-between flex-wrap">
-    <small class="text-muted">Generated items remain reviewable before use. The AI is instructed not to invent unsupported policies, duties, thresholds, or procedures.</small>
+    <div>
+        <small class="text-danger font-weight-bold d-block">Generating again replaces all current draft items in this test.</small>
+        <small class="text-muted">The previous items are cleared first, and only the newest generation is populated. Generated items remain reviewable before use.</small>
+    </div>
     <small id="soloTotal" class="font-weight-bold"></small>
 </div>
 </form>
@@ -350,8 +353,17 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        const existingItemCount = {{ (int)$items->count() }};
+        if (existingItemCount > 0 && !confirm(
+            'Generate a new item set? This will permanently clear the current ' +
+            existingItemCount + ' draft item(s) and replace them with the new AI generation.'
+        )) {
+            event.preventDefault();
+            return;
+        }
+
         button.disabled = true;
-        button.innerHTML = '<span class="spinner-border spinner-border-sm mr-1"></span> Queuing…';
+        button.innerHTML = '<span class="spinner-border spinner-border-sm mr-1"></span> Clearing & Queuing…';
         generationCard.style.display = '';
         liveStatus.innerHTML = '<i class="fas fa-clock mr-1"></i> Queuing…';
     });
