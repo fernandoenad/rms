@@ -74,7 +74,7 @@ class AssessmentScoreSyncService
                 }
             });
 
-        $group->forceFill(['scores_synced_at'=>now()])->save();
+        $group->forceFill(['scores_synced_at'=>$skipped === 0 ? now() : null])->save();
 
         return compact('synced','skipped');
     }
@@ -127,7 +127,7 @@ class AssessmentScoreSyncService
                 }
             });
 
-        $test->forceFill(['scores_synced_at'=>now()])->save();
+        $test->forceFill(['scores_synced_at'=>$skipped === 0 ? now() : null])->save();
 
         return compact('synced','skipped');
     }
