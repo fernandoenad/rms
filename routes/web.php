@@ -107,6 +107,8 @@ Route::post('/skills/attempts/{attempt}/inline', [GuestSkillTestAttempt::class, 
     ->middleware('throttle:skill-save')->name('guest.skills.attempts.inline');
 Route::post('/skills/attempts/{attempt}/upload', [GuestSkillTestAttempt::class, 'upload'])
     ->middleware('throttle:skill-upload')->name('guest.skills.attempts.upload');
+Route::post('/skills/attempts/{attempt}/event', [GuestSkillTestAttempt::class, 'eventLog'])
+    ->middleware('throttle:assessment-event')->name('guest.skills.attempts.event');
 Route::post('/skills/attempts/{attempt}/submit', [GuestSkillTestAttempt::class, 'submit'])
     ->middleware('throttle:skill-submit')->name('guest.skills.attempts.submit');
 
@@ -175,6 +177,10 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/assessment-groups/{assessmentGroup}/analytics', [AdminAssessmentGroup::class, 'analytics'])->name('admin.assessment_groups.analytics');
     Route::get('/admin/assessment-groups/{assessmentGroup}/export', [AdminAssessmentGroup::class, 'exportCsv'])->name('admin.assessment_groups.export');
     Route::post('/admin/assessment-groups/{assessmentGroup}/equivalent-set', [AdminAssessmentGroup::class, 'createEquivalentSet'])->name('admin.assessment_groups.equivalent_set');
+    Route::post('/admin/assessment-groups/{assessmentGroup}/pause', [AdminAssessmentGroup::class, 'pause'])->name('admin.assessment_groups.pause');
+    Route::post('/admin/assessment-groups/{assessmentGroup}/resume', [AdminAssessmentGroup::class, 'resume'])->name('admin.assessment_groups.resume');
+    Route::post('/admin/assessment-groups/{assessmentGroup}/archive', [AdminAssessmentGroup::class, 'archive'])->name('admin.assessment_groups.archive');
+    Route::post('/admin/assessment-groups/{assessmentGroup}/attempts/{attempt}/extend', [AdminAssessmentGroup::class, 'extendAttempt'])->name('admin.assessment_groups.attempts.extend');
     Route::post('/admin/assessment-groups/{assessmentGroup}/release-scores', [AdminAssessmentGroup::class, 'releaseScores'])->name('admin.assessment_groups.release_scores');
     Route::post('/admin/assessment-groups/{assessmentGroup}/hide-scores', [AdminAssessmentGroup::class, 'hideScores'])->name('admin.assessment_groups.hide_scores');
     Route::post('/admin/assessment-groups/{assessmentGroup}/incidents', [AdminAssessmentGroup::class, 'incident'])->name('admin.assessment_groups.incidents.store');
@@ -189,6 +195,9 @@ Route::group(['middleware' => ['active']], function () {
     Route::put('/admin/assessment/{exam}', [AdminWrittenExam::class, 'update'])->name('admin.assessments.update');
     Route::put('/admin/assessment/{exam}/toggle', [AdminWrittenExam::class, 'toggleStatus'])->name('admin.assessments.toggle');
     Route::post('/admin/assessment/{exam}/approve', [AdminWrittenExam::class, 'approve'])->name('admin.assessments.approve');
+    Route::post('/admin/assessment/{exam}/pause', [AdminWrittenExam::class, 'pause'])->name('admin.assessments.pause');
+    Route::post('/admin/assessment/{exam}/resume', [AdminWrittenExam::class, 'resume'])->name('admin.assessments.resume');
+    Route::post('/admin/assessment/{exam}/archive', [AdminWrittenExam::class, 'archive'])->name('admin.assessments.archive');
     Route::post('/admin/assessment/{exam}/duplicate', [AdminWrittenExam::class, 'duplicate'])->name('admin.assessments.duplicate');
     Route::post('/admin/assessment/{exam}/ai-generate', [AdminWrittenExam::class, 'generateAi'])->name('admin.assessments.ai_generate');
     Route::post('/admin/assessment/{exam}/assign', [AdminWrittenExam::class, 'assignApplicants'])->name('admin.assessments.assign');
@@ -222,6 +231,10 @@ Route::group(['middleware' => ['active']], function () {
     Route::post('/admin/skills/{skillTest}/assign', [AdminSkillTest::class, 'assignApplicants'])->name('admin.skills.assign');
     Route::post('/admin/skills/{skillTest}/toggle', [AdminSkillTest::class, 'toggleStatus'])->name('admin.skills.toggle');
     Route::post('/admin/skills/{skillTest}/approve', [AdminSkillTest::class, 'approve'])->name('admin.skills.approve');
+    Route::post('/admin/skills/{skillTest}/pause', [AdminSkillTest::class, 'pause'])->name('admin.skills.pause');
+    Route::post('/admin/skills/{skillTest}/resume', [AdminSkillTest::class, 'resume'])->name('admin.skills.resume');
+    Route::post('/admin/skills/{skillTest}/archive', [AdminSkillTest::class, 'archive'])->name('admin.skills.archive');
+    Route::post('/admin/skills/{skillTest}/attempts/{attempt}/extend', [AdminSkillTest::class, 'extendAttempt'])->name('admin.skills.attempts.extend');
     Route::get('/admin/skills/{skillTest}/results', [AdminSkillTest::class, 'results'])->name('admin.skills.results');
     Route::get('/admin/skills/{skillTest}/export', [AdminSkillTest::class, 'exportCsv'])->name('admin.skills.export');
     Route::get('/admin/skills/{skillTest}/submissions/{submission}/download', [AdminSkillTest::class, 'downloadSubmission'])->name('admin.skills.submissions.download');
