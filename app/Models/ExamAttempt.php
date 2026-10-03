@@ -32,4 +32,6 @@ class ExamAttempt extends Model
     public function answers(): HasMany { return $this->hasMany(ExamAttemptAnswer::class); }
     public function itemOrders(): HasMany { return $this->hasMany(ExamAttemptItemOrder::class); }
     public function events(): HasMany { return $this->hasMany(AssessmentAttemptEvent::class); }
+    public function timeExtensions(): HasMany { return $this->hasMany(AssessmentTimeExtension::class); }
+    public function scoreChanges(): HasMany { return $this->hasMany(AssessmentScoreChange::class); }
 }
