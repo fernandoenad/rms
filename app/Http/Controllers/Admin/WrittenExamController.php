@@ -341,7 +341,8 @@ class WrittenExamController extends Controller
                 ->all();
         }
 
-        if ((int) $data['count'] > 20) {
+        // All AI generation is queued so model latency never occupies a web request.
+        if ((int) $data['count'] >= 1) {
             $exam->update([
                 'ai_context' => $contextOptions['additional_context'] ?: null,
                 'ai_generation_focus' => $contextOptions['generation_focus'],
