@@ -93,8 +93,9 @@ HARD RULES:
 6. Avoid all/none-of-the-above, trivial clues, duplicated wording that reveals the answer, unnecessary negatives, and irrelevant trivia.
 7. Favor application, judgment, and job-relevant scenarios over pure recall when supported by the job.
 8. Return a concise rationale and the job/qualification basis for internal reviewer use.
-9. Do not mention that the item was AI-generated.
-10. Output VALID JSON ONLY, no markdown.
+9. Difficulty must be exactly one of: easy, moderate, difficult.
+10. Do not mention that the item was AI-generated.
+11. Output VALID JSON ONLY, no markdown.
 
 JSON shape:
 {"items":[{"question":"...","options":["...","...","...","..."],"correct_index":0,"solo_level":"relational","difficulty":"moderate","competency_basis":"...","rationale":"..."}]}
