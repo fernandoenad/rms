@@ -22,8 +22,11 @@
 <div class="card"><div class="card-header"><strong>Upload File</strong></div><div class="card-body">
 <form method="post" enctype="multipart/form-data" action="{{ route('guest.skills.attempts.upload',$attempt) }}">@csrf
 <input type="file" name="file" class="form-control-file mb-2" required>
-@if($submission && $submission->original_filename)<div class="small text-success mb-2">✓ Saved file: {{ $submission->original_filename }}</div>@endif
-<button class="btn btn-outline-primary btn-block">Upload / Replace File</button>
+@if($submission && $submission->original_filename)
+<div class="small text-success mb-2">✓ Latest saved file (v{{ $submission->version }}): {{ $submission->original_filename }}</div>
+@endif
+<button class="btn btn-outline-primary btn-block">Upload New Version</button>
+<small class="text-muted d-block mt-2">Previous uploaded versions are retained in the audit history.</small>
 </form></div></div>
 @endif
 
@@ -38,11 +41,133 @@
 @section('js')
 <script>
 (() => {
-let seconds={{ (int)$remainingSeconds }}, timer=document.getElementById('skillTimer');
-function tick(){let m=Math.floor(Math.max(seconds,0)/60),s=Math.max(seconds,0)%60;timer.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');if(seconds<=0){location.reload();return;}seconds--;setTimeout(tick,1000)} tick();
-const box=document.getElementById('inlineResponse'), state=document.getElementById('inlineSave');
-let t;
-if(box){box.addEventListener('input',()=>{state.textContent='Saving…';clearTimeout(t);t=setTimeout(async()=>{try{let r=await fetch(@json(route('guest.skills.attempts.inline',$attempt)),{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':@json(csrf_token()),'Accept':'application/json'},body:JSON.stringify({inline_response:box.value})});if(!r.ok)throw 0;state.textContent='✓ Saved';state.className='float-right small text-success';}catch(e){state.textContent='Not saved — check connection';state.className='float-right small text-danger';}},1200)})}
+    let seconds={{ (int)$remainingSeconds }};
+    const timer=document.getElementById('skillTimer');
+    const box=document.getElementById('inlineResponse');
+    const state=document.getElementById('inlineSave');
+    const saveUrl=@json(route('guest.skills.attempts.inline',$attempt));
+    const csrf=@json(csrf_token());
+    const pendingKey='rms_skill_{{ $attempt->id }}_pending_inline';
+    let debounceTimer=null;
+    let saving=false;
+    let pendingValue=null;
+
+    function tick(){
+        const m=Math.floor(Math.max(seconds,0)/60);
+        const s=Math.max(seconds,0)%60;
+        timer.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+
+        if(seconds<=0){
+            location.reload();
+            return;
+        }
+
+        seconds--;
+        setTimeout(tick,1000);
+    }
+
+    async function persistInline(value){
+        pendingValue=value;
+        localStorage.setItem(pendingKey,value);
+
+        if(saving || !navigator.onLine) {
+            if(state){
+                state.textContent='Waiting for connection…';
+                state.className='float-right small text-warning';
+            }
+            return;
+        }
+
+        saving=true;
+
+        try {
+            while(pendingValue !== null && navigator.onLine){
+                const current=pendingValue;
+                pendingValue=null;
+
+                if(state){
+                    state.textContent='Saving…';
+                    state.className='float-right small text-warning';
+                }
+
+                const response=await fetch(saveUrl,{
+                    method:'POST',
+                    headers:{
+                        'Content-Type':'application/json',
+                        'X-CSRF-TOKEN':csrf,
+                        'Accept':'application/json'
+                    },
+                    body:JSON.stringify({inline_response:current})
+                });
+
+                if(response.status===409){
+                    location.reload();
+                    return;
+                }
+
+                if(!response.ok){
+                    throw new Error('save failed');
+                }
+
+                if(pendingValue===null){
+                    localStorage.removeItem(pendingKey);
+                    if(state){
+                        state.textContent='✓ Saved';
+                        state.className='float-right small text-success';
+                    }
+                }
+            }
+        } catch(e){
+            if(state){
+                state.textContent='Not saved — will retry when connected';
+                state.className='float-right small text-danger';
+            }
+        } finally {
+            saving=false;
+
+            if(pendingValue !== null && navigator.onLine){
+                setTimeout(()=>persistInline(pendingValue),800);
+            }
+        }
+    }
+
+    tick();
+
+    if(box){
+        const recovered=localStorage.getItem(pendingKey);
+        if(recovered !== null && recovered !== box.value){
+            box.value=recovered;
+            if(state){
+                state.textContent='Recovered unsaved response — saving…';
+                state.className='float-right small text-warning';
+            }
+            persistInline(recovered);
+        }
+
+        box.addEventListener('input',()=>{
+            clearTimeout(debounceTimer);
+            localStorage.setItem(pendingKey,box.value);
+            if(state){
+                state.textContent='Waiting to save…';
+                state.className='float-right small text-muted';
+            }
+            debounceTimer=setTimeout(()=>persistInline(box.value),900);
+        });
+
+        window.addEventListener('online',()=>{
+            const pending=localStorage.getItem(pendingKey);
+            if(pending !== null){
+                persistInline(pending);
+            }
+        });
+
+        window.addEventListener('offline',()=>{
+            if(state){
+                state.textContent='Offline — response kept on this device';
+                state.className='float-right small text-warning';
+            }
+        });
+    }
 })();
 </script>
 @overwrite
