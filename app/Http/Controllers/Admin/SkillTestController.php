@@ -27,6 +27,11 @@ class SkillTestController extends Controller
         $this->middleware('auth');
     }
 
+    protected function currentUserIsAdmin(): bool
+    {
+        return (int) optional(optional(auth()->user())->role)->level === 1;
+    }
+
     public function index(AssessmentGovernanceService $governance)
     {
         $tests = SkillTest::with([
