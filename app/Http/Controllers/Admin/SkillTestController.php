@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\AssessmentAuditLog;
 use App\Models\AssessmentIncident;
+use App\Models\AssessmentScoreChange;
+use App\Models\AssessmentTimeExtension;
 use App\Models\SkillTest;
 use App\Models\SkillTestAssignment;
 use App\Models\SkillTestAttempt;
@@ -603,6 +605,9 @@ class SkillTestController extends Controller
                 'submissions',
                 'aiEvaluations',
                 'humanScores',
+                'events' => fn ($q) => $q->orderByDesc('event_at')->limit(20),
+                'timeExtensions' => fn ($q) => $q->with('creator:id,name,email')->orderByDesc('id'),
+                'scoreChanges' => fn ($q) => $q->with('changer:id,name,email')->orderByDesc('id'),
             ])
             ->whereNotNull('started_at')
             ->whereIn('status', [1,2,3])
@@ -724,10 +729,21 @@ class SkillTestController extends Controller
                 );
             }
 
+            $previous = $attempt->final_score;
+
             $attempt->update([
                 'final_score'=>round($total, 2),
                 'finalized_by'=>auth()->id(),
                 'evaluated_at'=>now(),
+            ]);
+
+            AssessmentScoreChange::create([
+                'skill_test_attempt_id'=>$attempt->id,
+                'previous_score'=>$previous,
+                'new_score'=>round($total,2),
+                'source'=>'human',
+                'reason'=>$previous === null ? 'Initial human rubric finalization.' : 'Human rubric score updated.',
+                'changed_by'=>auth()->id(),
             ]);
         });
 
@@ -857,10 +873,21 @@ class SkillTestController extends Controller
                         );
                     }
 
+                    $previous = $locked->final_score;
+
                     $locked->update([
                         'final_score'=>round($total, 2),
                         'finalized_by'=>auth()->id(),
                         'evaluated_at'=>now(),
+                    ]);
+
+                    AssessmentScoreChange::create([
+                        'skill_test_attempt_id'=>$locked->id,
+                        'previous_score'=>$previous,
+                        'new_score'=>round($total,2),
+                        'source'=>'ai_approved',
+                        'reason'=>'AI rubric proposal approved in bulk by an administrator/evaluator.',
+                        'changed_by'=>auth()->id(),
                     ]);
 
                     return true;
@@ -1059,6 +1086,115 @@ class SkillTestController extends Controller
         });
 
         return back()->with('status', 'Original skills attempt retained as voided; retake authorized on the selected published task.');
+    }
+
+    public function pause(
+        Request $request,
+        SkillTest $skillTest,
+        AssessmentGovernanceService $governance
+    ) {
+        $data = $request->validate(['reason'=>'required|string|max:3000']);
+
+        if ($skillTest->archived_at) {
+            return back()->with('status', 'Archived skills tests cannot be paused.');
+        }
+
+        $skillTest->update([
+            'is_paused'=>true,
+            'pause_reason'=>$data['reason'],
+            'paused_at'=>now(),
+            'paused_by'=>auth()->id(),
+        ]);
+
+        $governance->log('skill_test_paused', [
+            'skill_test_id'=>$skillTest->id,
+        ], ['reason'=>$data['reason'], 'scope'=>'new_starts']);
+
+        return back()->with('status', 'New skills-test starts are paused. Existing in-progress attempts may continue.');
+    }
+
+    public function resume(
+        SkillTest $skillTest,
+        AssessmentGovernanceService $governance
+    ) {
+        $skillTest->update([
+            'is_paused'=>false,
+            'pause_reason'=>null,
+            'paused_at'=>null,
+            'paused_by'=>null,
+        ]);
+
+        $governance->log('skill_test_resumed', ['skill_test_id'=>$skillTest->id]);
+
+        return back()->with('status', 'Skills test resumed for new starts.');
+    }
+
+    public function archive(
+        SkillTest $skillTest,
+        AssessmentGovernanceService $governance
+    ) {
+        if ($skillTest->attempts()->where('status',1)->exists()) {
+            return back()->with('status', 'Cannot archive while skills-test attempts are in progress.');
+        }
+
+        $skillTest->update([
+            'status'=>0,
+            'is_paused'=>false,
+            'archived_at'=>now(),
+            'archived_by'=>auth()->id(),
+        ]);
+
+        $governance->log('skill_test_archived', ['skill_test_id'=>$skillTest->id]);
+
+        return redirect()->route('admin.assessment_center.index')
+            ->with('status', 'Skills test archived and frozen.');
+    }
+
+    public function extendAttempt(
+        Request $request,
+        SkillTest $skillTest,
+        SkillTestAttempt $attempt,
+        AssessmentGovernanceService $governance
+    ) {
+        abort_unless((int)$attempt->skill_test_id === (int)$skillTest->id, 404);
+
+        $data = $request->validate([
+            'minutes'=>'required|integer|min:1|max:240',
+            'reason'=>'required|string|max:3000',
+        ]);
+
+        $extension = DB::transaction(function () use ($attempt, $data) {
+            $locked = SkillTestAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
+
+            if ((int)$locked->status !== 1 || !$locked->expires_at) {
+                return null;
+            }
+
+            $locked->update([
+                'expires_at'=>$locked->expires_at->copy()->addMinutes((int)$data['minutes']),
+            ]);
+
+            return AssessmentTimeExtension::create([
+                'skill_test_attempt_id'=>$locked->id,
+                'minutes'=>(int)$data['minutes'],
+                'reason'=>$data['reason'],
+                'created_by'=>auth()->id(),
+            ]);
+        });
+
+        if (!$extension) {
+            return back()->with('status', 'Only active, timed attempts can receive an extension.');
+        }
+
+        $governance->log('skill_attempt_time_extended', [
+            'skill_test_id'=>$skillTest->id,
+        ], [
+            'attempt_id'=>$attempt->id,
+            'minutes'=>(int)$data['minutes'],
+            'reason'=>$data['reason'],
+        ]);
+
+        return back()->with('status', "Added {$data['minutes']} minute(s) to the selected skills-test attempt.");
     }
 
     public function downloadSubmission(
