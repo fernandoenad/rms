@@ -163,6 +163,23 @@ Output VALID JSON ONLY:
 {"title":"...","instructions":"...","expected_output":"...","rubric":[{"criterion":"...","description":"...","max_points":40}]}
 PROMPT;
 
+        $avoidTasks = collect($contextOptions['avoid_tasks'] ?? [])
+            ->filter(fn($row)=>is_array($row))
+            ->take(25)
+            ->values();
+
+        $avoidBlock = $avoidTasks->isNotEmpty()
+            ? "\n\nEXISTING EQUIVALENT TASKS — create a clearly different task that measures the same level of job performance. Do not duplicate or closely paraphrase these:\n"
+                .$avoidTasks->map(fn($row,$i)=>($i+1).". ".($row['title'] ?? '')." — ".mb_substr((string)($row['instructions'] ?? ''),0,1200))->implode("\n")
+            : '';
+
+        $sharedRubric = $contextOptions['shared_rubric'] ?? null;
+        $rubricBlock = $sharedRubric
+            ? "\n\nSHARED ANALYTIC RUBRIC FOR ALL EQUIVALENT SETS:\n"
+                .json_encode($sharedRubric, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)
+                ."\nCreate a different but equivalent task that can be scored fairly using EXACTLY these rubric dimensions and point weights. Return the same rubric unchanged."
+            : '';
+
         $response = $this->client()->chat()->create([
             'model' => $this->model(),
             'messages' => [
@@ -170,7 +187,10 @@ PROMPT;
                 ['role' => 'user', 'content' =>
                     $this->vacancyContext($vacancy, $contextOptions)
                     . "\n\nDuration: {$durationMinutes} minutes."
+                    . $rubricBlock
+                    . $avoidBlock
                     . "\nCreate a defensible performance task aligned to the supplied context and generation focus."
+                    . "\nFor equivalent sets, keep the workload, complexity, expected evidence, and scoring demand comparable while changing the task context/output enough to reduce answer sharing."
                 ],
             ],
         ]);
