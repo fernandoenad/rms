@@ -262,7 +262,13 @@
                                         </div>
                                     @endforeach
 
-                                    <button class="btn btn-sm btn-success">Save Human Rubric Scores</button>
+                                    @if($attempt->final_score !== null)
+                                        <div class="form-group mt-2">
+                                            <label class="small">Reason for changing the finalized score</label>
+                                            <textarea name="change_reason" class="form-control form-control-sm" rows="2" required placeholder="Document the validated reason for this score revision."></textarea>
+                                        </div>
+                                    @endif
+                                    <button class="btn btn-sm btn-success">{{ $attempt->final_score !== null ? 'Update Final Score' : 'Save Human Rubric Scores' }}</button>
                                 </form>
                                 @endif
 
