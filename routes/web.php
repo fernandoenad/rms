@@ -185,6 +185,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/assessment/{exam}/edit', [AdminWrittenExam::class, 'edit'])->name('admin.assessments.edit');
     Route::put('/admin/assessment/{exam}', [AdminWrittenExam::class, 'update'])->name('admin.assessments.update');
     Route::put('/admin/assessment/{exam}/toggle', [AdminWrittenExam::class, 'toggleStatus'])->name('admin.assessments.toggle');
+    Route::post('/admin/assessment/{exam}/approve', [AdminWrittenExam::class, 'approve'])->name('admin.assessments.approve');
     Route::post('/admin/assessment/{exam}/duplicate', [AdminWrittenExam::class, 'duplicate'])->name('admin.assessments.duplicate');
     Route::post('/admin/assessment/{exam}/ai-generate', [AdminWrittenExam::class, 'generateAi'])->name('admin.assessments.ai_generate');
     Route::post('/admin/assessment/{exam}/assign', [AdminWrittenExam::class, 'assignApplicants'])->name('admin.assessments.assign');
@@ -217,6 +218,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::put('/admin/skills/{skillTest}/rubric/{criterion}/review', [AdminSkillTest::class, 'reviewCriterion'])->name('admin.skills.rubric.review');
     Route::post('/admin/skills/{skillTest}/assign', [AdminSkillTest::class, 'assignApplicants'])->name('admin.skills.assign');
     Route::post('/admin/skills/{skillTest}/toggle', [AdminSkillTest::class, 'toggleStatus'])->name('admin.skills.toggle');
+    Route::post('/admin/skills/{skillTest}/approve', [AdminSkillTest::class, 'approve'])->name('admin.skills.approve');
     Route::get('/admin/skills/{skillTest}/results', [AdminSkillTest::class, 'results'])->name('admin.skills.results');
     Route::get('/admin/skills/{skillTest}/export', [AdminSkillTest::class, 'exportCsv'])->name('admin.skills.export');
     Route::get('/admin/skills/{skillTest}/submissions/{submission}/download', [AdminSkillTest::class, 'downloadSubmission'])->name('admin.skills.submissions.download');
