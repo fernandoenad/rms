@@ -19,6 +19,12 @@
 @stop
 
 @section('content')
+@foreach($alerts as $alert)
+<div class="alert alert-{{ $alert['level'] }} py-2">
+    <i class="fas fa-exclamation-triangle mr-1"></i>{{ $alert['message'] }}
+</div>
+@endforeach
+
 <div class="row">
     <div class="col-lg-3 col-6">
         <div class="small-box bg-info">
