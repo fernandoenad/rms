@@ -123,8 +123,8 @@
               onsubmit="return confirm('Approve the selected AI-proposed scores as human-final scores?');">
             @csrf
             <input type="hidden" name="scope" value="selected">
-            <button class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-check"></i> Approve Selected
+            <button class="btn btn-outline-primary btn-sm" id="approveSelectedBtn" disabled>
+                <i class="fas fa-check"></i> Approve Selected (<span id="selectedScoreCount">0</span>)
             </button>
         </form>
     </div>
@@ -143,7 +143,7 @@
         <table class="table table-hover mb-0">
             <thead>
                 <tr>
-                    <th style="width:36px">Select</th>
+                    <th style="width:36px"><input type="checkbox" id="selectAllEligible" aria-label="Select all eligible scores"></th>
                     <th>Applicant</th>
                     <th>Status</th>
                     <th>Started / Submitted</th>
@@ -336,6 +336,33 @@
 @section('js')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const selectAll = document.getElementById('selectAllEligible');
+    const selectedCount = document.getElementById('selectedScoreCount');
+    const approveSelectedBtn = document.getElementById('approveSelectedBtn');
+    const scoreCheckboxes = Array.from(document.querySelectorAll('input[name="attempt_ids[]"][form="bulkApproveSelected"]'));
+
+    function refreshSelectionState() {
+        const checked = scoreCheckboxes.filter(input => input.checked).length;
+        selectedCount.textContent = checked;
+        approveSelectedBtn.disabled = checked === 0;
+
+        if (selectAll) {
+            selectAll.checked = scoreCheckboxes.length > 0 && checked === scoreCheckboxes.length;
+            selectAll.indeterminate = checked > 0 && checked < scoreCheckboxes.length;
+            selectAll.disabled = scoreCheckboxes.length === 0;
+        }
+    }
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            scoreCheckboxes.forEach(input => input.checked = selectAll.checked);
+            refreshSelectionState();
+        });
+    }
+
+    scoreCheckboxes.forEach(input => input.addEventListener('change', refreshSelectionState));
+    refreshSelectionState();
+
     const checkbox = document.getElementById('autoRefresh');
     const key = 'rms_skill_test_{{ $skillTest->id }}_auto_refresh';
     checkbox.checked = localStorage.getItem(key) === '1';
