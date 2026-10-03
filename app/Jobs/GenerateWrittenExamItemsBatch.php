@@ -78,6 +78,14 @@ class GenerateWrittenExamItemsBatch implements ShouldQueue
                     $contextOptions
                 );
 
+                // The administrator may have requested a newer generation while
+                // this API call was in flight. Re-check immediately before
+                // persistence so a superseded run cannot restore stale items.
+                $run->refresh();
+                if (!in_array($run->status, ['queued','processing'], true)) {
+                    return;
+                }
+
                 $created = DB::transaction(function () use ($exam, $items) {
                     $created = 0;
 
