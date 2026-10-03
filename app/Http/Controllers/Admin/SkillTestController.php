@@ -371,6 +371,11 @@ class SkillTestController extends Controller
 
         if (($data['score_release_policy'] ?? $skillTest->score_release_policy) !== $skillTest->score_release_policy) {
             $data['scores_released_at'] = null;
+            $data['scores_synced_at'] = null;
+        }
+
+        if (($data['assessment_score_key'] ?? null) !== $skillTest->assessment_score_key) {
+            $data['scores_synced_at'] = null;
         }
 
         $taskChanged =
@@ -448,6 +453,7 @@ class SkillTestController extends Controller
             $copy->reviewed_at = null;
             $copy->review_notes = null;
             $copy->scores_released_at = null;
+            $copy->scores_synced_at = null;
             $copy->created_by = auth()->id();
             $copy->approval_status = $this->currentUserIsAdmin() ? 'approved' : 'pending';
             $copy->approved_by = $this->currentUserIsAdmin() ? auth()->id() : null;
@@ -910,7 +916,8 @@ class SkillTestController extends Controller
         Request $request,
         SkillTest $skillTest,
         SkillTestAttempt $attempt,
-        AssessmentGovernanceService $governance
+        AssessmentGovernanceService $governance,
+        AssessmentScoreSyncService $scoreSync
     ) {
         abort_unless((int) $attempt->skill_test_id === (int) $skillTest->id, 404);
 
@@ -977,20 +984,29 @@ class SkillTestController extends Controller
             ]);
         });
 
+        $attempt->refresh();
+        $synced = $scoreSync->syncSkillAttempt($attempt);
+
         $governance->log('skill_human_score_finalized', [
             'skill_test_id'=>$skillTest->id,
         ], [
             'attempt_id'=>$attempt->id,
             'final_score'=>round($total, 2),
+            'applicant_score_synced'=>$synced,
         ]);
 
-        return back()->with('status', 'Human rubric scores saved. Final score: '.number_format($total,2).'/100.');
+        return back()->with(
+            'status',
+            'Human rubric scores saved. Final score: '.number_format($total,2).'/100.'
+            .($synced ? ' The official score was also written to the applicant assessment record.' : '')
+        );
     }
 
     public function approveAiScores(
         Request $request,
         SkillTest $skillTest,
-        AssessmentGovernanceService $governance
+        AssessmentGovernanceService $governance,
+        AssessmentScoreSyncService $scoreSync
     ) {
         $data = $request->validate([
             'scope'=>'required|in:all,selected',
@@ -1025,11 +1041,14 @@ class SkillTestController extends Controller
 
         $approved = 0;
         $skipped = 0;
+        $synced = 0;
 
         $query->with(['aiEvaluations'])->orderBy('id')->chunkById(100, function ($attempts) use (
             $criteria,
+            $scoreSync,
             &$approved,
-            &$skipped
+            &$skipped,
+            &$synced
         ) {
             foreach ($attempts as $attempt) {
                 $evaluation = $attempt->aiEvaluations
@@ -1125,6 +1144,10 @@ class SkillTestController extends Controller
 
                 if ($didApprove) {
                     $approved++;
+                    $attempt->refresh();
+                    if ($scoreSync->syncSkillAttempt($attempt)) {
+                        $synced++;
+                    }
                 } else {
                     $skipped++;
                 }
@@ -1137,11 +1160,13 @@ class SkillTestController extends Controller
             'scope'=>$data['scope'],
             'approved'=>$approved,
             'skipped'=>$skipped,
+            'applicant_scores_synced'=>$synced,
         ]);
 
         return back()->with(
             'status',
             "{$approved} AI-proposed score(s) approved as human-final scores."
+            .($synced ? " {$synced} official score(s) were also written to applicant assessment records." : '')
             .($skipped ? " {$skipped} attempt(s) were skipped because the AI rubric result was incomplete or invalid." : '')
         );
     }
