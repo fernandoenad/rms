@@ -165,7 +165,6 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/assessment/{exam}/edit', [AdminWrittenExam::class, 'edit'])->name('admin.assessments.edit');
     Route::put('/admin/assessment/{exam}', [AdminWrittenExam::class, 'update'])->name('admin.assessments.update');
     Route::put('/admin/assessment/{exam}/toggle', [AdminWrittenExam::class, 'toggleStatus'])->name('admin.assessments.toggle');
-    Route::put('/admin/assessment/{exam}/regenerate-key', [AdminWrittenExam::class, 'regenerateKey'])->name('admin.assessments.regenerate_key');
     Route::post('/admin/assessment/{exam}/duplicate', [AdminWrittenExam::class, 'duplicate'])->name('admin.assessments.duplicate');
     Route::post('/admin/assessment/{exam}/ai-generate', [AdminWrittenExam::class, 'generateAi'])->name('admin.assessments.ai_generate');
     Route::post('/admin/assessment/{exam}/assign', [AdminWrittenExam::class, 'assignApplicants'])->name('admin.assessments.assign');
