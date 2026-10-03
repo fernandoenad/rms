@@ -7,6 +7,7 @@ use App\Models\Exam;
 use App\Models\WrittenExam;
 use App\Models\WrittenExamOption;
 use Illuminate\Http\Request;
+use App\Services\AssessmentGovernanceService;
 use Illuminate\Support\Facades\DB;
 
 class WrittenExamItemController extends Controller
@@ -18,7 +19,11 @@ class WrittenExamItemController extends Controller
 
     protected function ensureMutable(Exam $exam): void
     {
-        if ($exam->attempts()->exists()) {
+        if ((int) $exam->status === 1) {
+            abort(403, 'Published sets are immutable. Return the set to draft before changing items.');
+        }
+
+        if ($exam->attempts()->whereNotNull('started_at')->exists()) {
             abort(403, 'Cannot modify exam items after attempts exist. Create a new exam set/version instead.');
         }
     }
@@ -97,20 +102,33 @@ class WrittenExamItemController extends Controller
             'answer_key' => 'required|in:A,B,C,D,a,b,c,d',
         ]);
 
-        DB::transaction(function () use ($item, $data) {
-            $item->update([
-                'question' => $data['question'],
-                'option_a' => $data['option_a'],
-                'option_b' => $data['option_b'],
-                'option_c' => $data['option_c'],
-                'option_d' => $data['option_d'],
-                'answer_key' => strtoupper($data['answer_key']),
-            ]);
-            $this->syncOptions($item, $data);
+        $newItem = DB::transaction(function () use ($item, $data, $exam) {
+            $item->update(['status' => 0]);
+
+            $newItem = $item->replicate();
+            $newItem->exam_id = $exam->id;
+            $newItem->question = $data['question'];
+            $newItem->option_a = $data['option_a'];
+            $newItem->option_b = $data['option_b'];
+            $newItem->option_c = $data['option_c'];
+            $newItem->option_d = $data['option_d'];
+            $newItem->answer_key = strtoupper($data['answer_key']);
+            $newItem->item_version = ((int) $item->item_version) + 1;
+            $newItem->supersedes_item_id = $item->id;
+            $newItem->review_status = 'pending_review';
+            $newItem->reviewed_by = null;
+            $newItem->reviewed_at = null;
+            $newItem->review_notes = null;
+            $newItem->status = 1;
+            $newItem->save();
+
+            $this->syncOptions($newItem, $data);
+
+            return $newItem;
         });
 
         return redirect()->route('admin.assessments.items.index', $exam)
-            ->with('status', 'Item updated.');
+            ->with('status', "Item revised as version {$newItem->item_version}. Review and approve the new version before publishing.");
     }
 
     public function destroy(Exam $exam, WrittenExam $item)
@@ -146,6 +164,9 @@ class WrittenExamItemController extends Controller
                 'option_c' => $data['option_c'],
                 'option_d' => $data['option_d'],
                 'answer_key' => strtoupper($data['answer_key']),
+                'review_status' => 'approved',
+                'reviewed_by' => auth()->id(),
+                'reviewed_at' => now(),
                 'status' => 1,
             ]);
             $this->syncOptions($item, $data);
@@ -186,6 +207,9 @@ class WrittenExamItemController extends Controller
                     'exam_id' => $exam->id,
                     'enrollment_key' => $exam->enrollment_key,
                     ...$payload,
+                    'review_status' => 'approved',
+                    'reviewed_by' => auth()->id(),
+                    'reviewed_at' => now(),
                     'status' => 1,
                 ]);
                 $this->syncOptions($item, $payload);
@@ -197,6 +221,40 @@ class WrittenExamItemController extends Controller
 
         return redirect()->route('admin.assessments.items.index', $exam)
             ->with('status', "Imported {$created} items.");
+    }
+
+    public function review(
+        Request $request,
+        Exam $exam,
+        WrittenExam $item,
+        AssessmentGovernanceService $governance
+    ) {
+        $this->ensureMutable($exam);
+        abort_unless((int) $item->exam_id === (int) $exam->id, 404);
+
+        $data = $request->validate([
+            'decision' => 'required|in:approved,rejected,pending_review',
+            'review_notes' => 'nullable|string|max:5000',
+        ]);
+
+        $item->update([
+            'review_status' => $data['decision'],
+            'reviewed_by' => auth()->id(),
+            'reviewed_at' => now(),
+            'review_notes' => $data['review_notes'] ?? null,
+            'status' => $data['decision'] === 'rejected' ? 0 : $item->status,
+        ]);
+
+        $governance->log('item_reviewed', [
+            'assessment_group_id' => $exam->assessment_group_id,
+            'exam_id' => $exam->id,
+            'written_exam_id' => $item->id,
+        ], [
+            'decision' => $data['decision'],
+            'version' => $item->item_version,
+        ]);
+
+        return back()->with('status', 'Item review decision saved.');
     }
 
     public function toggleStatus(Exam $exam, WrittenExam $item)
