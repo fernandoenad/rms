@@ -22,4 +22,6 @@ class SkillTestAttempt extends Model
     public function application(): BelongsTo { return $this->belongsTo(Application::class); }
     public function submissions(): HasMany { return $this->hasMany(SkillTestSubmission::class); }
     public function aiEvaluations(): HasMany { return $this->hasMany(SkillTestAiEvaluation::class); }
+    public function humanScores(): HasMany { return $this->hasMany(SkillTestHumanScore::class); }
 }
+
