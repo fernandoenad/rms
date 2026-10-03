@@ -12,7 +12,7 @@ class SkillTest extends Model
         'review_status','reviewed_by','reviewed_at','review_notes',
         'instructions','expected_output','start_date','end_date',
         'duration','access_mode','submission_modes','allowed_extensions','max_file_size_kb',
-        'ai_scoring','score_release_policy','scores_released_at',
+        'ai_scoring','score_release_policy','assessment_score_key','scores_released_at',
         'ai_context','ai_generation_focus','ai_use_qualifications','ai_use_job_description',
         'status','approval_status','approved_by','approved_at','approval_notes',
         'is_paused','pause_reason','paused_at','paused_by','archived_at','archived_by'
