@@ -861,6 +861,38 @@ class SkillTestController extends Controller
         return back()->with('status',$message);
     }
 
+    public function destroy(SkillTest $skillTest)
+    {
+        abort_unless($this->currentUserIsAdmin(), 403);
+
+        if ($skillTest->attempts()->exists()) {
+            return back()->with('status','Cannot delete a Skills Test after any applicant has attempted it. Archive it instead.');
+        }
+
+        if (SkillTestGroupAttemptLock::where('skill_test_id',$skillTest->id)->exists()) {
+            return back()->with('status','Cannot delete this set because an applicant is already locked to it.');
+        }
+
+        $group = $skillTest->skillTestGroup;
+
+        if ($group && $group->skillTests()->count() <= 1) {
+            return back()->with('status','This is the last set in the group. Delete the Skills Test Group instead.');
+        }
+
+        DB::transaction(function () use ($skillTest,$group) {
+            $skillTest->delete();
+
+            if ($group) {
+                $group->update([
+                    'expected_sets'=>$group->skillTests()->count(),
+                ]);
+            }
+        });
+
+        return redirect()->route('admin.skills.index')
+            ->with('status','Skills Test deleted. No applicant attempts were affected.');
+    }
+
     public function approve(
         Request $request,
         SkillTest $skillTest,
