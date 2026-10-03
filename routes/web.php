@@ -230,6 +230,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::put('/admin/assessment/{exam}/items/{item}', [AdminWrittenExamItem::class, 'update'])->name('admin.assessments.items.update');
     Route::put('/admin/assessment/{exam}/items/{item}/toggle', [AdminWrittenExamItem::class, 'toggleStatus'])->name('admin.assessments.items.toggle');
     Route::put('/admin/assessment/{exam}/items/{item}/review', [AdminWrittenExamItem::class, 'review'])->middleware('assessment.capability:reviewer')->name('admin.assessments.items.review');
+    Route::post('/admin/assessment/{exam}/items/approve-generated', [AdminWrittenExamItem::class, 'approveGenerated'])->middleware('assessment.capability:reviewer')->name('admin.assessments.items.approve_generated');
     Route::delete('/admin/assessment/{exam}/items/{item}', [AdminWrittenExamItem::class, 'destroy'])->name('admin.assessments.items.destroy');
     Route::post('/admin/applications/{application}/assessment/{exam}/start', [\App\Http\Controllers\Admin\ExamAttemptController::class, 'start'])->name('admin.assessments.attempts.start');
     Route::get('/admin/assessments/attempts/{attempt}', [\App\Http\Controllers\Admin\ExamAttemptController::class, 'take'])->name('admin.assessments.attempts.take');
