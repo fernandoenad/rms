@@ -42,6 +42,10 @@ class SkillTestAttemptController extends Controller
     {
         $this->authorizeAccess($request,$application,$skillTest);
 
+        if ($skillTest->archived_at || $skillTest->is_paused) {
+            return back()->with('status_assessment','New starts are temporarily unavailable for this skills test.');
+        }
+
         if (now()->lt($skillTest->start_date) || now()->gte($skillTest->end_date)) {
             return back()->with('status_assessment','This skills test is not currently open.');
         }
