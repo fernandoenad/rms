@@ -86,11 +86,18 @@ Route::get('/applications/my', [GuestApplication::class, 'my'])->name('guest.app
 Route::get('/applications/{application}', [GuestApplication::class, 'show'])->name('guest.applications.show');
 Route::post('/applications/{application}/inquire', [GuestApplication::class, 'inquire'])->name('guest.applications.inquire');
 Route::post('/applications/{application}/inquire2', [OpenAIController::class, 'inquire2'])->name('guest.applications.inquire2');
-Route::post('/applications/{application}/assessment/{exam}/start', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'start'])->name('guest.assessments.attempts.start');
-Route::get('/assessments/attempts/{attempt}', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'take'])->name('guest.assessments.attempts.take');
-Route::post('/assessments/attempts/{attempt}/answer', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'saveAnswer'])->name('guest.assessments.attempts.answer');
-Route::post('/assessments/attempts/{attempt}/submit', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'submit'])->name('guest.assessments.attempts.submit');
-Route::post('/assessments/attempts/{attempt}/event', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'eventLog'])->name('guest.assessments.attempts.event');
+Route::post('/applications/{application}/assessment/{exam}/start', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'start'])
+    ->middleware('throttle:30,1')->name('guest.assessments.attempts.start');
+Route::get('/assessments/attempts/{attempt}', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'take'])
+    ->middleware('throttle:120,1')->name('guest.assessments.attempts.take');
+Route::get('/assessments/attempts/{attempt}/review', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'reviewStatus'])
+    ->middleware('throttle:60,1')->name('guest.assessments.attempts.review');
+Route::post('/assessments/attempts/{attempt}/answer', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'saveAnswer'])
+    ->middleware('throttle:180,1')->name('guest.assessments.attempts.answer');
+Route::post('/assessments/attempts/{attempt}/submit', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'submit'])
+    ->middleware('throttle:20,1')->name('guest.assessments.attempts.submit');
+Route::post('/assessments/attempts/{attempt}/event', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'eventLog'])
+    ->middleware('throttle:60,1')->name('guest.assessments.attempts.event');
 Route::post('/applications/{application}/skills/{skillTest}/start', [GuestSkillTestAttempt::class, 'start'])->name('guest.skills.start');
 Route::get('/skills/attempts/{attempt}', [GuestSkillTestAttempt::class, 'take'])->name('guest.skills.attempts.take');
 Route::post('/skills/attempts/{attempt}/inline', [GuestSkillTestAttempt::class, 'saveInline'])->name('guest.skills.attempts.inline');
@@ -157,6 +164,14 @@ Route::group(['middleware' => ['active']], function () {
     Route::post('/admin/assessment-groups', [AdminAssessmentGroup::class, 'store'])->name('admin.assessment_groups.store');
     Route::get('/admin/assessment-groups/{assessmentGroup}/edit', [AdminAssessmentGroup::class, 'edit'])->name('admin.assessment_groups.edit');
     Route::get('/admin/assessment-groups/{assessmentGroup}/results', [AdminAssessmentGroup::class, 'results'])->name('admin.assessment_groups.results');
+    Route::get('/admin/assessment-groups/{assessmentGroup}/analytics', [AdminAssessmentGroup::class, 'analytics'])->name('admin.assessment_groups.analytics');
+    Route::get('/admin/assessment-groups/{assessmentGroup}/export', [AdminAssessmentGroup::class, 'exportCsv'])->name('admin.assessment_groups.export');
+    Route::post('/admin/assessment-groups/{assessmentGroup}/equivalent-set', [AdminAssessmentGroup::class, 'createEquivalentSet'])->name('admin.assessment_groups.equivalent_set');
+    Route::post('/admin/assessment-groups/{assessmentGroup}/release-scores', [AdminAssessmentGroup::class, 'releaseScores'])->name('admin.assessment_groups.release_scores');
+    Route::post('/admin/assessment-groups/{assessmentGroup}/hide-scores', [AdminAssessmentGroup::class, 'hideScores'])->name('admin.assessment_groups.hide_scores');
+    Route::post('/admin/assessment-groups/{assessmentGroup}/incidents', [AdminAssessmentGroup::class, 'incident'])->name('admin.assessment_groups.incidents.store');
+    Route::put('/admin/assessment-groups/{assessmentGroup}/incidents/{incident}/resolve', [AdminAssessmentGroup::class, 'resolveIncident'])->name('admin.assessment_groups.incidents.resolve');
+    Route::post('/admin/assessment-groups/{assessmentGroup}/attempts/{attempt}/void-retake', [AdminAssessmentGroup::class, 'voidAndRetake'])->name('admin.assessment_groups.attempts.void_retake');
     Route::put('/admin/assessment-groups/{assessmentGroup}', [AdminAssessmentGroup::class, 'update'])->name('admin.assessment_groups.update');
 
     Route::get('/admin/assessment', [AdminWrittenExam::class, 'index'])->name('admin.assessments.index');
@@ -178,6 +193,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/assessment/{exam}/items/{item}/edit', [AdminWrittenExamItem::class, 'edit'])->name('admin.assessments.items.edit');
     Route::put('/admin/assessment/{exam}/items/{item}', [AdminWrittenExamItem::class, 'update'])->name('admin.assessments.items.update');
     Route::put('/admin/assessment/{exam}/items/{item}/toggle', [AdminWrittenExamItem::class, 'toggleStatus'])->name('admin.assessments.items.toggle');
+    Route::put('/admin/assessment/{exam}/items/{item}/review', [AdminWrittenExamItem::class, 'review'])->name('admin.assessments.items.review');
     Route::delete('/admin/assessment/{exam}/items/{item}', [AdminWrittenExamItem::class, 'destroy'])->name('admin.assessments.items.destroy');
     Route::post('/admin/applications/{application}/assessment/{exam}/start', [\App\Http\Controllers\Admin\ExamAttemptController::class, 'start'])->name('admin.assessments.attempts.start');
     Route::get('/admin/assessments/attempts/{attempt}', [\App\Http\Controllers\Admin\ExamAttemptController::class, 'take'])->name('admin.assessments.attempts.take');
