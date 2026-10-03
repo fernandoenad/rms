@@ -322,35 +322,48 @@ class WrittenExamController extends Controller
             ->whereHas('assessment')
             ->get(['id','application_code']);
 
-        $assigned = 0;
-        $conflicts = 0;
+        $conflictingApplicationIds = collect();
 
-        foreach ($applications as $application) {
-            if ($exam->assessment_group_id) {
-                $siblingExamIds = Exam::where('assessment_group_id', $exam->assessment_group_id)
-                    ->whereKeyNot($exam->id)
-                    ->pluck('id');
+        if ($exam->assessment_group_id && $applications->isNotEmpty()) {
+            $siblingExamIds = Exam::where('assessment_group_id', $exam->assessment_group_id)
+                ->whereKeyNot($exam->id)
+                ->pluck('id');
 
-                $alreadyAssignedElsewhere = ExamAssignment::where('application_id', $application->id)
-                    ->whereIn('exam_id', $siblingExamIds)
-                    ->exists();
-
-                if ($alreadyAssignedElsewhere) {
-                    $conflicts++;
-                    continue;
-                }
+            if ($siblingExamIds->isNotEmpty()) {
+                $conflictingApplicationIds = ExamAssignment::whereIn('exam_id', $siblingExamIds)
+                    ->whereIn('application_id', $applications->pluck('id'))
+                    ->pluck('application_id')
+                    ->unique();
             }
-
-            ExamAssignment::firstOrCreate([
-                'exam_id' => $exam->id,
-                'application_id' => $application->id,
-            ]);
-            $assigned++;
         }
 
-        $message = "{$assigned} taken-in applicant(s) assigned.";
+        $eligibleApplications = $applications
+            ->reject(fn ($application) => $conflictingApplicationIds->contains($application->id))
+            ->values();
+
+        $assigned = 0;
+        $now = now();
+
+        foreach ($eligibleApplications->chunk(500) as $chunk) {
+            $rows = $chunk->map(fn ($application) => [
+                'exam_id' => $exam->id,
+                'application_id' => $application->id,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])->all();
+
+            $assigned += ExamAssignment::query()->insertOrIgnore($rows);
+        }
+
+        $conflicts = $conflictingApplicationIds->count();
+        $alreadyOnThisSet = max(0, $eligibleApplications->count() - $assigned);
+
+        $message = "{$assigned} applicant assignment(s) added.";
+        if ($alreadyOnThisSet) {
+            $message .= " {$alreadyOnThisSet} were already assigned to this set.";
+        }
         if ($conflicts) {
-            $message .= " {$conflicts} skipped because they are already assigned to another set in this assessment group.";
+            $message .= " {$conflicts} skipped because they are assigned to another set in this assessment group.";
         }
 
         return back()->with('status', $message);
