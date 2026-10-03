@@ -64,7 +64,8 @@ class FinalizeExpiredSkillAttempts extends Command
                         'submitted_at'=>now(),
                     ]);
 
-                    if ($attempt->skillTest?->ai_scoring) {
+                    if ($attempt->skillTest?->ai_scoring
+                        && (filled($latest->inline_response) || filled($latest->file_path))) {
                         $aiAttemptIds[] = $attempt->id;
                     }
 
