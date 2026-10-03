@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AssessmentAiGenerationRun;
 use App\Models\Exam;
 use App\Models\WrittenExam;
 use App\Models\WrittenExamOption;
@@ -52,7 +53,7 @@ class WrittenExamItemController extends Controller
         return view('admin.assessments.items.create', compact('exam'));
     }
 
-    public function index(Exam $exam)
+    public function index(Exam $exam, AssessmentGovernanceService $governance)
     {
         $items = $exam->writtenExams()
             ->with('options')
@@ -76,9 +77,20 @@ class WrittenExamItemController extends Controller
             ->orderByDesc('id')
             ->get();
 
-        $hasAttempts = $exam->attempts()->exists();
+        $hasAttempts = $exam->attempts()->whereNotNull('started_at')->exists();
+        $readiness = $governance->readiness($exam);
+        $generationRuns = AssessmentAiGenerationRun::where('exam_id', $exam->id)
+            ->orderByDesc('id')
+            ->limit(5)
+            ->get();
 
-        return view('admin.assessments.items.index', compact('exam', 'items', 'hasAttempts'));
+        return view('admin.assessments.items.index', compact(
+            'exam',
+            'items',
+            'hasAttempts',
+            'readiness',
+            'generationRuns'
+        ));
     }
 
     public function edit(Exam $exam, WrittenExam $item)
