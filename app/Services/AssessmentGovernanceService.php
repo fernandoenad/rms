@@ -53,6 +53,7 @@ class AssessmentGovernanceService
         return AssessmentContentBank::updateOrCreate(
             [
                 'content_type'=>'written_item',
+                'vacancy_id'=>$item->exam->vacancy_id,
                 'fingerprint'=>$fingerprint,
             ],
             [
@@ -82,6 +83,7 @@ class AssessmentGovernanceService
         return AssessmentContentBank::updateOrCreate(
             [
                 'content_type'=>'skill_task',
+                'vacancy_id'=>$test->vacancy_id,
                 'fingerprint'=>$fingerprint,
             ],
             [
