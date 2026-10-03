@@ -610,6 +610,75 @@ class WrittenExamController extends Controller
         );
     }
 
+    public function pause(
+        Request $request,
+        Exam $exam,
+        AssessmentGovernanceService $governance
+    ) {
+        $data = $request->validate(['reason'=>'required|string|max:3000']);
+
+        if ($exam->archived_at) {
+            return back()->with('status', 'Archived written tests cannot be paused.');
+        }
+
+        $exam->update([
+            'is_paused'=>true,
+            'pause_reason'=>$data['reason'],
+            'paused_at'=>now(),
+            'paused_by'=>auth()->id(),
+        ]);
+
+        $governance->log('exam_paused', [
+            'assessment_group_id'=>$exam->assessment_group_id,
+            'exam_id'=>$exam->id,
+        ], ['reason'=>$data['reason'], 'scope'=>'new_starts']);
+
+        return back()->with('status', 'New starts are paused. Existing in-progress attempts may continue.');
+    }
+
+    public function resume(
+        Exam $exam,
+        AssessmentGovernanceService $governance
+    ) {
+        $exam->update([
+            'is_paused'=>false,
+            'pause_reason'=>null,
+            'paused_at'=>null,
+            'paused_by'=>null,
+        ]);
+
+        $governance->log('exam_resumed', [
+            'assessment_group_id'=>$exam->assessment_group_id,
+            'exam_id'=>$exam->id,
+        ]);
+
+        return back()->with('status', 'Written test resumed for new starts.');
+    }
+
+    public function archive(
+        Exam $exam,
+        AssessmentGovernanceService $governance
+    ) {
+        if ($exam->attempts()->where('status',1)->exists()) {
+            return back()->with('status', 'Cannot archive while attempts are in progress.');
+        }
+
+        $exam->update([
+            'status'=>0,
+            'is_paused'=>false,
+            'archived_at'=>now(),
+            'archived_by'=>auth()->id(),
+        ]);
+
+        $governance->log('exam_archived', [
+            'assessment_group_id'=>$exam->assessment_group_id,
+            'exam_id'=>$exam->id,
+        ]);
+
+        return redirect()->route('admin.assessment_center.index')
+            ->with('status', 'Written test archived and frozen.');
+    }
+
     public function results(Exam $exam)
     {
         $exam->load(['writtenExams.options']);
