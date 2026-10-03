@@ -136,7 +136,7 @@
     </div>
     <div class="card-body table-responsive p-0">
         <table class="table table-hover mb-0">
-            <thead><tr><th>Set</th><th>Schedule</th><th>Items</th><th>Attempts</th><th>Readiness</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Set</th><th>Schedule</th><th>Items</th><th>Attempts</th><th>Approval</th><th>Readiness</th><th>Status</th><th></th></tr></thead>
             <tbody>
             @forelse($assessmentGroup->exams as $exam)
                 @php $ready = $readiness[$exam->id] ?? ['ready'=>false,'issues'=>[],'item_count'=>0]; @endphp
@@ -151,6 +151,18 @@
                     </td>
                     <td>{{ $ready['item_count'] }}</td>
                     <td>{{ $exam->attempts_count }}</td>
+                    <td>
+                        @if($exam->approval_status==='approved')
+                            <span class="badge badge-success">Approved</span>
+                        @else
+                            <span class="badge badge-warning">Pending</span>
+                            @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1)
+                                <form method="post" action="{{ route('admin.assessments.approve',$exam) }}" class="mt-1">@csrf
+                                    <button class="btn btn-xs btn-outline-success">Approve</button>
+                                </form>
+                            @endif
+                        @endif
+                    </td>
                     <td>
                         @if($ready['ready'])
                             <span class="badge badge-success">Ready</span>
@@ -169,7 +181,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="7">No sets yet.</td></tr>
+                <tr><td colspan="8">No sets yet.</td></tr>
             @endforelse
             </tbody>
         </table>
