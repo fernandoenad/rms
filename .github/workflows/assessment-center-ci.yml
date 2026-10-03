@@ -56,3 +56,4 @@ jobs:
         run: |
           node --check loadtests/k6/written-assessment.js
           node --check loadtests/k6/skills-test.js
+          node --check loadtests/k6/operations-dashboard.js
