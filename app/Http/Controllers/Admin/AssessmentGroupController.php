@@ -425,6 +425,7 @@ class AssessmentGroupController extends Controller
                 'exam:id,assessment_group_id,title,set_code',
                 'events' => fn ($q) => $q->orderByDesc('event_at')->limit(20),
                 'timeExtensions' => fn ($q) => $q->with('creator:id,name,email')->orderByDesc('id'),
+                'incidents' => fn ($q) => $q->where('status','open')->latest(),
             ])
             ->whereNotNull('started_at')
             ->whereIn('status', [1, 2, 3])
