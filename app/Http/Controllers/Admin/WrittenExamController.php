@@ -208,7 +208,11 @@ class WrittenExamController extends Controller
             return back()->with('status', 'Exam settings are locked after an attempt has started. Create a new governed set/version instead.');
         }
 
-        if ((int) $exam->status === 1) {
+        // A published set may be edited only when this same submission
+        // explicitly returns it to draft. Previously, the guard ran before
+        // validation and created a catch-22: choosing Draft in the edit form
+        // could never be saved because the persisted status was still Published.
+        if ((int) $exam->status === 1 && (int) $request->input('status', 1) !== 0) {
             return back()->with('status', 'Return this published set to draft before changing its settings.');
         }
 
