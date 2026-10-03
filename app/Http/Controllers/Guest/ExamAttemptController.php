@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\AssessmentAttemptEvent;
 use App\Models\AssessmentGroupAttemptLock;
+use App\Models\AssessmentPerformanceSample;
 use App\Models\Exam;
 use App\Models\ExamAssignment;
 use App\Models\ExamAttempt;
@@ -422,6 +423,7 @@ class ExamAttemptController extends Controller
 
     public function saveAnswer(Request $request, ExamAttempt $attempt)
     {
+        $startedNs = hrtime(true);
         $this->authorizeAnswerSave($request, $attempt);
 
         // Avoid Laravel exists: rules here because the same relationship must be
@@ -497,6 +499,15 @@ class ExamAttemptController extends Controller
 
         // No per-answer audit-event insert: the answer row and its updated_at
         // timestamp are already the authoritative persistence record.
+        if (random_int(1, 50) === 1) {
+            AssessmentPerformanceSample::create([
+                'operation'=>'written_answer_save',
+                'exam_attempt_id'=>$attempt->id,
+                'latency_ms'=>(int) round((hrtime(true)-$startedNs)/1_000_000),
+                'recorded_at'=>now(),
+            ]);
+        }
+
         return response()->json([
             'message' => 'Saved',
             'saved_at' => $result['saved_at'],
