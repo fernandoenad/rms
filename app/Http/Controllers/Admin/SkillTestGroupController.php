@@ -277,6 +277,73 @@ class SkillTestGroupController extends Controller
         return back()->with('status','Skills Test group settings updated.');
     }
 
+    public function releaseScores(
+        SkillTestGroup $skillTestGroup,
+        AssessmentScoreSyncService $scoreSync
+    ) {
+        if ($skillTestGroup->score_release_policy !== 'manual') {
+            return back()->with('status','This group is not using manual score release.');
+        }
+
+        $skillTestGroup->update(['scores_released_at'=>now()]);
+        $sync = $scoreSync->syncSkillGroup($skillTestGroup->fresh());
+
+        return back()->with(
+            'status',
+            'Skills Test group scores released. '.$sync['synced'].' applicant score(s) synchronized.'
+            .($sync['skipped'] ? ' '.$sync['skipped'].' record(s) were skipped.' : '')
+        );
+    }
+
+    public function hideScores(SkillTestGroup $skillTestGroup)
+    {
+        $skillTestGroup->update(['scores_released_at'=>null,'scores_synced_at'=>null]);
+        return back()->with('status','Manual Skills Test group score release was withdrawn.');
+    }
+
+    public function pause(Request $request, SkillTestGroup $skillTestGroup)
+    {
+        $data=$request->validate(['reason'=>'required|string|max:3000']);
+        $skillTestGroup->update([
+            'is_paused'=>true,
+            'pause_reason'=>$data['reason'],
+            'paused_at'=>now(),
+            'paused_by'=>auth()->id(),
+        ]);
+        return back()->with('status','New starts for all Skills Test sets in this group are paused.');
+    }
+
+    public function resume(SkillTestGroup $skillTestGroup)
+    {
+        $skillTestGroup->update([
+            'is_paused'=>false,'pause_reason'=>null,'paused_at'=>null,'paused_by'=>null,
+        ]);
+        return back()->with('status','Skills Test group resumed.');
+    }
+
+    public function archive(SkillTestGroup $skillTestGroup)
+    {
+        $inProgress = $skillTestGroup->skillTests()
+            ->whereHas('attempts',fn($q)=>$q->where('status',1))
+            ->exists();
+
+        if ($inProgress) {
+            return back()->with('status','Cannot archive while a Skills Test attempt is in progress.');
+        }
+
+        $skillTestGroup->update([
+            'status'=>false,
+            'is_paused'=>false,
+            'archived_at'=>now(),
+            'archived_by'=>auth()->id(),
+        ]);
+
+        $skillTestGroup->skillTests()->update(['status'=>0]);
+
+        return redirect()->route('admin.skill_groups.index')
+            ->with('status','Skills Test group archived and frozen.');
+    }
+
     public function addEquivalentSet(
         Request $request,
         SkillTestGroup $skillTestGroup,
