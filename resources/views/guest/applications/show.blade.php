@@ -346,7 +346,11 @@
                                                     @php
                                                         $skillAttempt = $skillTest->attempts->first();
                                                         $skillSubmitted = $skillAttempt && $skillAttempt->status == 2;
-                                                        $skillOpen = now()->gte($skillTest->start_date) && now()->lt($skillTest->end_date);
+                                                        $skillVoided = $skillAttempt && $skillAttempt->status == 3;
+                                                        $skillScoreReleased = $skillTest->scoresAreReleased();
+                                                        $skillOpen = $skillTest->status
+                                                            && now()->gte($skillTest->start_date)
+                                                            && now()->lt($skillTest->end_date);
                                                     @endphp
                                                     <div class="col-12 col-md-6 mb-3">
                                                         <div class="card h-100 border">
@@ -354,7 +358,9 @@
                                                                 <h6 class="mb-1">{{ $skillTest->title }}</h6>
                                                                 <div class="small text-muted mb-2">{{ $skillTest->duration }} min · {{ $skillTest->start_date->format('M d, Y h:i A') }}</div>
                                                                 <div class="mb-2">
-                                                                    @if($skillSubmitted)
+                                                                    @if($skillVoided)
+                                                                        <span class="badge badge-secondary">Voided</span>
+                                                                    @elseif($skillSubmitted)
                                                                         <span class="badge badge-success">Submitted</span>
                                                                     @elseif($skillAttempt)
                                                                         <span class="badge badge-warning">In progress</span>
@@ -364,8 +370,23 @@
                                                                         <span class="badge badge-secondary">Scheduled/Closed</span>
                                                                     @endif
                                                                 </div>
+                                                                @if($skillSubmitted)
+                                                                    <div class="border rounded p-2 mb-2 small">
+                                                                        <strong>Result:</strong>
+                                                                        @if($skillScoreReleased && $skillAttempt->final_score !== null)
+                                                                            {{ number_format((float)$skillAttempt->final_score,2) }}/100
+                                                                        @elseif($skillScoreReleased)
+                                                                            Pending human evaluation
+                                                                        @else
+                                                                            Pending official release
+                                                                        @endif
+                                                                    </div>
+                                                                @endif
+
                                                                 @if(!$hasAssessmentRel)
                                                                     <button class="btn btn-sm btn-secondary btn-block" disabled>Not eligible</button>
+                                                                @elseif($skillVoided)
+                                                                    <button class="btn btn-sm btn-secondary btn-block" disabled>Use authorized retake task</button>
                                                                 @elseif($skillSubmitted)
                                                                     <button class="btn btn-sm btn-success btn-block" disabled>Completed</button>
                                                                 @elseif($skillAttempt)
