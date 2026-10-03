@@ -3,18 +3,29 @@
 @section('content_header')
 <div class="d-flex justify-content-between align-items-center">
     <h1>Skills Tests</h1>
-    <a href="{{ route('admin.skills.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> New Skills Test</a>
+    <div>
+        <a href="{{ route('admin.skill_groups.index') }}" class="btn btn-outline-secondary mr-2"><i class="fas fa-layer-group"></i> Skills Test Groups</a>
+        <a href="{{ route('admin.skills.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> New Skills Test</a>
+    </div>
 </div>
 @stop
 @section('content')
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 <div class="card"><div class="card-body table-responsive p-0">
 <table class="table table-hover">
-<thead><tr><th>Title</th><th>Position</th><th>Schedule</th><th>Access</th><th>Attempts</th><th>Readiness</th><th>Status</th><th></th></tr></thead>
+<thead><tr><th>Title</th><th>Group / Set</th><th>Position</th><th>Schedule</th><th>Access</th><th>Attempts</th><th>Readiness</th><th>Status</th><th></th></tr></thead>
 <tbody>
 @forelse($tests as $test)
 <tr>
 <td>{{ $test->title }}<div class="small text-muted">{{ $test->code }}</div></td>
+<td>
+@if($test->skill_test_group_id)
+    <a href="{{ route('admin.skill_groups.edit',$test->skill_test_group_id) }}">{{ optional($test->skillTestGroup)->title }}</a><br>
+    <span class="badge badge-primary">Set {{ $test->set_code }}</span>
+@else
+    <span class="text-muted">Standalone</span>
+@endif
+</td>
 <td>{{ optional($test->vacancy)->position_title }}</td>
 <td>{{ $test->start_date }}<br><span class="small">to {{ $test->end_date }}</span></td>
 <td>{{ $test->access_mode === 'all_taken_in' ? 'All taken-in applicants' : 'Selected applicants' }}</td>
@@ -34,6 +45,6 @@
 <a class="btn btn-sm btn-info" href="{{ route('admin.skills.results',$test) }}"><i class="fas fa-chart-bar"></i></a>
 </td>
 </tr>
-@empty<tr><td colspan="8">No skills tests yet.</td></tr>@endforelse
+@empty<tr><td colspan="9">No skills tests yet.</td></tr>@endforelse
 </tbody></table></div></div>
 @stop
