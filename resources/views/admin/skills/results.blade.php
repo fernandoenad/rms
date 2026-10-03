@@ -103,6 +103,33 @@
     </div>
 </div>
 
+<div class="card card-outline card-primary">
+    <div class="card-header"><strong>Bulk Score Approval</strong></div>
+    <div class="card-body">
+        <div class="small text-muted mb-2">
+            Approves complete AI rubric proposals as the human-final rubric scores. Attempts with incomplete/invalid AI criterion scores are skipped automatically.
+        </div>
+
+        <form method="post" action="{{ route('admin.skills.approve_ai_scores',$skillTest) }}" class="d-inline"
+              onsubmit="return confirm('Approve ALL eligible pending AI-proposed scores as human-final scores? This records you as the approving evaluator.');">
+            @csrf
+            <input type="hidden" name="scope" value="all">
+            <button class="btn btn-primary btn-sm">
+                <i class="fas fa-check-double"></i> Approve All Eligible AI Scores
+            </button>
+        </form>
+
+        <form id="bulkApproveSelected" method="post" action="{{ route('admin.skills.approve_ai_scores',$skillTest) }}" class="d-inline ml-1"
+              onsubmit="return confirm('Approve the selected AI-proposed scores as human-final scores?');">
+            @csrf
+            <input type="hidden" name="scope" value="selected">
+            <button class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-check"></i> Approve Selected
+            </button>
+        </form>
+    </div>
+</div>
+
 <div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
     <div class="small text-muted">Applicants appear as soon as they start. Submitted attempts remain available for rubric-level human evaluation.</div>
     <div>
@@ -116,6 +143,7 @@
         <table class="table table-hover mb-0">
             <thead>
                 <tr>
+                    <th style="width:36px">Select</th>
                     <th>Applicant</th>
                     <th>Status</th>
                     <th>Started / Submitted</th>
@@ -133,6 +161,11 @@
                     $humanByCriterion = $attempt->humanScores->keyBy('skill_test_rubric_criterion_id');
                 @endphp
                 <tr>
+                    <td>
+                        @if((int)$attempt->status === 2 && $attempt->final_score === null && $latestAi && $latestAi->status === 'completed' && is_array($latestAi->criterion_scores))
+                            <input type="checkbox" name="attempt_ids[]" value="{{ $attempt->id }}" form="bulkApproveSelected" aria-label="Select {{ optional($attempt->application)->application_code }}">
+                        @endif
+                    </td>
                     <td>
                         {{ optional($attempt->application)->application_code }}<br>
                         <small>{{ optional($attempt->application)->getFullname() }}</small>
@@ -271,7 +304,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="7">No skills-test attempts yet.</td></tr>
+                <tr><td colspan="8">No skills-test attempts yet.</td></tr>
             @endforelse
             </tbody>
         </table>
