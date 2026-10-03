@@ -22,7 +22,14 @@ class SkillTest extends Model
     ];
 
     public function vacancy(): BelongsTo { return $this->belongsTo(Vacancy::class); }
-    public function rubricCriteria(): HasMany { return $this->hasMany(SkillTestRubricCriterion::class)->orderBy('sort_order'); }
+    public function rubricCriteria(): HasMany {
+        return $this->hasMany(SkillTestRubricCriterion::class)
+            ->where('is_active', true)
+            ->orderBy('sort_order');
+    }
+    public function allRubricCriteria(): HasMany {
+        return $this->hasMany(SkillTestRubricCriterion::class)->orderBy('sort_order');
+    }
     public function attempts(): HasMany { return $this->hasMany(SkillTestAttempt::class); }
     public function assignments(): HasMany { return $this->hasMany(SkillTestAssignment::class); }
     public function reviewer(): BelongsTo { return $this->belongsTo(User::class, 'reviewed_by'); }
