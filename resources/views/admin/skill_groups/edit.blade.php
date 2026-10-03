@@ -44,6 +44,34 @@ onsubmit="return confirm('Archive and freeze this entire Skills Test group?');">
 </div>
 </div>
 
+<div class="card card-outline card-info">
+<div class="card-header"><strong><i class="fas fa-magic mr-1"></i> Generate All Empty Sets with AI</strong></div>
+<div class="card-body">
+<p class="small text-muted">
+One click generates all empty Set A/B/C tasks. The first generated set establishes the shared 100-point rubric.
+The remaining sets receive different but equivalent tasks designed to use that same rubric. All generated tasks and rubric criteria remain <strong>Pending Review</strong>.
+</p>
+<form method="post" action="{{ route('admin.skill_groups.generate_all_sets',$skillTestGroup) }}"
+onsubmit="return confirm('Queue AI generation for every empty draft set in this Skills Test Group?');">@csrf
+<div class="form-row">
+<div class="form-group col-md-4"><label>Generation focus</label>
+<select name="generation_focus" class="form-control">
+<option value="mixed">Mixed job-relevant</option>
+<option value="duties">Duties and responsibilities</option>
+<option value="technical">Technical competencies</option>
+<option value="situational">Situational / work scenario</option>
+</select></div>
+<div class="form-group col-md-8"><label>Additional context <span class="text-muted font-weight-normal">(optional)</span></label>
+<textarea name="additional_context" rows="3" maxlength="30000" class="form-control"></textarea></div>
+</div>
+<input type="hidden" name="use_qualifications" value="0"><input type="hidden" name="use_job_description" value="0">
+<label class="mr-3"><input type="checkbox" name="use_qualifications" value="1" checked> Use qualifications</label>
+<label class="mr-3"><input type="checkbox" name="use_job_description" value="1" checked> Use job description</label>
+<button class="btn btn-info"><i class="fas fa-magic mr-1"></i> Generate All Empty Sets</button>
+</form>
+</div>
+</div>
+
 <div class="card card-outline card-primary">
 <div class="card-header"><strong>Equivalent Sets</strong></div>
 <div class="card-body table-responsive p-0">
