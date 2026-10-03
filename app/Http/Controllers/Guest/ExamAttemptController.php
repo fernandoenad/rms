@@ -297,6 +297,33 @@ class ExamAttemptController extends Controller
             }
 
             if (!$existingLock) {
+                $candidates = Exam::where('assessment_group_id',$exam->assessment_group_id)
+                    ->where('vacancy_id',$application->vacancy_id)
+                    ->where('status',1)
+                    ->where(function($q){
+                        $q->whereNull('start_date')->orWhere('start_date','<=',now());
+                    })
+                    ->where(function($q){
+                        $q->whereNull('end_date')->orWhere('end_date','>',now());
+                    })
+                    ->where(function($q) use ($application) {
+                        $q->where('access_mode','all_taken_in')
+                          ->orWhereExists(function($sub) use ($application) {
+                              $sub->selectRaw('1')->from('exam_assignments')
+                                  ->whereColumn('exam_assignments.exam_id','exams.id')
+                                  ->where('exam_assignments.application_id',$application->id);
+                          });
+                    })
+                    ->orderBy('set_code')
+                    ->get(['id']);
+
+                if ($candidates->isNotEmpty()) {
+                    $index = abs(crc32($exam->assessment_group_id.':'.$application->id)) % $candidates->count();
+                    if ((int)$candidates[$index]->id !== (int)$exam->id) {
+                        abort(403,'This application is assigned to another equivalent Written Assessment set.');
+                    }
+                }
+
                 try {
                     AssessmentGroupAttemptLock::create([
                         'assessment_group_id' => $exam->assessment_group_id,
