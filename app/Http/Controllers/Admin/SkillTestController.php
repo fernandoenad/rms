@@ -100,6 +100,14 @@ class SkillTestController extends Controller
         $requestedPublish = (int) ($data['status'] ?? 0) === 1;
 
         $data['status'] = 0;
+        $data['created_by'] = auth()->id();
+        $data['approval_status'] = $this->currentUserIsAdmin() ? 'approved' : 'pending';
+        $data['approved_by'] = $this->currentUserIsAdmin() ? auth()->id() : null;
+        $data['approved_at'] = $this->currentUserIsAdmin() ? now() : null;
+        $data['approval_notes'] = $this->currentUserIsAdmin()
+            ? 'Auto-approved because the creator is an administrator.'
+            : null;
+
         $data['review_status'] = 'approved';
         $data['reviewed_by'] = auth()->id();
         $data['reviewed_at'] = now();
