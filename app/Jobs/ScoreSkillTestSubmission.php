@@ -101,8 +101,12 @@ class ScoreSkillTestSubmission implements ShouldQueue
                 'completed_at' => now(),
             ]);
 
-            // Proposed score only. A human evaluator must finalize final_score.
-            $attempt->update(['ai_proposed_score' => $result['proposed_total']]);
+            // Proposed score only. Re-check state because an administrator may
+            // have voided the attempt while the external AI request was running.
+            SkillTestAttempt::whereKey($attempt->id)
+                ->where('status', 2)
+                ->whereNull('voided_at')
+                ->update(['ai_proposed_score' => $result['proposed_total']]);
         } catch (\Throwable $e) {
             $evaluation->update([
                 'status' => 'failed',
