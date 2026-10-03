@@ -157,11 +157,11 @@ class SkillTestAttemptController extends Controller
 
         $data = $request->validate(['inline_response'=>'nullable|string|max:100000']);
 
-        $savedAt = DB::transaction(function () use ($attempt, $data) {
+        $result = DB::transaction(function () use ($attempt, $data) {
             $locked = SkillTestAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
 
             if ((int)$locked->status !== 1) {
-                throw new \RuntimeException('Attempt is no longer editable.');
+                return ['saved'=>false];
             }
 
             $submission = SkillTestSubmission::where('skill_test_attempt_id',$locked->id)
@@ -178,10 +178,17 @@ class SkillTestAttemptController extends Controller
 
             $submission->update(['inline_response'=>$data['inline_response'] ?? null]);
 
-            return now()->toIso8601String();
+            return ['saved'=>true, 'saved_at'=>now()->toIso8601String()];
         });
 
-        return response()->json(['message'=>'Saved','saved_at'=>$savedAt]);
+        if (!$result['saved']) {
+            return response()->json([
+                'message'=>'This attempt is no longer editable.',
+                'expired'=>true,
+            ],409);
+        }
+
+        return response()->json(['message'=>'Saved','saved_at'=>$result['saved_at']]);
     }
 
     public function upload(Request $request, SkillTestAttempt $attempt)
@@ -198,32 +205,43 @@ class SkillTestAttemptController extends Controller
         $file = $data['file'];
         $path = $file->store('skill-tests/'.$test->id.'/'.$attempt->id,'local');
 
-        DB::transaction(function () use ($attempt, $file, $path) {
-            $locked = SkillTestAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
+        try {
+            $saved = DB::transaction(function () use ($attempt, $file, $path) {
+                $locked = SkillTestAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
 
-            if ((int)$locked->status !== 1) {
-                Storage::disk('local')->delete($path);
-                throw new \RuntimeException('Attempt is no longer editable.');
-            }
+                if ((int)$locked->status !== 1) {
+                    return false;
+                }
 
-            $latest = SkillTestSubmission::where('skill_test_attempt_id',$locked->id)
-                ->where('is_final',false)
-                ->orderByDesc('version')
-                ->first();
+                $latest = SkillTestSubmission::where('skill_test_attempt_id',$locked->id)
+                    ->where('is_final',false)
+                    ->orderByDesc('version')
+                    ->first();
 
-            $nextVersion = ((int) optional($latest)->version) + 1;
+                $nextVersion = ((int) optional($latest)->version) + 1;
 
-            SkillTestSubmission::create([
-                'skill_test_attempt_id'=>$locked->id,
-                'version'=>$nextVersion,
-                'inline_response'=>optional($latest)->inline_response,
-                'file_path'=>$path,
-                'original_filename'=>$file->getClientOriginalName(),
-                'mime_type'=>$file->getMimeType(),
-                'file_size'=>$file->getSize(),
-                'is_final'=>false,
-            ]);
-        });
+                SkillTestSubmission::create([
+                    'skill_test_attempt_id'=>$locked->id,
+                    'version'=>$nextVersion,
+                    'inline_response'=>optional($latest)->inline_response,
+                    'file_path'=>$path,
+                    'original_filename'=>$file->getClientOriginalName(),
+                    'mime_type'=>$file->getMimeType(),
+                    'file_size'=>$file->getSize(),
+                    'is_final'=>false,
+                ]);
+
+                return true;
+            });
+        } catch (\Throwable $e) {
+            Storage::disk('local')->delete($path);
+            throw $e;
+        }
+
+        if (!$saved) {
+            Storage::disk('local')->delete($path);
+            return back()->with('status_assessment','This skills-test attempt is no longer editable.');
+        }
 
         return back()->with('status_assessment','File uploaded as a new submission version. Previous uploads are retained for audit history.');
     }
