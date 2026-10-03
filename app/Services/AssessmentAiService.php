@@ -213,15 +213,61 @@ PROMPT;
         ]);
 
         $decoded = $this->decodeJson($response['choices'][0]['message']['content'] ?? '');
-        if (!isset($decoded['criterion_scores']) || !isset($decoded['proposed_total'])) {
+        if (!isset($decoded['criterion_scores']) || !is_array($decoded['criterion_scores'])) {
             throw new RuntimeException('AI returned an invalid skills-score payload.');
+        }
+
+        $returned = collect($decoded['criterion_scores'])
+            ->filter(fn ($row) => isset($row['criterion_id']))
+            ->keyBy(fn ($row) => (int) $row['criterion_id']);
+
+        $flags = is_array($decoded['flags'] ?? null) ? $decoded['flags'] : [];
+        $normalizedScores = [];
+        $normalizedTotal = 0.0;
+
+        foreach ($criteria as $criterion) {
+            $criterionId = (int) $criterion['id'];
+            $maxPoints = (float) $criterion['max_points'];
+            $row = $returned->get($criterionId);
+
+            if (!$row || !isset($row['score']) || !is_numeric($row['score'])) {
+                $flags[] = "AI did not return a valid score for rubric criterion {$criterionId}.";
+                $score = 0.0;
+                $row = [
+                    'criterion_id' => $criterionId,
+                    'evidence' => '',
+                    'reason' => 'No valid AI score returned.',
+                    'confidence' => 'low',
+                ];
+            } else {
+                $rawScore = (float) $row['score'];
+                $score = max(0.0, min($maxPoints, $rawScore));
+
+                if (abs($score - $rawScore) > 0.001) {
+                    $flags[] = "AI score for rubric criterion {$criterionId} was outside its allowed range and was normalized.";
+                }
+            }
+
+            $normalizedTotal += $score;
+            $normalizedScores[] = array_merge($row, [
+                'criterion_id' => $criterionId,
+                'score' => round($score, 2),
+                'max_points' => $maxPoints,
+            ]);
+        }
+
+        if (isset($decoded['proposed_total']) && is_numeric($decoded['proposed_total'])) {
+            $reportedTotal = (float) $decoded['proposed_total'];
+            if (abs($reportedTotal - $normalizedTotal) > 0.5) {
+                $flags[] = 'AI-reported total did not match the normalized rubric sum; RMS used the criterion sum.';
+            }
         }
 
         return [
             'model' => $this->model(),
-            'criterion_scores' => $decoded['criterion_scores'],
-            'proposed_total' => (float) $decoded['proposed_total'],
-            'flags' => $decoded['flags'] ?? [],
+            'criterion_scores' => $normalizedScores,
+            'proposed_total' => round($normalizedTotal, 2),
+            'flags' => array_values(array_unique($flags)),
             'raw_response' => $response['choices'][0]['message']['content'] ?? '',
         ];
     }
