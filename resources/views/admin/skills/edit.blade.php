@@ -10,6 +10,11 @@
         </small>
     </div>
     <div class="mt-2 mt-md-0">
+        @if($skillTest->skill_test_group_id)
+            <a href="{{ route('admin.skill_groups.edit',$skillTest->skill_test_group_id) }}" class="btn btn-outline-secondary mr-2"><i class="fas fa-arrow-left"></i> Back to Group</a>
+        @else
+            <a href="{{ route('admin.assessment_center.index') }}" class="btn btn-outline-secondary mr-2"><i class="fas fa-arrow-left"></i> Back</a>
+        @endif
         <a href="{{ route('admin.skills.preview',$skillTest) }}" class="btn btn-outline-primary mr-2"><i class="fas fa-eye"></i> Preview & Dry Run</a>
         <a href="{{ route('admin.skills.results',$skillTest) }}" class="btn btn-outline-info mr-2"><i class="fas fa-chart-bar"></i> Live Results</a>
         <a href="{{ route('admin.skills.export',$skillTest) }}" class="btn btn-outline-success"><i class="fas fa-file-csv"></i> Export CSV</a>
