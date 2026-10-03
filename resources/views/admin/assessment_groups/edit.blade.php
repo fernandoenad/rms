@@ -13,26 +13,6 @@
     </div>
 </div>
 
-<div class="card">
-    <div class="card-header"><strong>Recent Governance Audit Trail</strong></div>
-    <div class="card-body table-responsive p-0">
-        <table class="table table-sm mb-0">
-            <thead><tr><th>When</th><th>Action</th><th>User</th><th>Details</th></tr></thead>
-            <tbody>
-            @forelse($assessmentGroup->auditLogs as $log)
-                <tr>
-                    <td>{{ $log->created_at->format('M d, Y h:i A') }}</td>
-                    <td>{{ str_replace('_',' ',$log->action) }}</td>
-                    <td>{{ optional($log->user)->email ?: 'System' }}</td>
-                    <td class="small">{{ $log->metadata ? json_encode($log->metadata) : '-' }}</td>
-                </tr>
-            @empty
-                <tr><td colspan="4" class="text-muted">No governance audit entries yet.</td></tr>
-            @endforelse
-            </tbody>
-        </table>
-    </div>
-</div>
 @stop
 
 @section('content')
@@ -232,4 +212,26 @@
         </div>
     </div>
 </div>
+
+<div class="card">
+    <div class="card-header"><strong>Recent Governance Audit Trail</strong></div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-sm mb-0">
+            <thead><tr><th>When</th><th>Action</th><th>User</th><th>Details</th></tr></thead>
+            <tbody>
+            @forelse($assessmentGroup->auditLogs as $log)
+                <tr>
+                    <td>{{ $log->created_at->format('M d, Y h:i A') }}</td>
+                    <td>{{ str_replace('_',' ',$log->action) }}</td>
+                    <td>{{ optional($log->user)->email ?: 'System' }}</td>
+                    <td class="small">{{ $log->metadata ? json_encode($log->metadata) : '-' }}</td>
+                </tr>
+            @empty
+                <tr><td colspan="4" class="text-muted">No governance audit entries yet.</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+
 @stop
