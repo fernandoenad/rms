@@ -383,6 +383,10 @@ return [
                 'regex:@^admin/assessment/\\d+/items/\\d+/edit$@',
                 'regex:@^admin/assessment/\\d+/results$@',
                 'admin/skills',
+                'admin/skills/tests',
+                'admin/skill-groups',
+                'admin/skill-groups/create',
+                'regex:@^admin/skill-groups/\\d+/edit$@',
                 'admin/skills/create',
                 'regex:@^admin/skills/\\d+/(edit|preview|results)$@'
 
