@@ -41,7 +41,11 @@ class GenerateWrittenExamItemsBatch implements ShouldQueue
             return;
         }
 
-        Cache::lock('assessment-ai-generation-exam-'.$exam->id, 600)->block(480, function () use ($run, $exam, $ai) {
+        $lockKey = $exam->assessment_group_id
+            ? 'assessment-ai-generation-written-group-'.$exam->assessment_group_id
+            : 'assessment-ai-generation-exam-'.$exam->id;
+
+        Cache::lock($lockKey, 600)->block(480, function () use ($run, $exam, $ai) {
             $run->refresh();
 
             if (!in_array($run->status, ['queued', 'processing'], true)) {
