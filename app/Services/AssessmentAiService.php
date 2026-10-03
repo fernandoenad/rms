@@ -181,9 +181,14 @@ HARD RULES:
 5. The keyed answer MUST NOT be conspicuously longer, more detailed, more qualified, more specific, or more polished than the distractors. Do not let length reveal the answer.
 6. For RELATIONAL and especially EXTENDED_ABSTRACT items, put the complexity in the scenario/stem and in the reasoning required. Do NOT express higher-level thinking by making the correct option longer.
 7. Use a MIX of item structures, with a strong preference for compact structured-response options in higher-SOLO items:
-   - ACTION SEQUENCE: present 4-6 numbered actions in the stem, then ask for the most appropriate order. Options should be compact sequences such as "1 → 3 → 2 → 4".
-   - COMBINATION SELECTION: present numbered actions/statements, then ask which combination is most appropriate. Options should be compact combinations such as "1, 2, and 4".
-   - BEST PAIR / TRIAD: ask which two or three listed actions/evidence should be selected together.
+   - ACTION SEQUENCE: present 4-6 numbered actions in the stem, then ask for the most appropriate order. Put EACH numbered action on its OWN LINE using literal line breaks, for example:
+     1. First action
+     2. Second action
+     3. Third action
+     4. Fourth action
+     Options should be compact sequences such as "1 → 3 → 2 → 4".
+   - COMBINATION SELECTION: present numbered actions/statements with EACH numbered entry on its OWN LINE, then ask which combination is most appropriate. Options should be compact combinations such as "1, 2, and 4".
+   - BEST PAIR / TRIAD: present the candidate actions/evidence one per line and ask which two or three should be selected together.
    - STANDARD SINGLE-BEST-ANSWER: use only when compact parallel prose options are more natural.
    For RELATIONAL and EXTENDED_ABSTRACT items, prefer the first three formats whenever defensible because the stem should carry the complexity while the options remain short and length-matched.
 8. Structured-response items must still require judgment. Do not reduce them to trivia, simple recall, or obvious sequencing.
