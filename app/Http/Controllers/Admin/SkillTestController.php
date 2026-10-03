@@ -222,6 +222,7 @@ class SkillTestController extends Controller
             }
 
             $skillTest->update(['status' => 1]);
+            $governance->recordSkillExposure($skillTest->fresh());
 
             $governance->log('skill_test_published', [
                 'skill_test_id' => $skillTest->id,
@@ -400,6 +401,10 @@ class SkillTestController extends Controller
             'review_notes'=>$data['review_notes'] ?? null,
         ]);
 
+        if ($data['decision'] === 'approved') {
+            $governance->syncSkillTaskToBank($skillTest->fresh());
+        }
+
         $governance->log('skill_task_reviewed', [
             'skill_test_id'=>$skillTest->id,
         ], ['decision'=>$data['decision']]);
@@ -569,6 +574,7 @@ class SkillTestController extends Controller
             }
 
             $skillTest->update(['status'=>1]);
+            $governance->recordSkillExposure($skillTest->fresh());
             $governance->log('skill_test_published', ['skill_test_id'=>$skillTest->id]);
 
             return back()->with('status', 'Skills test published after readiness validation.');
