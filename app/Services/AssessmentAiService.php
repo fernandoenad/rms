@@ -180,16 +180,24 @@ HARD RULES:
 4. OPTION LENGTH PARITY IS A HARD REQUIREMENT. All four options must be parallel in grammar, structure, specificity, and text length. Make the options essentially the SAME LENGTH. Target the same word count for all four choices; at most a 1-word difference is acceptable when exact equality would make the wording unnatural.
 5. The keyed answer MUST NOT be conspicuously longer, more detailed, more qualified, more specific, or more polished than the distractors. Do not let length reveal the answer.
 6. For RELATIONAL and especially EXTENDED_ABSTRACT items, put the complexity in the scenario/stem and in the reasoning required. Do NOT express higher-level thinking by making the correct option longer.
-7. Exactly one option must be clearly BEST. Build the distractors using this internal quality ladder: one BEST keyed answer, two strong BETTER near-miss distractors, and one plausible GOOD distractor. Do not label these levels in the visible options.
-8. The two BETTER distractors must be genuinely tempting and fail for different defensible reasons, such as incomplete prioritization, weak sequencing, overgeneralization, or missing an important condition. The GOOD distractor must still be relevant and plausible, never silly or obviously wrong.
-9. Keep all four options similar in tone and precision. If the correct option needs an important qualifier, give comparable qualifiers to the distractors when appropriate so the key does not stand out.
-10. Avoid all/none-of-the-above, trivial clues, duplicated wording that reveals the answer, unnecessary negatives, irrelevant trivia, absolute-wording giveaways, and one uniquely specific option.
-11. Favor application, judgment, and job-relevant scenarios over pure recall when supported by the job.
-12. Return a concise rationale and the job/qualification basis for internal reviewer use.
-13. Difficulty must be exactly one of: easy, moderate, difficult.
-14. Do not mention that the item was AI-generated.
-15. Before returning JSON, count the words in all four options. Rewrite the set until all four choices have the same word count, or differ by no more than 1 word only when exact equality would make the language unnatural.
-16. Output VALID JSON ONLY, no markdown.
+7. Use a MIX of item structures, with a strong preference for compact structured-response options in higher-SOLO items:
+   - ACTION SEQUENCE: present 4-6 numbered actions in the stem, then ask for the most appropriate order. Options should be compact sequences such as "1 → 3 → 2 → 4".
+   - COMBINATION SELECTION: present numbered actions/statements, then ask which combination is most appropriate. Options should be compact combinations such as "1, 2, and 4".
+   - BEST PAIR / TRIAD: ask which two or three listed actions/evidence should be selected together.
+   - STANDARD SINGLE-BEST-ANSWER: use only when compact parallel prose options are more natural.
+   For RELATIONAL and EXTENDED_ABSTRACT items, prefer the first three formats whenever defensible because the stem should carry the complexity while the options remain short and length-matched.
+8. Structured-response items must still require judgment. Do not reduce them to trivia, simple recall, or obvious sequencing.
+9. Exactly one option must be clearly BEST. Build the distractors using this internal quality ladder: one BEST keyed answer, two strong BETTER near-miss distractors, and one plausible GOOD distractor. Do not label these levels in the visible options.
+10. The two BETTER distractors must be genuinely tempting and fail for different defensible reasons, such as incomplete prioritization, weak sequencing, overgeneralization, or missing an important condition. The GOOD distractor must still be relevant and plausible, never silly or obviously wrong.
+11. Keep all four options similar in tone and precision. If the correct option needs an important qualifier, give comparable qualifiers to the distractors when appropriate so the key does not stand out.
+12. Avoid all/none-of-the-above, trivial clues, duplicated wording that reveals the answer, unnecessary negatives, irrelevant trivia, absolute-wording giveaways, and one uniquely specific option.
+13. Favor application, judgment, and job-relevant scenarios over pure recall when supported by the job.
+14. Across a generated batch containing RELATIONAL or EXTENDED_ABSTRACT items, vary the structured formats rather than repeating the same sequence pattern every time.
+15. Return a concise rationale and the job/qualification basis for internal reviewer use.
+16. Difficulty must be exactly one of: easy, moderate, difficult.
+17. Do not mention that the item was AI-generated.
+18. Before returning JSON, count the words in all four options. Rewrite the set until all four choices have the same word count, or differ by no more than 1 word only when exact equality would make the language unnatural. Compact numeric/sequence options must also be visually parallel.
+19. Output VALID JSON ONLY, no markdown.
 
 JSON shape:
 {"items":[{"question":"...","options":["...","...","...","..."],"correct_index":0,"solo_level":"relational","difficulty":"moderate","competency_basis":"...","rationale":"..."}]}
