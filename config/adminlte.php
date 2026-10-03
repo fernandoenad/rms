@@ -406,6 +406,12 @@ return [
         ],
         ['header' => 'Tools'],
         [
+            'text' => 'System Health',
+            'url'  => 'admin/system-health',
+            'icon' => 'fas fa-fw fa-heartbeat',
+            'active' => ['admin/system-health', 'admin/system-health/*']
+        ],
+        [
             'text' => 'User Management',
             'url'  => 'admin/users',
             'icon' => 'fas fa-fw fa-users',
