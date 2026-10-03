@@ -36,7 +36,6 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">Add item to: {{ $exam->title }}</h3>
-                        <span class="float-right text-muted">Enrollment key: {{ $exam->enrollment_key }}</span>
                     </div>
                     <form method="post" action="{{ route('admin.assessments.items.store', $exam) }}">
                         @csrf
