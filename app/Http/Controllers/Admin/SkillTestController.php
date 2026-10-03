@@ -682,6 +682,148 @@ class SkillTestController extends Controller
         return back()->with('status', 'Human rubric scores saved. Final score: '.number_format($total,2).'/100.');
     }
 
+    public function approveAiScores(
+        Request $request,
+        SkillTest $skillTest,
+        AssessmentGovernanceService $governance
+    ) {
+        $data = $request->validate([
+            'scope'=>'required|in:all,selected',
+            'attempt_ids'=>'nullable|array',
+            'attempt_ids.*'=>'integer',
+        ]);
+
+        $criteria = $skillTest->rubricCriteria()->get();
+
+        if ($criteria->isEmpty()) {
+            return back()->with('status', 'Cannot approve AI scores because there is no active rubric.');
+        }
+
+        $query = $skillTest->attempts()
+            ->where('status', 2)
+            ->whereNull('final_score')
+            ->whereNotNull('ai_proposed_score');
+
+        if ($data['scope'] === 'selected') {
+            $attemptIds = collect($data['attempt_ids'] ?? [])
+                ->map(fn ($id) => (int) $id)
+                ->filter()
+                ->unique()
+                ->values();
+
+            if ($attemptIds->isEmpty()) {
+                return back()->with('status', 'Select at least one submitted attempt to approve.');
+            }
+
+            $query->whereIn('id', $attemptIds);
+        }
+
+        $approved = 0;
+        $skipped = 0;
+
+        $query->with(['aiEvaluations'])->orderBy('id')->chunkById(100, function ($attempts) use (
+            $criteria,
+            &$approved,
+            &$skipped
+        ) {
+            foreach ($attempts as $attempt) {
+                $evaluation = $attempt->aiEvaluations
+                    ->where('status', 'completed')
+                    ->sortByDesc('id')
+                    ->first();
+
+                if (!$evaluation || !is_array($evaluation->criterion_scores)) {
+                    $skipped++;
+                    continue;
+                }
+
+                $scoresByCriterion = collect($evaluation->criterion_scores)
+                    ->filter(fn ($row) => isset($row['criterion_id']))
+                    ->keyBy(fn ($row) => (int) $row['criterion_id']);
+
+                $valid = true;
+                $total = 0.0;
+                $rows = [];
+
+                foreach ($criteria as $criterion) {
+                    $row = $scoresByCriterion->get((int) $criterion->id);
+
+                    if (!$row || !isset($row['score']) || !is_numeric($row['score'])) {
+                        $valid = false;
+                        break;
+                    }
+
+                    $score = (float) $row['score'];
+
+                    if ($score < 0 || $score > (float) $criterion->max_points) {
+                        $valid = false;
+                        break;
+                    }
+
+                    $total += $score;
+                    $rows[] = [
+                        'criterion'=>$criterion,
+                        'score'=>$score,
+                        'notes'=>'Approved from AI proposal by '.optional(auth()->user())->email,
+                    ];
+                }
+
+                if (!$valid) {
+                    $skipped++;
+                    continue;
+                }
+
+                DB::transaction(function () use ($attempt, $rows, $total) {
+                    $locked = SkillTestAttempt::whereKey($attempt->id)
+                        ->where('status', 2)
+                        ->whereNull('final_score')
+                        ->lockForUpdate()
+                        ->first();
+
+                    if (!$locked) {
+                        return;
+                    }
+
+                    foreach ($rows as $row) {
+                        SkillTestHumanScore::updateOrCreate(
+                            [
+                                'skill_test_attempt_id'=>$locked->id,
+                                'skill_test_rubric_criterion_id'=>$row['criterion']->id,
+                            ],
+                            [
+                                'score'=>$row['score'],
+                                'notes'=>$row['notes'],
+                                'evaluator_id'=>auth()->id(),
+                            ]
+                        );
+                    }
+
+                    $locked->update([
+                        'final_score'=>round($total, 2),
+                        'finalized_by'=>auth()->id(),
+                        'evaluated_at'=>now(),
+                    ]);
+                });
+
+                $approved++;
+            }
+        });
+
+        $governance->log('skill_ai_scores_bulk_approved', [
+            'skill_test_id'=>$skillTest->id,
+        ], [
+            'scope'=>$data['scope'],
+            'approved'=>$approved,
+            'skipped'=>$skipped,
+        ]);
+
+        return back()->with(
+            'status',
+            "{$approved} AI-proposed score(s) approved as human-final scores."
+            .($skipped ? " {$skipped} attempt(s) were skipped because the AI rubric result was incomplete or invalid." : '')
+        );
+    }
+
     public function releaseScores(
         SkillTest $skillTest,
         AssessmentGovernanceService $governance
