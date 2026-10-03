@@ -38,14 +38,28 @@ class WrittenExamController extends Controller
         abort_if($exam->archived_at, 403, 'This assessment is archived and frozen.');
     }
 
-    public function index()
+    public function index(Request $request)
     {
+        $vacancies = Vacancy::query()
+            ->whereHas('exams')
+            ->orderByDesc('id')
+            ->get(['id','position_title','cycle']);
+
+        $selectedVacancyId = $request->integer('vacancy_id');
+
         $exams = Exam::with(['vacancy:id,position_title', 'assessmentGroup:id,title'])
             ->withCount(['writtenExams', 'attempts'])
+            ->when($selectedVacancyId, fn ($query) =>
+                $query->where('vacancy_id', $selectedVacancyId)
+            )
             ->orderByDesc('id')
             ->get();
 
-        return view('admin.assessments.index', compact('exams'));
+        return view('admin.assessments.index', compact(
+            'exams',
+            'vacancies',
+            'selectedVacancyId'
+        ));
     }
 
     public function create(Request $request, AssessmentScoreSyncService $scoreSync)
