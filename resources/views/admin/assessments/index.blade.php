@@ -12,6 +12,32 @@
 @stop
 @section('content')
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
+
+<div class="card card-outline card-secondary">
+    <div class="card-body py-3">
+        <form method="get" action="{{ route('admin.assessments.index') }}" class="form-row align-items-end">
+            <div class="form-group col-md-6 mb-md-0">
+                <label>Filter by Position</label>
+                <select name="vacancy_id" class="form-control" onchange="this.form.submit()">
+                    <option value="">All positions</option>
+                    @foreach($vacancies as $vacancy)
+                        <option value="{{ $vacancy->id }}" {{ (int)$selectedVacancyId === (int)$vacancy->id ? 'selected' : '' }}>
+                            #{{ $vacancy->id }} — {{ $vacancy->position_title }} ({{ $vacancy->cycle }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="form-group col-md-3 mb-md-0">
+                @if($selectedVacancyId)
+                    <a href="{{ route('admin.assessments.index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Clear Filter
+                    </a>
+                @endif
+            </div>
+        </form>
+    </div>
+</div>
+
 <div class="card"><div class="card-body table-responsive p-0">
 <table class="table table-hover">
 <thead><tr><th>Exam</th><th>Group / Set</th><th>Position</th><th>Schedule</th><th>Access</th><th>Shuffle</th><th>Items</th><th>Attempts</th><th>Status</th><th></th></tr></thead>
