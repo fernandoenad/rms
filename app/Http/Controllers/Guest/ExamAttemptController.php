@@ -84,13 +84,17 @@ class ExamAttemptController extends Controller
         return $expiry;
     }
 
-    protected function finalizeExpiredAttempt(Request $request, ExamAttempt $attempt): ExamAttempt
-    {
+    protected function finalizeAttempt(
+        Request $request,
+        ExamAttempt $attempt,
+        string $reason,
+        bool $autoSubmitted
+    ): ExamAttempt {
         if ((int) $attempt->status === 2) {
             return $attempt;
         }
 
-        return DB::transaction(function () use ($request, $attempt) {
+        return DB::transaction(function () use ($request, $attempt, $reason, $autoSubmitted) {
             $locked = ExamAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
 
             if ((int) $locked->status === 2) {
@@ -110,7 +114,6 @@ class ExamAttemptController extends Controller
                     continue;
                 }
 
-                // Backward compatibility for attempts saved before option-ID migration.
                 if ($answer && !$answer->selected_option_id && $answer->selected_option
                     && strtoupper($answer->selected_option) === strtoupper((string) $item->answer_key)) {
                     $correct++;
@@ -123,21 +126,27 @@ class ExamAttemptController extends Controller
             $locked->update([
                 'ended_at' => now(),
                 'status' => 2,
-                'auto_submitted' => true,
-                'auto_submit_reason' => 'timeout',
+                'auto_submitted' => $autoSubmitted,
+                'auto_submit_reason' => $reason,
                 'correct_answers' => $correct,
                 'total_items' => $total,
                 'percentage' => $percentage,
                 'scored_at' => now(),
             ]);
 
-            $this->event($request, $locked, 'timeout', [
+            $this->event($request, $locked, $reason, [
                 'correct_answers' => $correct,
                 'total_items' => $total,
+                'answered_items' => $answers->whereNotNull('selected_option_id')->count(),
             ]);
 
             return $locked;
         });
+    }
+
+    protected function finalizeExpiredAttempt(Request $request, ExamAttempt $attempt): ExamAttempt
+    {
+        return $this->finalizeAttempt($request, $attempt, 'timeout', true);
     }
 
     protected function ensureNotExpired(Request $request, ExamAttempt $attempt): bool
@@ -334,14 +343,22 @@ class ExamAttemptController extends Controller
         $this->authorizeApplication($request, $application);
         $this->authorizeExam($application, $attempt->exam);
 
-        // Applicant submission is timeout-only. Early manual finalization is intentionally blocked.
-        if ($this->ensureNotExpired($request, $attempt->fresh())) {
-            return response()->json([
-                'message' => 'Assessment is still in progress. Answers are saved automatically and will submit when time expires.',
-            ], 409);
+        $freshAttempt = $attempt->fresh();
+
+        // Timeout submission remains automatic and needs no applicant confirmation.
+        if (!$this->ensureNotExpired($request, $freshAttempt)) {
+            return redirect()->route('guest.applications.show', $application)
+                ->with('status_assessment', 'Assessment submitted.');
         }
 
+        // Early submission is allowed only after the applicant explicitly confirms it.
+        $request->validate([
+            'confirmed' => 'required|accepted',
+        ]);
+
+        $this->finalizeAttempt($request, $freshAttempt, 'manual_submit', false);
+
         return redirect()->route('guest.applications.show', $application)
-            ->with('status_assessment', 'Assessment submitted.');
+            ->with('status_assessment', 'Assessment submitted successfully.');
     }
 }
