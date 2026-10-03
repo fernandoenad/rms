@@ -11,7 +11,7 @@
     <div class="card-body">
         <div class="form-group">
             <label>Position</label>
-            <select name="vacancy_id" class="form-control" required>
+            <select name="vacancy_id" id="groupVacancyId" class="form-control" required>
                 <option value="">Select position</option>
                 @foreach($vacancies as $v)
                     <option value="{{ $v->id }}" {{ old('vacancy_id')==$v->id?'selected':'' }}>
@@ -35,6 +35,21 @@
                 <label>Number of equivalent sets</label>
                 <input type="number" min="1" max="26" name="expected_sets" value="{{ old('expected_sets',1) }}" class="form-control" required>
                 <small class="text-muted">RMS creates Set A, B, C... as drafts.</small>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label>Applicant score criterion</label>
+                <select name="assessment_score_key" id="groupScoreKey" class="form-control">
+                    <option value="">Do not write this assessment into applicant scores</option>
+                </select>
+                <small class="text-muted">When scores become official, RMS scales the test percentage to this criterion's maximum points and updates the applicant assessment record automatically.</small>
+            </div>
+            <div class="form-group col-md-6">
+                <div class="alert alert-light border small mb-0 mt-4">
+                    Example: if <strong>Written Examination = 20 points</strong> in the recruitment template and an applicant scores <strong>85%</strong>, RMS writes <strong>17.00</strong> to Written Examination.
+                </div>
             </div>
         </div>
 
@@ -102,4 +117,32 @@
     </div>
 </div>
 </form>
+@stop
+
+@section('js')
+<script>
+(() => {
+    const criteria = @json($scoreCriteriaByVacancy);
+    const vacancy = document.getElementById('groupVacancyId');
+    const scoreKey = document.getElementById('groupScoreKey');
+    const oldKey = @json(old('assessment_score_key'));
+
+    function refreshCriteria() {
+        const rows = criteria[String(vacancy.value)] || criteria[Number(vacancy.value)] || {};
+        const selected = scoreKey.value || oldKey || '';
+        scoreKey.innerHTML = '<option value="">Do not write this assessment into applicant scores</option>';
+
+        Object.entries(rows).forEach(([key,max]) => {
+            const option = document.createElement('option');
+            option.value = key;
+            option.textContent = key + ' (' + Number(max).toLocaleString() + ' pts)';
+            option.selected = key === selected;
+            scoreKey.appendChild(option);
+        });
+    }
+
+    vacancy.addEventListener('change', refreshCriteria);
+    refreshCriteria();
+})();
+</script>
 @stop
