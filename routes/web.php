@@ -196,6 +196,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/assessment/create', [AdminWrittenExam::class, 'create'])->name('admin.assessments.create');
     Route::post('/admin/assessment', [AdminWrittenExam::class, 'store'])->name('admin.assessments.store');
     Route::get('/admin/assessment/{exam}/edit', [AdminWrittenExam::class, 'edit'])->name('admin.assessments.edit');
+    Route::get('/admin/assessment/{exam}/preview', [AdminWrittenExam::class, 'preview'])->name('admin.assessments.preview');
     Route::put('/admin/assessment/{exam}', [AdminWrittenExam::class, 'update'])->name('admin.assessments.update');
     Route::put('/admin/assessment/{exam}/toggle', [AdminWrittenExam::class, 'toggleStatus'])->name('admin.assessments.toggle');
     Route::post('/admin/assessment/{exam}/approve', [AdminWrittenExam::class, 'approve'])->name('admin.assessments.approve');
@@ -226,6 +227,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/skills/create', [AdminSkillTest::class, 'create'])->name('admin.skills.create');
     Route::post('/admin/skills', [AdminSkillTest::class, 'store'])->name('admin.skills.store');
     Route::get('/admin/skills/{skillTest}/edit', [AdminSkillTest::class, 'edit'])->name('admin.skills.edit');
+    Route::get('/admin/skills/{skillTest}/preview', [AdminSkillTest::class, 'preview'])->name('admin.skills.preview');
     Route::put('/admin/skills/{skillTest}', [AdminSkillTest::class, 'update'])->name('admin.skills.update');
     Route::post('/admin/skills/{skillTest}/revision', [AdminSkillTest::class, 'createRevision'])->name('admin.skills.revision');
     Route::post('/admin/skills/{skillTest}/ai-generate', [AdminSkillTest::class, 'generateAi'])->name('admin.skills.ai_generate');
