@@ -176,9 +176,7 @@ class AssessmentGroupController extends Controller
                 'blueprint_version' => 1,
                 'status' => $data['status'],
                 'score_release_policy' => $data['score_release_policy'],
-                'scores_released_at' => $data['score_release_policy'] === 'manual'
-                    ? $assessmentGroup->scores_released_at
-                    : null,
+                'scores_released_at' => null,
             ]);
 
             $this->createSetPlaceholders(
@@ -282,6 +280,9 @@ class AssessmentGroupController extends Controller
                     : $assessmentGroup->blueprint_version,
                 'status' => $data['status'],
                 'score_release_policy' => $data['score_release_policy'],
+                'scores_released_at' => $data['score_release_policy'] === 'manual'
+                    ? $assessmentGroup->scores_released_at
+                    : null,
             ]);
 
             $this->createSetPlaceholders(
