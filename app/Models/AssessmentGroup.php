@@ -10,7 +10,7 @@ class AssessmentGroup extends Model
 {
     protected $fillable = [
         'vacancy_id', 'title', 'code', 'expected_sets', 'blueprint', 'blueprint_version',
-        'status', 'score_release_policy', 'scores_released_at'
+        'status', 'score_release_policy', 'assessment_score_key', 'scores_released_at'
     ];
 
     protected $casts = [
