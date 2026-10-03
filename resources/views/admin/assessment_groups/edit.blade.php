@@ -7,6 +7,7 @@
         <small class="text-muted">Equivalent written-test sets · Blueprint v{{ $assessmentGroup->blueprint_version }}</small>
     </div>
     <div class="mt-2 mt-md-0">
+        <a href="{{ route('admin.assessment_center.index') }}" class="btn btn-outline-secondary mr-2"><i class="fas fa-arrow-left"></i> Back</a>
         <a href="{{ route('admin.assessment_groups.results',$assessmentGroup) }}" class="btn btn-outline-secondary mr-2"><i class="fas fa-chart-bar"></i> Live Results</a>
         <a href="{{ route('admin.assessment_groups.analytics',$assessmentGroup) }}" class="btn btn-outline-info mr-2"><i class="fas fa-chart-line"></i> Analytics</a>
         <a href="{{ route('admin.assessment_groups.export',$assessmentGroup) }}" class="btn btn-outline-success"><i class="fas fa-file-csv"></i> Export CSV</a>
