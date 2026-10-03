@@ -43,6 +43,13 @@
 <td class="text-nowrap">
 <a class="btn btn-sm btn-warning" href="{{ route('admin.skills.edit',$test) }}"><i class="fas fa-edit"></i></a>
 <a class="btn btn-sm btn-info" href="{{ route('admin.skills.results',$test) }}"><i class="fas fa-chart-bar"></i></a>
+@if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1 && $test->attempts_count===0)
+<form method="post" action="{{ route('admin.skills.destroy',$test) }}" class="d-inline"
+      onsubmit="return confirm('Delete this Skills Test permanently? This is allowed only because no applicant has attempted it.');">
+@csrf @method('delete')
+<button class="btn btn-sm btn-outline-danger" title="Delete unattempted Skills Test"><i class="fas fa-trash"></i></button>
+</form>
+@endif
 </td>
 </tr>
 @empty<tr><td colspan="9">No skills tests yet.</td></tr>@endforelse
