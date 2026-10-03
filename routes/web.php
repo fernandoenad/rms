@@ -219,6 +219,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/assessment/{exam}/results', [AdminWrittenExam::class, 'results'])->name('admin.assessments.results');
     Route::delete('/admin/assessment/{exam}/attempts/{attempt}', [AdminWrittenExam::class, 'destroyAttempt'])->name('admin.assessments.attempts.destroy');
     Route::get('/admin/assessment/{exam}/items', [AdminWrittenExamItem::class, 'index'])->name('admin.assessments.items.index');
+    Route::get('/admin/assessment/{exam}/items/generation-status', [AdminWrittenExamItem::class, 'generationStatus'])->name('admin.assessments.items.generation_status');
     Route::get('/admin/assessment/{exam}/items/create', [AdminWrittenExamItem::class, 'create'])->name('admin.assessments.items.create');
     Route::post('/admin/assessment/{exam}/items', [AdminWrittenExamItem::class, 'store'])->name('admin.assessments.items.store');
     Route::post('/admin/assessment/{exam}/items/import', [AdminWrittenExamItem::class, 'import'])->name('admin.assessments.items.import');
