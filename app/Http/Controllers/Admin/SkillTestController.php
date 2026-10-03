@@ -528,6 +528,33 @@ class SkillTestController extends Controller
         return back()->with('status', "{$added} applicant assignment(s) added.");
     }
 
+    public function approve(
+        Request $request,
+        SkillTest $skillTest,
+        AssessmentGovernanceService $governance
+    ) {
+        abort_unless($this->currentUserIsAdmin(), 403);
+
+        $data = $request->validate([
+            'approval_notes'=>'nullable|string|max:5000',
+        ]);
+
+        $skillTest->update([
+            'approval_status'=>'approved',
+            'approved_by'=>auth()->id(),
+            'approved_at'=>now(),
+            'approval_notes'=>$data['approval_notes'] ?? 'Approved by administrator.',
+        ]);
+
+        $governance->log('skill_test_approved', [
+            'skill_test_id'=>$skillTest->id,
+        ], [
+            'creator_id'=>$skillTest->created_by,
+        ]);
+
+        return back()->with('status', 'Skills test approved.');
+    }
+
     public function toggleStatus(
         SkillTest $skillTest,
         AssessmentGovernanceService $governance
