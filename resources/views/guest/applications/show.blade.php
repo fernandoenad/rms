@@ -240,6 +240,17 @@
                                     </div>
                                 </div>
                                 <div class="chart tab-pane" id="my-assessments">
+                                    <div class="alert alert-light border mb-3">
+                                        <div class="d-flex align-items-start">
+                                            <i class="fas fa-clipboard-check text-primary mt-1 mr-2"></i>
+                                            <div>
+                                                <strong>Assessment Center</strong>
+                                                <div class="small text-muted">
+                                                    Review the status of each assessment below. Before a new test starts, RMS will show the test rules, timing, submission requirements, and important reminders. Your timer begins only after you confirm and click the final start button.
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="card-body table-responsive p-0">
                                         <table class="table table-hover text-nowrap">
                                             <thead>
@@ -322,13 +333,10 @@
                                                             @elseif(!$examOpen)
                                                                 <button class="btn btn-sm btn-secondary" disabled>{{ $examUpcoming ? 'Not open yet' : 'Closed' }}</button>
                                                             @else
-                                                                <form method="post" action="{{ route('guest.assessments.attempts.start', [$application, $exam]) }}" class="d-inline">
-                                                                    @csrf
-                                                                    <button type="submit" class="btn btn-sm btn-primary"
-                                                                        onclick="return confirm('Start this assessment now? Your timer begins immediately and you will be locked to this set.');">
-                                                                        Start
-                                                                    </button>
-                                                                </form>
+                                                                <button type="button" class="btn btn-sm btn-primary"
+                                                                    data-toggle="modal" data-target="#writtenStartModal{{ $exam->id }}">
+                                                                    <i class="fas fa-play-circle mr-1"></i> Take Written Test
+                                                                </button>
                                                             @endif
                                                         </td>
                                                     </tr>
@@ -399,13 +407,10 @@
                                                             @elseif($skillAttempt)
                                                                 <a href="{{ route('guest.skills.attempts.take',$skillAttempt) }}" class="btn btn-sm btn-primary">Continue</a>
                                                             @elseif($skillOpen)
-                                                                <form method="post" action="{{ route('guest.skills.start',[$application,$skillTest]) }}" class="d-inline">
-                                                                    @csrf
-                                                                    <button class="btn btn-sm btn-primary"
-                                                                        onclick="return confirm('{{ $skillTest->skill_test_group_id ? 'Start this Skills Test set? Your timer begins immediately and you will be locked to this equivalent set.' : 'Start this skills test? The timer begins immediately.' }}');">
-                                                                        Start
-                                                                    </button>
-                                                                </form>
+                                                                <button type="button" class="btn btn-sm btn-primary"
+                                                                    data-toggle="modal" data-target="#skillStartModal{{ $skillTest->id }}">
+                                                                    <i class="fas fa-tools mr-1"></i> Take Skills Test
+                                                                </button>
                                                             @else
                                                                 <button class="btn btn-sm btn-secondary" disabled>
                                                                     {{ $skillUpcoming ? 'Not open yet' : 'Unavailable' }}
@@ -422,6 +427,201 @@
                                                 @endif
                                             </tbody>
                                         </table>
+                                        {{-- Pre-test instruction modals: the start POST is intentionally inside
+                                             the modal so merely opening/reading the instructions never starts a timer. --}}
+                                        @foreach($exams as $exam)
+                                            @php
+                                                $attempt = $exam->attempts->first();
+                                                $examOpen = (!$exam->start_date || now()->gte($exam->start_date))
+                                                    && (!$exam->end_date || now()->lt($exam->end_date));
+                                            @endphp
+                                            @if(!$attempt && $hasAssessmentRel && $examOpen)
+                                                <div class="modal fade" id="writtenStartModal{{ $exam->id }}" tabindex="-1" aria-labelledby="writtenStartLabel{{ $exam->id }}" aria-hidden="true">
+                                                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header bg-light">
+                                                                <div>
+                                                                    <h5 class="modal-title mb-0" id="writtenStartLabel{{ $exam->id }}">
+                                                                        <i class="fas fa-file-alt text-primary mr-1"></i>
+                                                                        Before You Start the Written Test
+                                                                    </h5>
+                                                                    <small class="text-muted">{{ $exam->assessmentGroup?->title ?: $exam->title }}</small>
+                                                                </div>
+                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <div class="row mb-3">
+                                                                    <div class="col-md-4 mb-2">
+                                                                        <div class="border rounded p-3 h-100">
+                                                                            <small class="text-muted d-block">Time limit</small>
+                                                                            <strong>{{ $exam->duration }} minutes</strong>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-4 mb-2">
+                                                                        <div class="border rounded p-3 h-100">
+                                                                            <small class="text-muted d-block">Opens</small>
+                                                                            <strong>{{ optional($exam->start_date)->format('M d, Y h:i A') ?: 'Available now' }}</strong>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-4 mb-2">
+                                                                        <div class="border rounded p-3 h-100">
+                                                                            <small class="text-muted d-block">Closes</small>
+                                                                            <strong>{{ optional($exam->end_date)->format('M d, Y h:i A') ?: 'As announced' }}</strong>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="alert alert-warning">
+                                                                    <strong>Your timer starts only when you click “Start Test Now” below.</strong>
+                                                                    Do not start until you are ready to complete the assessment.
+                                                                </div>
+
+                                                                <h6 class="font-weight-bold">Important instructions</h6>
+                                                                <ol class="pl-4">
+                                                                    <li class="mb-2">Use a stable internet connection and, when possible, a fully charged device or a device connected to power.</li>
+                                                                    <li class="mb-2">Answer one question at a time. You may move between questions using the Previous, Next, and Questions controls.</li>
+                                                                    <li class="mb-2">Your selected answers are saved automatically. If your connection is interrupted, RMS will attempt to save again when the connection returns.</li>
+                                                                    <li class="mb-2">Refreshing the page, switching tabs/apps, locking the device, or temporarily losing connection does not by itself submit your test. These events may be recorded for assessment integrity and audit purposes.</li>
+                                                                    <li class="mb-2">When the allotted time expires, the system finalizes and submits your saved responses automatically.</li>
+                                                                    <li class="mb-2">You may submit earlier, but once submitted you can no longer reopen or change your answers.</li>
+                                                                    @if($exam->assessment_group_id)
+                                                                        <li class="mb-2">You will be locked to the equivalent test set assigned to you for this assessment.</li>
+                                                                    @endif
+                                                                </ol>
+
+                                                                <div class="custom-control custom-checkbox mt-3">
+                                                                    <input type="checkbox" class="custom-control-input assessment-start-ack"
+                                                                           id="writtenAck{{ $exam->id }}"
+                                                                           data-target="#writtenStartBtn{{ $exam->id }}">
+                                                                    <label class="custom-control-label" for="writtenAck{{ $exam->id }}">
+                                                                        I have read the instructions and I am ready to begin.
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Not Yet</button>
+                                                                <form method="post" action="{{ route('guest.assessments.attempts.start', [$application, $exam]) }}" class="d-inline">
+                                                                    @csrf
+                                                                    <button type="submit" id="writtenStartBtn{{ $exam->id }}" class="btn btn-primary" disabled>
+                                                                        <i class="fas fa-play mr-1"></i> Start Test Now
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        @endforeach
+
+                                        @foreach($skillTests as $skillTest)
+                                            @php
+                                                $skillAttempt = $skillTest->attempts->first();
+                                                $skillOpen = $skillTest->status
+                                                    && $skillTest->start_date
+                                                    && $skillTest->end_date
+                                                    && now()->gte($skillTest->start_date)
+                                                    && now()->lt($skillTest->end_date);
+                                                $skillModes = $skillTest->submission_modes ?: ['inline'];
+                                                $skillExtensions = $skillTest->allowed_extensions ?: [];
+                                            @endphp
+                                            @if(!$skillAttempt && $hasAssessmentRel && $skillOpen)
+                                                <div class="modal fade" id="skillStartModal{{ $skillTest->id }}" tabindex="-1" aria-labelledby="skillStartLabel{{ $skillTest->id }}" aria-hidden="true">
+                                                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header bg-light">
+                                                                <div>
+                                                                    <h5 class="modal-title mb-0" id="skillStartLabel{{ $skillTest->id }}">
+                                                                        <i class="fas fa-tools text-primary mr-1"></i>
+                                                                        Before You Start the Skills Test
+                                                                    </h5>
+                                                                    <small class="text-muted">{{ $skillTest->skillTestGroup?->title ?: $skillTest->title }}</small>
+                                                                </div>
+                                                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <div class="row mb-3">
+                                                                    <div class="col-md-4 mb-2">
+                                                                        <div class="border rounded p-3 h-100">
+                                                                            <small class="text-muted d-block">Time limit</small>
+                                                                            <strong>{{ $skillTest->duration }} minutes</strong>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-4 mb-2">
+                                                                        <div class="border rounded p-3 h-100">
+                                                                            <small class="text-muted d-block">Submission</small>
+                                                                            <strong>{{ collect($skillModes)->map(fn($mode) => ucfirst($mode))->join(' + ') }}</strong>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="col-md-4 mb-2">
+                                                                        <div class="border rounded p-3 h-100">
+                                                                            <small class="text-muted d-block">Closes</small>
+                                                                            <strong>{{ optional($skillTest->end_date)->format('M d, Y h:i A') }}</strong>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="alert alert-warning">
+                                                                    <strong>Your timer starts only when you click “Start Skills Test Now” below.</strong>
+                                                                    Make sure you have enough uninterrupted time to finish.
+                                                                </div>
+
+                                                                @if($skillTest->expected_output)
+                                                                    <div class="alert alert-light border">
+                                                                        <strong>Expected output</strong>
+                                                                        <div class="mt-1">{{ $skillTest->expected_output }}</div>
+                                                                    </div>
+                                                                @endif
+
+                                                                <h6 class="font-weight-bold">Important instructions</h6>
+                                                                <ol class="pl-4">
+                                                                    <li class="mb-2">Read the complete task instructions on the assessment screen before preparing your response.</li>
+                                                                    @if(in_array('inline',$skillModes,true))
+                                                                        <li class="mb-2">For inline responses, type directly in the response box. Your work is saved automatically as you type.</li>
+                                                                        <li class="mb-2">Pasting or dragging/dropping text into the inline response is disabled. Type your response directly in RMS.</li>
+                                                                    @endif
+                                                                    @if(in_array('file',$skillModes,true))
+                                                                        <li class="mb-2">
+                                                                            File submission is allowed.
+                                                                            @if(count($skillExtensions))
+                                                                                Accepted file type(s): <strong>{{ implode(', ', $skillExtensions) }}</strong>.
+                                                                            @endif
+                                                                            @if($skillTest->max_file_size_kb)
+                                                                                Maximum file size: <strong>{{ number_format($skillTest->max_file_size_kb / 1024, 1) }} MB</strong>.
+                                                                            @endif
+                                                                        </li>
+                                                                        <li class="mb-2">If you upload a replacement file before submission, RMS retains prior versions in the audit history.</li>
+                                                                    @endif
+                                                                    <li class="mb-2">Use a stable connection. Connectivity and page-visibility events may be recorded for audit purposes.</li>
+                                                                    <li class="mb-2">Submit only when your work is final. After submission, you can no longer edit the response or replace the file.</li>
+                                                                    @if($skillTest->skill_test_group_id)
+                                                                        <li class="mb-2">You will be locked to the equivalent skills-test set assigned to you.</li>
+                                                                    @endif
+                                                                </ol>
+
+                                                                <div class="custom-control custom-checkbox mt-3">
+                                                                    <input type="checkbox" class="custom-control-input assessment-start-ack"
+                                                                           id="skillAck{{ $skillTest->id }}"
+                                                                           data-target="#skillStartBtn{{ $skillTest->id }}">
+                                                                    <label class="custom-control-label" for="skillAck{{ $skillTest->id }}">
+                                                                        I have read the instructions and I am ready to begin.
+                                                                    </label>
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-outline-secondary" data-dismiss="modal">Not Yet</button>
+                                                                <form method="post" action="{{ route('guest.skills.start',[$application,$skillTest]) }}" class="d-inline">
+                                                                    @csrf
+                                                                    <button type="submit" id="skillStartBtn{{ $skillTest->id }}" class="btn btn-primary" disabled>
+                                                                        <i class="fas fa-play mr-1"></i> Start Skills Test Now
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        @endforeach
+
                                         @foreach($exams as $exam)
                                             @php $attempt = $exam->attempts->first(); @endphp
                                             @if($attempt && $attempt->auto_submitted)
@@ -564,5 +764,20 @@
     $(activeTab).addClass(' active');
 
     console.log(activeTab);
+
+    // Acknowledge test instructions before enabling the final start action.
+    $(document).on('change', '.assessment-start-ack', function () {
+        var target = $(this).data('target');
+        $(target).prop('disabled', !this.checked);
+    });
+
+    // Reset acknowledgement if the applicant closes a start modal and reopens it later.
+    $('.modal').on('hidden.bs.modal', function () {
+        var ack = $(this).find('.assessment-start-ack');
+        if (ack.length) {
+            ack.prop('checked', false);
+            $(ack.data('target')).prop('disabled', true);
+        }
+    });
 </script>
 @endsection
