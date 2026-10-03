@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Guest;
 
 use App\Http\Controllers\Controller;
 use App\Models\Application;
+use App\Models\AssessmentAccommodation;
 use App\Models\AssessmentAttemptEvent;
 use App\Models\AssessmentGroupAttemptLock;
 use App\Models\AssessmentPerformanceSample;
@@ -120,7 +121,7 @@ class ExamAttemptController extends Controller
         ]);
     }
 
-    protected function effectiveExpiry(Exam $exam, Carbon $startedAt): Carbon
+    protected function effectiveExpiry(Exam $exam, Carbon $startedAt, int $extraMinutes = 0): Carbon
     {
         $expiry = $startedAt->copy()->addMinutes((int) $exam->duration);
 
@@ -129,6 +130,10 @@ class ExamAttemptController extends Controller
             if ($windowEnd->lt($expiry)) {
                 $expiry = $windowEnd;
             }
+        }
+
+        if ($extraMinutes > 0) {
+            $expiry = $expiry->copy()->addMinutes($extraMinutes);
         }
 
         return $expiry;
@@ -258,6 +263,18 @@ class ExamAttemptController extends Controller
 
         $this->assertStartWindow($exam);
 
+        $accommodation = AssessmentAccommodation::where('application_id',$application->id)
+            ->where(function ($q) use ($exam) {
+                if ($exam->assessment_group_id) {
+                    $q->where('assessment_group_id',$exam->assessment_group_id);
+                } else {
+                    $q->where('exam_id',$exam->id);
+                }
+            })
+            ->latest('id')
+            ->first();
+        $extraMinutes = (int) optional($accommodation)->extra_minutes;
+
         if ($exam->assessment_group_id) {
             $existingLock = AssessmentGroupAttemptLock::where('assessment_group_id', $exam->assessment_group_id)
                 ->where('application_id', $application->id)
@@ -320,7 +337,7 @@ class ExamAttemptController extends Controller
         }
 
         if ((int) $attempt->status === 0) {
-            DB::transaction(function () use ($request, $attempt, $exam) {
+            DB::transaction(function () use ($request, $attempt, $exam, $extraMinutes) {
                 $locked = ExamAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
 
                 if ((int) $locked->status !== 0) {
@@ -330,7 +347,7 @@ class ExamAttemptController extends Controller
                 $startedAt = now();
                 $locked->update([
                     'started_at' => $startedAt,
-                    'expires_at' => $this->effectiveExpiry($exam, Carbon::parse($startedAt)),
+                    'expires_at' => $this->effectiveExpiry($exam, Carbon::parse($startedAt), $extraMinutes),
                     'status' => 1,
                 ]);
 
@@ -379,9 +396,21 @@ class ExamAttemptController extends Controller
 
         $remainingSeconds = max(0, now()->diffInSeconds(Carbon::parse($attempt->expires_at), false));
 
+        $accommodation = AssessmentAccommodation::where('application_id',$application->id)
+            ->where(function ($q) use ($exam) {
+                if ($exam->assessment_group_id) {
+                    $q->where('assessment_group_id',$exam->assessment_group_id);
+                } else {
+                    $q->where('exam_id',$exam->id);
+                }
+            })
+            ->latest('id')
+            ->first();
+        $largeText = (bool) optional($accommodation)->large_text;
+
         $this->event($request, $attempt, 'page_loaded');
 
-        return view('guest.assessments.take', compact('attempt', 'exam', 'items', 'remainingSeconds'));
+        return view('guest.assessments.take', compact('attempt', 'exam', 'items', 'remainingSeconds', 'largeText'));
     }
 
     public function reviewStatus(Request $request, ExamAttempt $attempt)
