@@ -10,7 +10,7 @@
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 <div class="card"><div class="card-body table-responsive p-0">
 <table class="table table-hover">
-<thead><tr><th>Title</th><th>Position</th><th>Schedule</th><th>Access</th><th>Attempts</th><th>Status</th><th></th></tr></thead>
+<thead><tr><th>Title</th><th>Position</th><th>Schedule</th><th>Access</th><th>Attempts</th><th>Readiness</th><th>Status</th><th></th></tr></thead>
 <tbody>
 @forelse($tests as $test)
 <tr>
@@ -19,12 +19,21 @@
 <td>{{ $test->start_date }}<br><span class="small">to {{ $test->end_date }}</span></td>
 <td>{{ $test->access_mode === 'all_taken_in' ? 'All taken-in applicants' : 'Selected applicants' }}</td>
 <td>{{ $test->attempts_count }}</td>
+@php $ready=$readiness[$test->id] ?? ['ready'=>false,'issues'=>[]]; @endphp
+<td>
+@if($ready['ready'])
+<span class="badge badge-success">Ready</span>
+@else
+<span class="badge badge-warning">Needs review</span>
+<details class="small mt-1"><summary>{{ count($ready['issues']) }} issue(s)</summary><ul class="pl-3 mb-0">@foreach(array_slice($ready['issues'],0,6) as $issue)<li>{{ $issue }}</li>@endforeach</ul></details>
+@endif
+</td>
 <td>{{ $test->status ? 'Published' : 'Draft' }}</td>
 <td class="text-nowrap">
 <a class="btn btn-sm btn-warning" href="{{ route('admin.skills.edit',$test) }}"><i class="fas fa-edit"></i></a>
 <a class="btn btn-sm btn-info" href="{{ route('admin.skills.results',$test) }}"><i class="fas fa-chart-bar"></i></a>
 </td>
 </tr>
-@empty<tr><td colspan="7">No skills tests yet.</td></tr>@endforelse
+@empty<tr><td colspan="8">No skills tests yet.</td></tr>@endforelse
 </tbody></table></div></div>
 @stop
