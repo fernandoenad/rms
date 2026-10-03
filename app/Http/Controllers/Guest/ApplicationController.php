@@ -102,22 +102,26 @@ class ApplicationController extends Controller
                 continue;
             }
 
-            $sets = $sets->filter(fn ($set) => !$set->assessmentGroup || $set->assessmentGroup->status);
+            $sets = $sets
+                ->filter(fn ($set) => !$set->assessmentGroup || $set->assessmentGroup->status)
+                ->sortBy(fn ($set) => (string)($set->set_code ?: $set->id))
+                ->values();
 
-            $openSet = $sets->first(function ($set) {
+            $openSets = $sets->filter(function ($set) {
                 return $set->status == 1
                     && (!$set->start_date || now()->gte($set->start_date))
                     && (!$set->end_date || now()->lt($set->end_date));
-            });
+            })->values();
 
-            $upcomingSet = $sets->first(function ($set) {
+            $upcomingSets = $sets->filter(function ($set) {
                 return $set->status == 1 && $set->start_date && now()->lt($set->start_date);
-            });
+            })->values();
 
-            $selectedSet = $openSet ?: $upcomingSet;
+            $candidates = $openSets->isNotEmpty() ? $openSets : $upcomingSets;
 
-            if ($selectedSet) {
-                $visibleExams->push($selectedSet);
+            if ($candidates->isNotEmpty()) {
+                $index = abs(crc32($groupId.':'.$application->id)) % $candidates->count();
+                $visibleExams->push($candidates->get($index));
             }
         }
 
@@ -176,29 +180,35 @@ class ApplicationController extends Controller
                 continue;
             }
 
-            $sets = $sets->filter(fn ($set) =>
-                !$set->skillTestGroup
-                || (
-                    $set->skillTestGroup->status
-                    && !$set->skillTestGroup->archived_at
-                    && !$set->skillTestGroup->is_paused
+            $sets = $sets
+                ->filter(fn ($set) =>
+                    !$set->skillTestGroup
+                    || (
+                        $set->skillTestGroup->status
+                        && !$set->skillTestGroup->archived_at
+                        && !$set->skillTestGroup->is_paused
+                    )
                 )
-            );
+                ->sortBy(fn ($set) => (string)($set->set_code ?: $set->id))
+                ->values();
 
-            $openSet = $sets->first(fn ($set) =>
+            $openSets = $sets->filter(fn ($set) =>
                 $set->status == 1
                 && (!$set->start_date || now()->gte($set->start_date))
                 && (!$set->end_date || now()->lt($set->end_date))
-            );
+            )->values();
 
-            $upcomingSet = $sets->first(fn ($set) =>
+            $upcomingSets = $sets->filter(fn ($set) =>
                 $set->status == 1
                 && $set->start_date
                 && now()->lt($set->start_date)
-            );
+            )->values();
 
-            if ($openSet ?: $upcomingSet) {
-                $visibleSkillTests->push($openSet ?: $upcomingSet);
+            $candidates = $openSets->isNotEmpty() ? $openSets : $upcomingSets;
+
+            if ($candidates->isNotEmpty()) {
+                $index = abs(crc32($groupId.':'.$application->id)) % $candidates->count();
+                $visibleSkillTests->push($candidates->get($index));
             }
         }
 
