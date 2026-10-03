@@ -182,6 +182,41 @@
 </div>
 </form>
 
+<div class="card card-outline card-info">
+    <div class="card-header"><strong><i class="fas fa-magic mr-1"></i> Generate All Empty Sets with AI</strong></div>
+    <div class="card-body">
+        <p class="small text-muted">
+            One click generates the full item set for every empty draft Set A/B/C/etc. using this group's shared blueprint.
+            RMS serializes equivalent-set generation so later sets are told to avoid questions already generated for earlier sets.
+            Generated items remain <strong>Pending Review</strong>; nothing is automatically approved or published.
+        </p>
+        <form method="post" action="{{ route('admin.assessment_groups.generate_all_sets',$assessmentGroup) }}"
+              onsubmit="return confirm('Queue AI generation for every empty draft set in this Written Assessment Group?');">
+            @csrf
+            <div class="form-row">
+                <div class="form-group col-md-4">
+                    <label>Generation focus</label>
+                    <select name="generation_focus" class="form-control">
+                        <option value="mixed">Mixed job-relevant</option>
+                        <option value="duties">Duties and responsibilities</option>
+                        <option value="technical">Technical competencies</option>
+                        <option value="situational">Situational / work scenario</option>
+                    </select>
+                </div>
+                <div class="form-group col-md-8">
+                    <label>Additional context <span class="text-muted font-weight-normal">(optional)</span></label>
+                    <textarea name="additional_context" rows="3" class="form-control" maxlength="30000"></textarea>
+                </div>
+            </div>
+            <input type="hidden" name="use_qualifications" value="0">
+            <input type="hidden" name="use_job_description" value="0">
+            <label class="mr-3"><input type="checkbox" name="use_qualifications" value="1" checked> Use qualifications</label>
+            <label class="mr-3"><input type="checkbox" name="use_job_description" value="1" checked> Use job description</label>
+            <button class="btn btn-info"><i class="fas fa-magic mr-1"></i> Generate All Empty Sets</button>
+        </form>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
         <strong>Equivalent Sets</strong>
