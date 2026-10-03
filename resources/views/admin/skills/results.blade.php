@@ -157,8 +157,31 @@
                     <td>
                         @if($latestSubmission)
                             <span class="badge badge-light">v{{ $latestSubmission->version }}</span>
-                            @if($latestSubmission->inline_response)<div class="small text-success">Inline response</div>@endif
-                            @if($latestSubmission->original_filename)<div class="small text-success">{{ $latestSubmission->original_filename }}</div>@endif
+                            @if($latestSubmission->inline_response)
+                                <div class="small text-success">Inline response saved</div>
+                                <details class="small mt-1"><summary>View inline response</summary><div class="border rounded p-2 mt-1" style="white-space:pre-wrap;max-height:220px;overflow:auto;">{{ $latestSubmission->inline_response }}</div></details>
+                            @endif
+                            @if($latestSubmission->original_filename)
+                                <div class="small mt-1">
+                                    <a href="{{ route('admin.skills.submissions.download',[$skillTest,$latestSubmission]) }}">
+                                        <i class="fas fa-download"></i> {{ $latestSubmission->original_filename }}
+                                    </a>
+                                </div>
+                            @endif
+                            @if($attempt->submissions->count() > 1)
+                                <details class="small mt-1">
+                                    <summary>{{ $attempt->submissions->count() }} submission versions</summary>
+                                    @foreach($attempt->submissions->sortByDesc('version') as $version)
+                                        <div class="border-top py-1">
+                                            v{{ $version->version }}
+                                            @if($version->is_final)<span class="badge badge-success">Final</span>@endif
+                                            @if($version->original_filename)
+                                                · <a href="{{ route('admin.skills.submissions.download',[$skillTest,$version]) }}">download file</a>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </details>
+                            @endif
                         @else
                             <span class="text-muted">No saved output yet</span>
                         @endif
