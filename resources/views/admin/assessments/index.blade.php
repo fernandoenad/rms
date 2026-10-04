@@ -77,5 +77,11 @@
 </tr>
 @empty<tr><td colspan="10">No written exams yet.</td></tr>@endforelse
 </tbody>
-</table></div></div>
+</table></div>
+@if($exams->hasPages())
+<div class="card-footer clearfix">
+    <div class="float-right">{{ $exams->links() }}</div>
+</div>
+@endif
+</div>
 @stop
