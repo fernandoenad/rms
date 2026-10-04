@@ -9,6 +9,7 @@ use App\Models\AssessmentPerformanceSample;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\SkillTest;
+use App\Models\SkillTestGroup;
 use App\Models\SkillTestAttempt;
 use App\Models\SkillTestAiEvaluation;
 use App\Models\WrittenExam;
@@ -188,7 +189,17 @@ class AssessmentCenterController extends Controller
             ->limit(20)
             ->get();
 
-        $skillTests = SkillTest::with('vacancy:id,position_title')
+        $skillGroups = SkillTestGroup::with([
+                'vacancy:id,position_title',
+                'skillTests:id,skill_test_group_id,status,is_paused,archived_at',
+            ])
+            ->whereNull('archived_at')
+            ->orderByDesc('id')
+            ->limit(20)
+            ->get();
+
+        $standaloneSkillTests = SkillTest::with('vacancy:id,position_title')
+            ->whereNull('skill_test_group_id')
             ->whereNull('archived_at')
             ->orderByDesc('id')
             ->limit(20)
@@ -211,7 +222,8 @@ class AssessmentCenterController extends Controller
             'heartbeat',
             'schedulerHealthy',
             'groups',
-            'skillTests',
+            'skillGroups',
+            'standaloneSkillTests',
             'standaloneExams'
         ));
     }
