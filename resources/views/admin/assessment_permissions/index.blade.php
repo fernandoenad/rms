@@ -7,6 +7,8 @@
 </div>
 @stop
 @section('content')
+@include('admin.assessment_center._nav')
+
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 <div class="alert alert-light border">
     Administrators (role level 1) always have all capabilities. For backward compatibility, a non-admin user with <strong>no explicit capability records</strong> keeps existing access. Once you save one or more capabilities for that user, only the selected Assessment Center capabilities are allowed.
