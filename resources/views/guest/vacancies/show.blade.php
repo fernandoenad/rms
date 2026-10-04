@@ -51,7 +51,7 @@
                                     <h3>Salary Grade: <small><small>{{$vacancy->salary_grade}}</small></small></h3>
                                     <h3>Base Pay: <small><small>{{number_format($vacancy->base_pay,2)}}</small></small></h3>
                                     <h3>Office: <small><small>{{$vacancy->getOffice()}}</small></small></h3>
-                                    <h3>Vacancy: <small><small>{{$vacancy->vacancy}}</small></small></h3>
+                                    <h3>Number of Vacancies: <small><small>{{$vacancy->vacancy}}</small></small></h3>
                                     <h3>Cycle: <small><small>{{$vacancy->cycle}}</small></small></h3>
                                 </div>
                                 <div class="col-lg-6">
@@ -60,9 +60,13 @@
                                     
                                 </div>
                                 <div class="col-lg-2">
-                                <a href="{{route('guest.vacancies.apply', $vacancy)}}" class="btn btn-primary btn-lg">
-                                        <i class="fas fa-file-signature"></i> Apply
-                                    </a>
+                                    @if($vacancy->isOpenForApplications())
+                                        <a href="{{route('guest.vacancies.apply', $vacancy)}}" class="btn btn-primary btn-lg">
+                                            <i class="fas fa-file-signature"></i> Apply
+                                        </a>
+                                    @else
+                                        <span class="badge badge-secondary p-2">Applications Closed</span>
+                                    @endif
                                 </div>
                             </div>
                             
