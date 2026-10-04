@@ -29,6 +29,40 @@
             {{ session('status') }}
         </div>
     @endif
+
+    @php
+        $posting = $vacancy->getPostingStatus();
+        $postingClass = $posting==='Open for Applications' ? 'success' : ($posting==='Scheduled' ? 'info' : ($posting==='Closed' ? 'secondary' : 'light border'));
+    @endphp
+    <div class="card card-outline card-light mb-3">
+        <div class="card-body py-2 d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <strong>{{ $vacancy->position_title }}</strong>
+                <span class="badge badge-{{ $postingClass }} ml-2">{{ $posting }}</span>
+                <div class="small text-muted">Quick posting controls are separate from the detailed vacancy settings below.</div>
+            </div>
+            <div class="mt-2 mt-md-0">
+                <a href="{{ route('admin.applications.vacancy.show',$vacancy) }}" class="btn btn-sm btn-outline-secondary mr-1"><i class="fas fa-users mr-1"></i> Applicants</a>
+                @if($posting==='Draft')
+                    <form method="post" action="{{ route('admin.vacancies.publish',$vacancy) }}" class="d-inline">@csrf
+                        <button class="btn btn-sm btn-success" onclick="return confirm('Publish and open applications now?')"><i class="fas fa-bullhorn mr-1"></i> Publish Now</button>
+                    </form>
+                @elseif($posting==='Open for Applications')
+                    <form method="post" action="{{ route('admin.vacancies.close_posting',$vacancy) }}" class="d-inline">@csrf
+                        <button class="btn btn-sm btn-warning" onclick="return confirm('Close applications now?')"><i class="fas fa-door-closed mr-1"></i> Close Applications</button>
+                    </form>
+                @elseif($posting==='Closed')
+                    <form method="post" action="{{ route('admin.vacancies.reopen',$vacancy) }}" class="d-inline">@csrf
+                        <button class="btn btn-sm btn-success" onclick="return confirm('Reopen applications now?')"><i class="fas fa-door-open mr-1"></i> Reopen</button>
+                    </form>
+                @elseif($posting==='Scheduled')
+                    <form method="post" action="{{ route('admin.vacancies.publish',$vacancy) }}" class="d-inline">@csrf
+                        <button class="btn btn-sm btn-success" onclick="return confirm('Override the schedule and open applications now?')"><i class="fas fa-play mr-1"></i> Open Now</button>
+                    </form>
+                @endif
+            </div>
+        </div>
+    </div>
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
