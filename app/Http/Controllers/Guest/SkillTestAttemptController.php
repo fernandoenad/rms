@@ -102,15 +102,13 @@ class SkillTestAttemptController extends Controller
             }
 
             if (!$existingLock) {
-                $candidates = SkillTest::where('skill_test_group_id',$skillTest->skill_test_group_id)
+                $currentSet = SkillTest::where('skill_test_group_id',$skillTest->skill_test_group_id)
                     ->where('vacancy_id',$application->vacancy_id)
                     ->where('status',1)
-                    ->where(function($q){
-                        $q->whereNull('start_date')->orWhere('start_date','<=',now());
-                    })
-                    ->where(function($q){
-                        $q->whereNull('end_date')->orWhere('end_date','>',now());
-                    })
+                    ->whereNotNull('start_date')
+                    ->whereNotNull('end_date')
+                    ->where('start_date','<=',now())
+                    ->where('end_date','>',now())
                     ->where(function($q) use ($application) {
                         $q->where('access_mode','all_taken_in')
                           ->orWhereExists(function($sub) use ($application) {
@@ -119,14 +117,19 @@ class SkillTestAttemptController extends Controller
                                   ->where('skill_test_assignments.application_id',$application->id);
                           });
                     })
+                    // Schedule determines the equivalent set. If two windows
+                    // overlap, the set that opened most recently takes priority.
+                    ->orderByDesc('start_date')
                     ->orderBy('set_code')
-                    ->get(['id']);
+                    ->first(['id','set_code']);
 
-                if ($candidates->isNotEmpty()) {
-                    $index = abs(crc32($skillTest->skill_test_group_id.':'.$application->id)) % $candidates->count();
-                    if ((int)$candidates[$index]->id !== (int)$skillTest->id) {
-                        abort(403,'This application is assigned to another equivalent Skills Test set.');
-                    }
+                if (!$currentSet || (int)$currentSet->id !== (int)$skillTest->id) {
+                    return back()->with(
+                        'status_assessment',
+                        $currentSet
+                            ? 'The current Skills Test schedule is using Set '.$currentSet->set_code.'. Refresh the page and start the available set.'
+                            : 'No equivalent Skills Test set is currently open.'
+                    );
                 }
 
                 try {
