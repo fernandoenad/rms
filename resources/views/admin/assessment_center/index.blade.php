@@ -7,18 +7,39 @@
         <small class="text-muted">Unified operations for written assessments and skills tests</small>
     </div>
     <div class="mt-2 mt-md-0">
-        <a href="{{ route('admin.assessment_groups.index') }}" class="btn btn-outline-primary mr-2">Manage Written</a>
-        <a href="{{ route('admin.skill_groups.index') }}" class="btn btn-outline-info mr-2">Manage Skills</a>
-        <a href="{{ route('admin.assessment_bank.index') }}" class="btn btn-outline-secondary mr-2">Content Bank</a>
-        <a href="{{ route('admin.assessment_snapshots.index') }}" class="btn btn-outline-secondary mr-2">Snapshots</a>
-        @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1)
-            <a href="{{ route('admin.assessment_permissions.index') }}" class="btn btn-outline-dark">Access Roles</a>
-        @endif
+        <a href="{{ route('admin.assessment_groups.create') }}" class="btn btn-outline-primary mr-2"><i class="fas fa-plus mr-1"></i> Written Group</a>
+        <a href="{{ route('admin.skill_groups.create') }}" class="btn btn-outline-info"><i class="fas fa-plus mr-1"></i> Skills Group</a>
     </div>
 </div>
 @stop
 
 @section('content')
+@include('admin.assessment_center._nav')
+
+@php
+    $nextAttention = $assessmentRows->first(fn ($row) => !$row['ready']);
+@endphp
+
+@if(($queue['failed'] ?? 0) > 0)
+<div class="alert alert-danger py-2 d-flex align-items-center justify-content-between flex-wrap">
+    <div><strong>Next recommended action:</strong> Review {{ number_format($queue['failed']) }} failed background job(s).</div>
+    <a href="#operationsHealth" class="btn btn-sm btn-outline-danger mt-2 mt-md-0">Open Operations</a>
+</div>
+@elseif(!$schedulerHealthy)
+<div class="alert alert-warning py-2 d-flex align-items-center justify-content-between flex-wrap">
+    <div><strong>Next recommended action:</strong> Check the scheduler heartbeat before the next assessment window.</div>
+    <a href="#operationsHealth" class="btn btn-sm btn-outline-warning mt-2 mt-md-0">Open Operations</a>
+</div>
+@elseif($nextAttention)
+<div class="alert alert-warning py-2 d-flex align-items-center justify-content-between flex-wrap">
+    <div>
+        <strong>Next recommended action:</strong>
+        {{ $nextAttention['title'] }} needs attention — {{ $nextAttention['readiness_detail'] }}
+    </div>
+    <a href="{{ $nextAttention['manage_url'] }}" class="btn btn-sm btn-outline-warning mt-2 mt-md-0">Review Assessment</a>
+</div>
+@endif
+
 @if(session('status'))
 <div class="alert alert-info py-2">{{ session('status') }}</div>
 @endif
@@ -56,7 +77,7 @@
     </div>
 </div>
 
-<div class="card card-outline card-secondary">
+<div id="operationsHealth" class="card card-outline card-secondary">
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
         <strong>Operations Health</strong>
         @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1 && ($queue['failed'] ?? 0) > 0)
@@ -136,7 +157,7 @@
     </div>
 </div>
 
-<div class="card card-outline card-primary">
+<div id="assessments" class="card card-outline card-primary">
     <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
         <div>
             <strong>Assessments</strong>

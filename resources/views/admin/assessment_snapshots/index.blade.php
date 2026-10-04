@@ -7,6 +7,8 @@
 </div>
 @stop
 @section('content')
+@include('admin.assessment_center._nav')
+
 <div class="card">
 <div class="card-body table-responsive p-0">
 <table class="table table-hover mb-0">

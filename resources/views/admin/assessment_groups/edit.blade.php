@@ -4,6 +4,15 @@
 <div class="d-flex justify-content-between align-items-center flex-wrap">
     <div>
         <h1 class="mb-0">{{ $assessmentGroup->title }}</h1>
+        <div class="small text-muted mb-1">
+            <a href="{{ route('admin.assessment_center.index') }}">Assessment Center</a>
+            <span class="mx-1">›</span>
+            <a href="{{ route('admin.assessment_center.index') }}#assessments">Assessments</a>
+            <span class="mx-1">›</span>
+            Written
+            <span class="mx-1">›</span>
+            {{ $assessmentGroup->title }}
+        </div>
         <small class="text-muted">Equivalent written-test sets · Blueprint v{{ $assessmentGroup->blueprint_version }}</small>
     </div>
     <div class="mt-2 mt-md-0">
@@ -17,6 +26,25 @@
 @stop
 
 @section('content')
+@include('admin.assessment_center._nav')
+
+@php
+    $nextSetIssue = collect($assessmentGroup->exams)->first(function ($set) use ($readiness) {
+        return !($readiness[$set->id]['ready'] ?? false);
+    });
+    $nextSetIssueData = $nextSetIssue ? ($readiness[$nextSetIssue->id] ?? null) : null;
+@endphp
+@if($nextSetIssue && $nextSetIssueData)
+<div class="alert alert-warning py-2 d-flex justify-content-between align-items-center flex-wrap">
+    <div>
+        <strong>Next recommended action:</strong>
+        Review Set {{ $nextSetIssue->set_code ?: '?' }}
+        @if(!empty($nextSetIssueData['issues'][0])) — {{ $nextSetIssueData['issues'][0] }} @endif
+    </div>
+    <a href="{{ route('admin.assessments.edit',$nextSetIssue) }}" class="btn btn-sm btn-outline-warning mt-2 mt-md-0">Manage Set</a>
+</div>
+@endif
+
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
 
