@@ -23,6 +23,10 @@ class VacancyController extends Controller
 
     public function show(Vacancy $vacancy)
     {
+        if (!$vacancy->isOpenForApplications()) {
+            abort(404);
+        }
+
         return view('guest.vacancies.show', ['vacancy' => $vacancy]);
     }
 
