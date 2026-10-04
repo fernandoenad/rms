@@ -281,7 +281,13 @@
                                                             <div class="small text-muted">
                                                                 Written Exam
                                                                 @if($exam->assessmentGroup && $exam->set_code)
-                                                                    · Assigned set: {{ $exam->set_code }}
+                                                                    @if($attempt)
+                                                                        · Assigned set: {{ $exam->set_code }}
+                                                                    @elseif($examOpen)
+                                                                        · Current set: {{ $exam->set_code }}
+                                                                    @elseif($examUpcoming)
+                                                                        · Scheduled set: {{ $exam->set_code }}
+                                                                    @endif
                                                                 @endif
                                                             </div>
                                                         </td>
