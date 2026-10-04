@@ -79,9 +79,13 @@ class VacancyController extends Controller
             'vacancy' => 'required|integer',
             'status' => 'required|integer|in:0,1',
             'posting_start_at' => 'nullable|date',
-            'posting_end_at' => 'nullable|date|after:posting_start_at',
+            'posting_end_at' => 'nullable|date',
             'template_id' => 'required|integer',
         ]);
+
+        if (!empty($data['posting_start_at']) && !empty($data['posting_end_at']) && strtotime($data['posting_end_at']) <= strtotime($data['posting_start_at'])) {
+            return back()->withErrors(['posting_end_at' => 'Applications Close must be later than Applications Open.'])->withInput();
+        }
 
         $data['level1_status'] = 1;
         $data['level2_status'] = 0;
@@ -115,6 +119,10 @@ class VacancyController extends Controller
             'level1_status' => 'required|integer|in:0,1,2',
             'level2_status' => 'required|integer|in:0,1,2,3',
         ]);
+
+        if (!empty($data['posting_start_at']) && !empty($data['posting_end_at']) && strtotime($data['posting_end_at']) <= strtotime($data['posting_start_at'])) {
+            return back()->withErrors(['posting_end_at' => 'Applications Close must be later than Applications Open.'])->withInput();
+        }
 
         $vacancy->update($data);
 
