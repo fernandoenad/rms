@@ -59,18 +59,21 @@ class WrittenExamItemController extends Controller
 
     public function index(Exam $exam, AssessmentGovernanceService $governance)
     {
+        $exam->loadMissing('assessmentGroup');
+
         $items = $exam->writtenExams()
-            ->with('options')
+            ->with(['options' => fn ($q) => $q->select(
+                'id',
+                'written_exam_id',
+                'source_position',
+                'option_text',
+                'is_correct'
+            )])
             ->select(
                 'id',
                 'exam_id',
                 'question',
-                'option_a',
-                'option_b',
-                'option_c',
-                'option_d',
                 'answer_key',
-                'attempts',
                 'status',
                 'solo_level',
                 'difficulty',
@@ -85,8 +88,17 @@ class WrittenExamItemController extends Controller
             ->orderByDesc('id')
             ->get();
 
+        // Reuse the item/options collection already loaded for this page so
+        // readiness does not issue another full written-items query.
+        $exam->setRelation('writtenExams', $items);
+
         $hasAttempts = $exam->attempts()->whereNotNull('started_at')->exists();
-        $readiness = $governance->readiness($exam);
+
+        // Similarity review is intentionally skipped during normal page loads.
+        // It is substantially more CPU intensive and remains part of publish/
+        // governance validation where it matters.
+        $readiness = $governance->readiness($exam, false);
+
         $generationRuns = AssessmentAiGenerationRun::where('exam_id', $exam->id)
             ->orderByDesc('id')
             ->limit(5)
@@ -120,15 +132,16 @@ class WrittenExamItemController extends Controller
             ])
             ->values();
 
-        $readiness = $governance->readiness($exam->fresh());
+        $hasActiveRun = $runs->contains(fn ($run) => in_array($run->status, ['queued','processing'], true));
+        $readiness = $hasActiveRun ? null : $governance->readiness($exam->fresh(), false);
 
         return response()->json([
             'runs'=>$runs,
-            'readiness'=>[
+            'readiness'=>$readiness ? [
                 'ready'=>(bool)$readiness['ready'],
                 'item_count'=>(int)($readiness['item_count'] ?? 0),
                 'issues'=>array_values($readiness['issues'] ?? []),
-            ],
+            ] : null,
         ]);
     }
 

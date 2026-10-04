@@ -158,27 +158,25 @@
 <div class="mb-3">
 <form method="post" action="{{ route('admin.assessments.items.import',$exam) }}" enctype="multipart/form-data">
     @csrf
-    <div class="form-row align-items-end">
-        <div class="form-group col-md-8 col-lg-6 mb-2">
-            <label class="small font-weight-bold mb-1">Import items from CSV</label>
-            <div class="custom-file">
-                <input type="file"
-                       name="file"
-                       id="writtenItemsCsv"
-                       accept=".csv,.txt"
-                       class="custom-file-input"
-                       {{ $locked?'disabled':'' }}
-                       required>
-                <label class="custom-file-label" for="writtenItemsCsv">Choose CSV or TXT file</label>
-            </div>
-            <small class="form-text text-muted">Select a prepared item file, then import it into this draft set.</small>
+    <label class="small font-weight-bold mb-1">Import items from CSV</label>
+    <div class="input-group written-import-group">
+        <div class="custom-file">
+            <input type="file"
+                   name="file"
+                   id="writtenItemsCsv"
+                   accept=".csv,.txt"
+                   class="custom-file-input"
+                   {{ $locked?'disabled':'' }}
+                   required>
+            <label class="custom-file-label" for="writtenItemsCsv">Choose CSV or TXT file</label>
         </div>
-        <div class="form-group col-md-4 col-lg-2 mb-2">
-            <button class="btn btn-outline-info btn-block" {{ $locked?'disabled':'' }}>
+        <div class="input-group-append">
+            <button class="btn btn-outline-info px-4" {{ $locked?'disabled':'' }}>
                 <i class="fas fa-file-import mr-1"></i> Import CSV
             </button>
         </div>
     </div>
+    <small class="form-text text-muted">Select a prepared item file, then import it into this draft set.</small>
 </form>
 </div>
 <div class="table-responsive"><table class="table table-hover">
@@ -239,6 +237,16 @@
 @section('css')
 <style>
 .written-stem { white-space: pre-line; display:block; line-height:1.55; }
+.written-import-group { max-width: 900px; }
+.written-import-group .custom-file-label,
+.written-import-group .custom-file-input,
+.written-import-group .btn { height: calc(2.25rem + 2px); }
+@media (max-width: 575.98px) {
+    .written-import-group { display:block; }
+    .written-import-group .custom-file { width:100%; margin-bottom:.5rem; }
+    .written-import-group .input-group-append { display:block; margin-left:0; }
+    .written-import-group .input-group-append .btn { width:100%; border-radius:.25rem; }
+}
 </style>
 @stop
 

@@ -54,7 +54,8 @@ class WrittenExamController extends Controller
                 $query->where('vacancy_id', $selectedVacancyId)
             )
             ->orderByDesc('id')
-            ->get();
+            ->paginate(40)
+            ->withQueryString();
 
         return view('admin.assessments.index', compact(
             'exams',
