@@ -2,7 +2,22 @@
 @section('title','Edit Written Exam')
 @section('content_header')
 <div class="d-flex justify-content-between align-items-center flex-wrap">
-    <h1 class="mb-0">Edit Written Exam</h1>
+    <div>
+        <h1 class="mb-0">{{ $exam->assessment_group_id ? 'Set '.$exam->set_code : 'Edit Written Exam' }}</h1>
+        <div class="small text-muted">
+            <a href="{{ route('admin.assessment_center.index') }}">Assessment Center</a>
+            <span class="mx-1">›</span>
+            <a href="{{ route('admin.assessment_center.index') }}#assessments">Assessments</a>
+            @if($exam->assessment_group_id)
+                <span class="mx-1">›</span>
+                <a href="{{ route('admin.assessment_groups.edit',$exam->assessment_group_id) }}">{{ optional($exam->assessmentGroup)->title ?: 'Written Group' }}</a>
+                <span class="mx-1">›</span>
+                Set {{ $exam->set_code }}
+            @else
+                <span class="mx-1">›</span> Standalone Written
+            @endif
+        </div>
+    </div>
     <div class="mt-2 mt-md-0">
         @if($exam->assessment_group_id)
             <a href="{{ route('admin.assessment_groups.edit',$exam->assessment_group_id) }}" class="btn btn-outline-secondary mr-2"><i class="fas fa-arrow-left"></i> Back to Group</a>
@@ -14,6 +29,21 @@
 </div>
 @stop
 @section('content')
+@include('admin.assessment_center._nav')
+
+@if($exam->assessment_group_id)
+<div class="card card-outline card-light mb-3">
+    <div class="card-body py-2">
+        <nav class="nav nav-pills nav-sm">
+            <a class="nav-link active" href="{{ route('admin.assessments.edit',$exam) }}">Overview & Schedule</a>
+            <a class="nav-link" href="{{ route('admin.assessments.items.index',$exam) }}">Items & Review</a>
+            <a class="nav-link" href="{{ route('admin.assessments.results',$exam) }}">Attempts & Results</a>
+            <a class="nav-link" href="{{ route('admin.assessments.preview',$exam) }}">Preview</a>
+        </nav>
+    </div>
+</div>
+@endif
+
 @if($exam->access_mode==='selected_applicants')
 <div class="card border-info"><div class="card-header"><strong>Optional Selected-Applicant Access</strong></div><div class="card-body">
 <form method="post" action="{{ route('admin.assessments.assign',$exam) }}">@csrf
