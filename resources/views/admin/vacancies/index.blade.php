@@ -1,7 +1,7 @@
 @extends('adminlte::page')
 
 @php
-    $title = "Positions";
+    $title = "Vacancies";
     $app_name = config('app.name', '') . ' [Admin]';
 @endphp 
 
