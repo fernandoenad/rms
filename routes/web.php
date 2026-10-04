@@ -171,6 +171,10 @@ Route::group(['middleware' => ['active']], function () {
     Route::put('/admin/vacancies/{vacancy}', [AdminVacancy::class, 'update'])->name('admin.vacancies.update');
     Route::get('/admin/vacancies/{vacancy}/delete', [AdminVacancy::class, 'delete'])->name('admin.vacancies.delete');
     Route::get('/admin/vacancies/{vacancy}/apply', [AdminVacancy::class, 'apply'])->name('admin.vacancies.apply');
+    Route::post('/admin/vacancies/{vacancy}/publish', [AdminVacancy::class, 'publish'])->name('admin.vacancies.publish');
+    Route::post('/admin/vacancies/{vacancy}/close-posting', [AdminVacancy::class, 'closePosting'])->name('admin.vacancies.close_posting');
+    Route::post('/admin/vacancies/{vacancy}/reopen', [AdminVacancy::class, 'reopen'])->name('admin.vacancies.reopen');
+    Route::post('/admin/vacancies/{vacancy}/draft', [AdminVacancy::class, 'returnToDraft'])->name('admin.vacancies.draft');
 
     Route::get('/admin/assessment-center', [AdminAssessmentCenter::class, 'index'])->name('admin.assessment_center.index');
     Route::post('/admin/assessment-center/failed-jobs/retry', [AdminAssessmentCenter::class, 'retryFailedJobs'])->name('admin.assessment_center.failed_jobs.retry');

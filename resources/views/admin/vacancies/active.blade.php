@@ -31,110 +31,37 @@
     @endif
 
     <div class="container-fluid">
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">List</h3>
-                    </div>
-                    <div class="card-body">
-                        <table id="list" class="table table-sm table-bordered table-striped">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Cycle</th>
-                                    <th>Position title</th>
-                                    <th class="text-right">Untagged applications</th>
-                                    <th class="text-right">Tagged applications</th>
-                                    <th class="text-right">Pending (SRC)</th>
-                                    <th class="text-right">Completed (SRC)</th>
-                                    <th class="text-right">Pending (DRC)</th>
-                                    <th class="text-right">Completed (DRC)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                
-                                @if(sizeof($vacancies) > 0)
-                                    @php $untagged = 0; $tagged = 0; $src_pending = 0; $src_completed = 0; $drc_pending = 0; $drc_completed = 0; @endphp
-                                    @foreach($vacancies as $vacancy)
-                                        @php 
-                                            $untagged += $vacancy->applications()->where('station_id', '=', -1)->get()->count();
-                                            $tagged += $vacancy->applications()->where('station_id', '!=', -1)->get()->count();
-                                        @endphp
-                                        <tr>
-                                            <td>{{$vacancy->id}}</td>
-                                            <td>{{$vacancy->cycle}}</td>
-                                            <td>
-                                                <a href="{{ route('admin.applications.vacancy.show', $vacancy) }}">
-                                                    {{$vacancy->position_title}}
-                                                </a>
-                                            </td>
-                                            @php 
-                                                $untagged = $vacancy->applications()->where('station_id', '=', -1)->get()->count();
-                                                $tagged = $vacancy->applications()->where('station_id', '!=', -1)->get()->count();
-                                            @endphp 
-                                            <td class="text-right">{{ number_format($untagged,0) }}</td>
-                                            <td class="text-right">{{ number_format($tagged,0) }}</td>
-                                            @php 
-                                                $assessments = $vacancy->applications()->join('assessments', 'assessments.application_id', '=', 'applications.id')->get(); 
-                                                        
-                                                if($assessments->count() > 0){
-                                                    $src_pending = $assessments->where('status','=',1)->count();
-                                                    $src_completed = $assessments->where('status','>=',2)->count();
-                                                    $drc_pending = $assessments->where('status','=',2)->count();
-                                                    $drc_completed =  $assessments->where('status','>=',3)->count();
-                                                } else {
-                                                    $src_pending = 0;
-                                                    $src_completed = 0;
-                                                    $drc_pending = 0;
-                                                    $drc_completed = 0;
-                                                }
-
-                                            @endphp
-                                            @if($tagged > 0)
-                                                <td class="text-right">{{number_format($src_pending,0)}}</td>
-                                                <td class="text-right">{{number_format($src_completed,0)}} <strong>({{number_format($src_completed/$tagged*100,2)}}%)</strong></td>
-                                                <td class="text-right">{{number_format($drc_pending,0)}}</td>
-                                                <td class="text-right">{{number_format($drc_completed,0)}} <strong>({{number_format($drc_completed/$tagged*100,2)}}%)</strong></td>
-                                            @else 
-                                                <td class="text-right">{{number_format($src_pending,0)}}</td>
-                                                <td class="text-right">{{number_format($src_completed,0)}} (N/A)</td>
-                                                <td class="text-right">{{number_format($drc_pending,0)}}</td>
-                                                <td class="text-right">{{number_format($drc_completed,0)}} (N/A)</td>
-                                            @endif
-                                        </tr>
-                                    @endforeach
-                                    <!--
-                                    <tr>
-                                        <td></td>
-                                        <td></td>
-                                        <th class="text-right">Subtotal</th>
-                                        <th class="text-right">{{ number_format($untagged,0) }}</th>
-                                        <th class="text-right">{{ number_format($tagged,0) }}</th>
-                                        <th class="text-right">{{ number_format($src_pending,0) }}</th>
-                                        <th class="text-right">{{ number_format($src_completed,0) }}</th>
-                                        <th class="text-right">{{ number_format($drc_pending,0) }}</th>
-                                        <th class="text-right">{{ number_format($drc_completed,0) }}</th>
-                                    </tr>
-                                    <tr>
-                                        <td></td>
-                                        <td></td>
-                                        <th class="text-right">Total</th>
-                                        <th colspan="2" class="text-center">{{ number_format($untagged + $tagged, 0)}}</th>
-                                        <th colspan="2" class="text-center">{{ number_format($src_pending + $src_completed, 0)}}</th>
-                                        <th colspan="2" class="text-center">{{ number_format($drc_pending + $drc_completed, 0)}}</th>
-                                    </tr>
-                                    -->
-                                @else
-                                    <tr>
-                                        <td colspan="9">0 vacancies found.</td>
-                                    </tr>
-                                @endif
-                            </tbody>
-
-                    </table>
-                </div>
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Recruitment Progress by Vacancy</h3></div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Position</th><th>Cycle</th><th class="text-right">Untagged</th><th class="text-right">Assigned</th>
+                            <th class="text-right">Station Pending</th><th class="text-right">Station Completed</th>
+                            <th class="text-right">Division Pending</th><th class="text-right">Division Completed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @forelse($vacancies as $vacancy)
+                        @php $tagged = (int)$vacancy->tagged_applications_count; @endphp
+                        <tr>
+                            <td><a href="{{ route('admin.applications.vacancy.show',$vacancy) }}"><strong>{{ $vacancy->position_title }}</strong></a></td>
+                            <td>{{ $vacancy->cycle }}</td>
+                            <td class="text-right">{{ number_format($vacancy->untagged_applications_count) }}</td>
+                            <td class="text-right">{{ number_format($tagged) }}</td>
+                            <td class="text-right">{{ number_format($vacancy->station_pending_count) }}</td>
+                            <td class="text-right">{{ number_format($vacancy->station_completed_count) }} <span class="text-muted">({{ $tagged ? number_format($vacancy->station_completed_count/$tagged*100,2).'%' : 'N/A' }})</span></td>
+                            <td class="text-right">{{ number_format($vacancy->division_pending_count) }}</td>
+                            <td class="text-right">{{ number_format($vacancy->division_completed_count) }} <span class="text-muted">({{ $tagged ? number_format($vacancy->division_completed_count/$tagged*100,2).'%' : 'N/A' }})</span></td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="8" class="text-center text-muted py-4">No vacancies found.</td></tr>
+                    @endforelse
+                    </tbody>
+                </table>
             </div>
+            @if($vacancies->hasPages())<div class="card-footer">{{ $vacancies->links('pagination::bootstrap-4') }}</div>@endif
         </div>
     </div>
 @stop
@@ -146,16 +73,7 @@
 @section('css')
 @stop
 
-@section('plugins.Datatables', true)
+@section('plugins.Datatables', false)
 
 @section('js')
-    <script> console.log('Hi!'); </script>
-    <script>
-        $(function () {
-            $("#list").DataTable({
-            "responsive": true, "lengthChange": false, "autoWidth": false, "pageLength": 100, "ordering" : false,
-            "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-            }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-        });
-    </script>
 @stop

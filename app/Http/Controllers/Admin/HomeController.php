@@ -34,7 +34,7 @@ class HomeController extends Controller
         // Use counts instead of loading all records for dashboard stats
         $applicationsCount = Application::count();
         $inquiriesCount = Inquiry::where('status', '=', 1)->count();
-        $vacancies = Vacancy::where('status', '=', 1)->get();
+        $vacancies = Vacancy::openForApplications()->get();
         $usersCount = User::count();
         
         return view('admin.index', [

@@ -29,12 +29,46 @@
             {{ session('status') }}
         </div>
     @endif
+
+    @php
+        $posting = $vacancy->getPostingStatus();
+        $postingClass = $posting==='Open for Applications' ? 'success' : ($posting==='Scheduled' ? 'info' : ($posting==='Closed' ? 'secondary' : 'light border'));
+    @endphp
+    <div class="card card-outline card-light mb-3">
+        <div class="card-body py-2 d-flex justify-content-between align-items-center flex-wrap">
+            <div>
+                <strong>{{ $vacancy->position_title }}</strong>
+                <span class="badge badge-{{ $postingClass }} ml-2">{{ $posting }}</span>
+                <div class="small text-muted">Quick posting controls are separate from the detailed vacancy settings below.</div>
+            </div>
+            <div class="mt-2 mt-md-0">
+                <a href="{{ route('admin.applications.vacancy.show',$vacancy) }}" class="btn btn-sm btn-outline-secondary mr-1"><i class="fas fa-users mr-1"></i> Applicants</a>
+                @if($posting==='Draft')
+                    <form method="post" action="{{ route('admin.vacancies.publish',$vacancy) }}" class="d-inline">@csrf
+                        <button class="btn btn-sm btn-success" onclick="return confirm('Publish and open applications now?')"><i class="fas fa-bullhorn mr-1"></i> Publish Now</button>
+                    </form>
+                @elseif($posting==='Open for Applications')
+                    <form method="post" action="{{ route('admin.vacancies.close_posting',$vacancy) }}" class="d-inline">@csrf
+                        <button class="btn btn-sm btn-warning" onclick="return confirm('Close applications now?')"><i class="fas fa-door-closed mr-1"></i> Close Applications</button>
+                    </form>
+                @elseif($posting==='Closed')
+                    <form method="post" action="{{ route('admin.vacancies.reopen',$vacancy) }}" class="d-inline">@csrf
+                        <button class="btn btn-sm btn-success" onclick="return confirm('Reopen applications now?')"><i class="fas fa-door-open mr-1"></i> Reopen</button>
+                    </form>
+                @elseif($posting==='Scheduled')
+                    <form method="post" action="{{ route('admin.vacancies.publish',$vacancy) }}" class="d-inline">@csrf
+                        <button class="btn btn-sm btn-success" onclick="return confirm('Override the schedule and open applications now?')"><i class="fas fa-play mr-1"></i> Open Now</button>
+                    </form>
+                @endif
+            </div>
+        </div>
+    </div>
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Modify for record ID# <strong>{{ $vacancy->id }}</strong></h3>
+                        <h3 class="card-title">Edit {{ $vacancy->position_title }} <span class="text-muted">#{{ $vacancy->id }}</span></h3>
                     </div>
                     <form method="post" action="{{ route('admin.vacancies.update', $vacancy) }}">
                         @csrf
@@ -104,7 +138,7 @@
                                 @enderror
                             </div>
                             <div class="form-group">
-                                <label for="#">Vacancy</label>
+                                <label for="#">Number of Vacancies</label>
                                 <input type="number" class="form-control" placeholder="Enter vacancy" 
                                     name="vacancy" class="@error('vacancy') is-invalid @enderror"
                                     value="{{ $vacancy->vacancy }}">
@@ -112,18 +146,41 @@
                                     <span class="text-danger"><small>{{ $message }}</small></span>
                                 @enderror
                             </div>
-                            <div class="form-group">
-                                <label for="#">Status</label>
-                                <select type="text" class="form-control" placeholder="Enter status" 
-                                    name="status" class="@error('status') is-invalid @enderror"
-                                    value="{{ $vacancy->status }}">
-                                    <option value="">---select---</option>
-                                    <option value="0" {{ $vacancy->status == 0 ? 'selected' : '' }}>Draft</option>
-                                    <option value="1" {{ $vacancy->status == 1 ? 'selected' : '' }}>Published</option>
-                                </select>
-                                @error('status')
-                                    <span class="text-danger"><small>{{ $message }}</small></span>
-                                @enderror
+                            <div class="card card-outline card-info">
+                                <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                                    <strong>Posting & Application Window</strong>
+                                    @php
+                                        $postingState = $vacancy->getPostingStatus();
+                                        $postingClass = $postingState==='Open for Applications' ? 'success' : ($postingState==='Scheduled' ? 'info' : ($postingState==='Closed' ? 'secondary' : 'light border'));
+                                    @endphp
+                                    <span class="badge badge-{{ $postingClass }}">{{ $postingState }}</span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label>Posting Mode</label>
+                                        <select class="form-control @error('status') is-invalid @enderror" name="status">
+                                            <option value="0" {{ (string)old('status',$vacancy->status)==='0' ? 'selected' : '' }}>Draft — not visible to applicants</option>
+                                            <option value="1" {{ (string)old('status',$vacancy->status)==='1' ? 'selected' : '' }}>Published — visibility follows the dates below</option>
+                                        </select>
+                                        @error('status')<span class="text-danger d-block"><small>{{ $message }}</small></span>@enderror
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label>Applications Open</label>
+                                            <input type="datetime-local" name="posting_start_at" class="form-control @error('posting_start_at') is-invalid @enderror"
+                                                   value="{{ old('posting_start_at', optional($vacancy->posting_start_at)->format('Y-m-d\TH:i')) }}">
+                                            <small class="text-muted">Leave blank to open immediately while published.</small>
+                                            @error('posting_start_at')<span class="text-danger"><small>{{ $message }}</small></span>@enderror
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label>Applications Close</label>
+                                            <input type="datetime-local" name="posting_end_at" class="form-control @error('posting_end_at') is-invalid @enderror"
+                                                   value="{{ old('posting_end_at', optional($vacancy->posting_end_at)->format('Y-m-d\TH:i')) }}">
+                                            <small class="text-muted">The public application form closes automatically at this time.</small>
+                                            @error('posting_end_at')<span class="text-danger"><small>{{ $message }}</small></span>@enderror
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="#">Template</label>
@@ -140,12 +197,12 @@
                                 @enderror
                             </div> 
                             <div class="form-group">
-                                <label for="#">Level 1 Status (Station Level)</label>
+                                <label for="#">Station Screening Stage</label>
                                 <select type="text" class="form-control" placeholder="Enter status" 
                                     name="level1_status" class="@error('level1_status') is-invalid @enderror"
                                     value="{{ $vacancy->level1_status }}">
                                     <option value="">---select---</option>
-                                    <option value="0" {{ $vacancy->level1_status == 0 ? 'selected' : '' }}>Close</option>
+                                    <option value="0" {{ $vacancy->level1_status == 0 ? 'selected' : '' }}>Closed</option>
                                     <option value="1" {{ $vacancy->level1_status == 1 ? 'selected' : '' }}>Open</option>
                                     <option value="2" {{ $vacancy->level1_status == 2 ? 'selected' : '' }}>Completed</option>
                                 </select>
@@ -154,12 +211,12 @@
                                 @enderror
                             </div>
                             <div class="form-group">
-                                <label for="#">Level 2 Status (Sub-Committee Level)</label>
+                                <label for="#">Division Screening Stage</label>
                                 <select type="text" class="form-control" placeholder="Enter status" 
                                     name="level2_status" class="@error('level2_status') is-invalid @enderror"
                                     value="{{ $vacancy->level2_status }}">
                                     <option value="">---select---</option>
-                                    <option value="0" {{ $vacancy->level2_status == 0 ? 'selected' : '' }}>Close</option>
+                                    <option value="0" {{ $vacancy->level2_status == 0 ? 'selected' : '' }}>Closed</option>
                                     <option value="1" {{ $vacancy->level2_status == 1 ? 'selected' : '' }}>Open</option>
                                     <option value="2" {{ $vacancy->level2_status == 2 ? 'selected' : '' }}>Completed</option>
                                     <option value="3" {{ $vacancy->level2_status == 3 ? 'selected' : '' }}>Posted</option>
@@ -171,8 +228,8 @@
                             
                         </div>
                         <div class="card-footer">
-                            <button type="submit" class="btn btn-primary">Submit</button>
-                            <button type="reset" class="btn btn-default">Clear</button>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Save Changes</button>
+                            <button type="reset" class="btn btn-default">Reset</button>
                             <a href="{{ url()->previous() }}" class="btn btn-default float-right">Cancel</a>
                         </div>
                     </form> 

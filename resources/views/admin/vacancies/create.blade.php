@@ -34,7 +34,7 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Accomplish the form below</h3>
+                        <h3 class="card-title">Create a vacancy</h3>
                     </div>
                     <form method="post" action="{{ route('admin.vacancies.store') }}">
                         @csrf
@@ -104,7 +104,7 @@
                                 @enderror
                             </div>
                             <div class="form-group">
-                                <label for="#">Vacancy</label>
+                                <label for="#">Number of Vacancies</label>
                                 <input type="number" class="form-control" placeholder="Enter vacancy" 
                                     name="vacancy" class="@error('vacancy') is-invalid @enderror"
                                     value="{{ old('vacancy') }}">
@@ -112,18 +112,33 @@
                                     <span class="text-danger"><small>{{ $message }}</small></span>
                                 @enderror
                             </div>
-                            <div class="form-group">
-                                <label for="#">Status</label>
-                                <select type="text" class="form-control" placeholder="Enter status" 
-                                    name="status" class="@error('status') is-invalid @enderror"
-                                    value="{{ old('status') }}">
-                                    <option value="">---select---</option>
-                                    <option value="0" {{ old('status') == 0 ? 'selected' : '' }}>Draft</option>
-                                    <option value="1" {{ old('status') == 1 ? 'selected' : '' }}>Published</option>
-                                </select>
-                                @error('status')
-                                    <span class="text-danger"><small>{{ $message }}</small></span>
-                                @enderror
+                            <div class="card card-outline card-info">
+                                <div class="card-header py-2"><strong>Posting & Application Window</strong></div>
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label>Posting Mode</label>
+                                        <select class="form-control @error('status') is-invalid @enderror" name="status">
+                                            <option value="0" {{ (string)old('status','0')==='0' ? 'selected' : '' }}>Draft — not visible to applicants</option>
+                                            <option value="1" {{ (string)old('status','0')==='1' ? 'selected' : '' }}>Published — visibility follows the dates below</option>
+                                        </select>
+                                        <small class="text-muted">Published vacancies automatically become Scheduled, Open for Applications, or Closed based on the posting window.</small>
+                                        @error('status')<span class="text-danger d-block"><small>{{ $message }}</small></span>@enderror
+                                    </div>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-6">
+                                            <label>Applications Open</label>
+                                            <input type="datetime-local" name="posting_start_at" class="form-control @error('posting_start_at') is-invalid @enderror" value="{{ old('posting_start_at') }}">
+                                            <small class="text-muted">Leave blank to open immediately when published.</small>
+                                            @error('posting_start_at')<span class="text-danger"><small>{{ $message }}</small></span>@enderror
+                                        </div>
+                                        <div class="form-group col-md-6">
+                                            <label>Applications Close</label>
+                                            <input type="datetime-local" name="posting_end_at" class="form-control @error('posting_end_at') is-invalid @enderror" value="{{ old('posting_end_at') }}">
+                                            <small class="text-muted">After this time, new applications are blocked automatically. The vacancy does not revert to Draft.</small>
+                                            @error('posting_end_at')<span class="text-danger"><small>{{ $message }}</small></span>@enderror
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="#">Template</label>
@@ -141,8 +156,8 @@
                             </div>                            
                         </div>
                         <div class="card-footer">
-                            <button type="submit" class="btn btn-primary">Submit</button>
-                            <button type="reset" class="btn btn-default">Clear</button>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save mr-1"></i> Save Vacancy</button>
+                            <button type="reset" class="btn btn-default">Reset</button>
                             <a href="{{ url()->previous() }}" class="btn btn-default float-right">Cancel</a>
                         </div>
                     </form> 
