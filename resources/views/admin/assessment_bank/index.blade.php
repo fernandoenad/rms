@@ -11,6 +11,8 @@
 @stop
 
 @section('content')
+@include('admin.assessment_center._nav')
+
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 
 <div class="card">
