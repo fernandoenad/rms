@@ -12,7 +12,7 @@
 <div class="card card-outline card-light mb-3 assessment-center-nav">
     <div class="card-body py-2 px-3">
         <div class="d-flex flex-wrap align-items-center justify-content-between">
-            <nav class="nav nav-pills flex-wrap assessment-center-tabs" aria-label="Assessment Center">
+            <nav class="nav nav-pills flex-wrap" aria-label="Assessment Center" style="gap:.25rem;">
                 <a class="nav-link {{ $assessmentCenterActive ? 'active' : '' }}"
                    href="{{ route('admin.assessment_center.index') }}">
                     <i class="fas fa-home mr-1"></i> Overview
@@ -53,18 +53,3 @@
         </div>
     </div>
 </div>
-
-@once
-@section('css')
-@parent
-<style>
-.assessment-center-tabs { gap:.25rem; }
-.assessment-center-tabs .nav-link { padding:.45rem .75rem; border-radius:.35rem; }
-.assessment-center-nav .dropdown-menu { min-width:190px; }
-@media (max-width:767.98px) {
-    .assessment-center-tabs { width:100%; }
-    .assessment-center-tabs .nav-link { margin-bottom:.25rem; }
-}
-</style>
-@stop
-@endonce
