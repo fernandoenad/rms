@@ -7,8 +7,8 @@
         <small class="text-muted">Unified operations for written assessments and skills tests</small>
     </div>
     <div class="mt-2 mt-md-0">
-        <a href="{{ route('admin.assessment_groups.index') }}" class="btn btn-outline-primary mr-2">Written Assessments</a>
-        <a href="{{ route('admin.skills.index') }}" class="btn btn-outline-info mr-2">Skills Tests</a>
+        <a href="{{ route('admin.assessment_groups.index') }}" class="btn btn-outline-primary mr-2">Manage Written</a>
+        <a href="{{ route('admin.skill_groups.index') }}" class="btn btn-outline-info mr-2">Manage Skills</a>
         <a href="{{ route('admin.assessment_bank.index') }}" class="btn btn-outline-secondary mr-2">Content Bank</a>
         <a href="{{ route('admin.assessment_snapshots.index') }}" class="btn btn-outline-secondary mr-2">Snapshots</a>
         @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1)
@@ -136,105 +136,181 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header"><strong>Written Assessment Groups</strong></div>
-            <div class="card-body table-responsive p-0">
-                <table class="table table-sm table-hover mb-0">
-                    <thead><tr><th>Assessment</th><th>Sets</th><th>State</th><th></th></tr></thead>
-                    <tbody>
-                    @forelse($groups as $group)
-                    <tr>
-                        <td>{{ $group->title }}<br><small class="text-muted">{{ optional($group->vacancy)->position_title }}</small></td>
-                        <td>{{ $group->exams->count() }}</td>
-                        <td>
-                            @if($group->is_paused)<span class="badge badge-warning">Paused</span>
-                            @elseif($group->status)<span class="badge badge-success">Active</span>
-                            @else<span class="badge badge-secondary">Inactive</span>@endif
-                        </td>
-                        <td><a href="{{ route('admin.assessment_groups.edit',$group) }}" class="btn btn-xs btn-outline-primary">Open</a></td>
-                    </tr>
-                    @empty<tr><td colspan="4">No assessment groups.</td></tr>@endforelse
-                    </tbody>
-                </table>
-            </div>
+<div class="card card-outline card-primary">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap">
+        <div>
+            <strong>Assessments</strong>
+            <div class="small text-muted">Written and Skills assessments now follow the same group → set → attempt workflow.</div>
         </div>
+        <div class="btn-group btn-group-sm mt-2 mt-md-0" role="group" aria-label="Assessment filters">
+            <button type="button" class="btn btn-primary assessment-filter active" data-filter="all">All</button>
+            <button type="button" class="btn btn-outline-primary assessment-filter" data-filter="written">Written</button>
+            <button type="button" class="btn btn-outline-primary assessment-filter" data-filter="skills">Skills</button>
+            <button type="button" class="btn btn-outline-warning assessment-filter" data-filter="attention">Needs Attention</button>
+            <button type="button" class="btn btn-outline-success assessment-filter" data-filter="open">Open Now</button>
+        </div>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-hover mb-0" id="assessmentOverviewTable">
+            <thead>
+                <tr>
+                    <th>Assessment</th>
+                    <th>Type</th>
+                    <th>Position</th>
+                    <th>Sets</th>
+                    <th>Current / Next</th>
+                    <th>Activity</th>
+                    <th>Readiness</th>
+                    <th>State</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+            @forelse($assessmentRows as $row)
+                <tr data-type="{{ $row['type'] }}"
+                    data-attention="{{ $row['ready'] ? '0' : '1' }}"
+                    data-open="{{ $row['current_set'] ? '1' : '0' }}">
+                    <td>
+                        <strong>{{ $row['title'] }}</strong>
+                        <div class="small text-muted">Equivalent-set assessment</div>
+                    </td>
+                    <td>
+                        <span class="badge {{ $row['type']==='written' ? 'badge-primary' : 'badge-info' }}">
+                            {{ $row['type_label'] }}
+                        </span>
+                    </td>
+                    <td>{{ $row['position'] ?: '—' }}</td>
+                    <td>{{ $row['sets'] }}</td>
+                    <td>
+                        @if($row['current_set'])
+                            <span class="badge badge-success">Set {{ $row['current_set'] }} open now</span>
+                        @elseif($row['next_set'])
+                            <strong>Set {{ $row['next_set'] }}</strong>
+                            <div class="small text-muted">
+                                {{ optional($row['next_at'])->format('M d, Y h:i A') }}
+                            </div>
+                        @else
+                            <span class="text-muted">No scheduled set</span>
+                        @endif
+                    </td>
+                    <td>
+                        @if($row['active_attempts'] > 0)
+                            <strong>{{ number_format($row['active_attempts']) }}</strong> taking now
+                        @else
+                            <span class="text-muted">0 taking now</span>
+                        @endif
+                        <div class="small text-muted">{{ number_format($row['attempts']) }} total attempt(s)</div>
+                    </td>
+                    <td>
+                        @if($row['ready'])
+                            <span class="badge badge-success">Ready</span>
+                        @else
+                            <span class="badge badge-warning">Needs attention</span>
+                        @endif
+                        <div class="small text-muted mt-1">{{ $row['readiness_detail'] }}</div>
+                    </td>
+                    <td><span class="badge badge-{{ $row['state_class'] }}">{{ $row['state'] }}</span></td>
+                    <td><a href="{{ $row['manage_url'] }}" class="btn btn-sm btn-outline-primary">Manage</a></td>
+                </tr>
+            @empty
+                <tr><td colspan="9" class="text-muted text-center py-4">No grouped assessments yet.</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
 
-        <div class="card">
-            <div class="card-header"><strong>Standalone Written Tests</strong></div>
-            <div class="card-body table-responsive p-0">
-                <table class="table table-sm table-hover mb-0">
-                    <thead><tr><th>Test</th><th>State</th><th></th></tr></thead>
-                    <tbody>
-                    @forelse($standaloneExams as $exam)
+<div class="card card-outline card-secondary collapsed-card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <strong>Standalone / Legacy Assessments</strong>
+            <span class="badge badge-light border ml-1">{{ $standaloneExams->count() + $standaloneSkillTests->count() }}</span>
+        </h3>
+        <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse" title="Show standalone assessments">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body p-0" style="display:none;">
+        <div class="alert alert-light border-0 border-bottom rounded-0 mb-0 small text-muted">
+            Grouped assessments are recommended for scheduled equivalent sets. Keep standalone assessments for exceptional or legacy workflows.
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead><tr><th>Assessment</th><th>Type</th><th>Position</th><th>State</th><th></th></tr></thead>
+                <tbody>
+                    @foreach($standaloneExams as $exam)
                     <tr>
-                        <td>{{ $exam->title }}<br><small class="text-muted">{{ optional($exam->vacancy)->position_title }}</small></td>
+                        <td>{{ $exam->title }}</td>
+                        <td><span class="badge badge-primary">Written</span></td>
+                        <td>{{ optional($exam->vacancy)->position_title }}</td>
                         <td>
                             @if($exam->is_paused)<span class="badge badge-warning">Paused</span>
                             @elseif($exam->status)<span class="badge badge-success">Published</span>
                             @else<span class="badge badge-secondary">Draft</span>@endif
                         </td>
-                        <td><a href="{{ route('admin.assessments.edit',$exam) }}" class="btn btn-xs btn-outline-primary">Open</a></td>
+                        <td><a href="{{ route('admin.assessments.edit',$exam) }}" class="btn btn-xs btn-outline-primary">Manage</a></td>
                     </tr>
-                    @empty<tr><td colspan="3">No standalone written tests.</td></tr>@endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header"><strong>Skills Test Groups</strong></div>
-            <div class="card-body table-responsive p-0">
-                <table class="table table-sm table-hover mb-0">
-                    <thead><tr><th>Assessment</th><th>Sets</th><th>State</th><th></th></tr></thead>
-                    <tbody>
-                    @forelse($skillGroups as $group)
+                    @endforeach
+                    @foreach($standaloneSkillTests as $test)
                     <tr>
-                        <td>{{ $group->title }}<br><small class="text-muted">{{ optional($group->vacancy)->position_title }}</small></td>
-                        <td>{{ $group->skillTests->count() }}</td>
-                        <td>
-                            @if($group->is_paused)<span class="badge badge-warning">Paused</span>
-                            @elseif($group->status)<span class="badge badge-success">Active</span>
-                            @else<span class="badge badge-secondary">Inactive</span>@endif
-                        </td>
-                        <td><a href="{{ route('admin.skill_groups.edit',$group) }}" class="btn btn-xs btn-outline-info">Open</a></td>
-                    </tr>
-                    @empty<tr><td colspan="4">No skills test groups.</td></tr>@endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-header"><strong>Standalone Skills Tests</strong></div>
-            <div class="card-body table-responsive p-0">
-                <table class="table table-sm table-hover mb-0">
-                    <thead><tr><th>Test</th><th>State</th><th></th></tr></thead>
-                    <tbody>
-                    @forelse($standaloneSkillTests as $test)
-                    <tr>
-                        <td>{{ $test->title }}<br><small class="text-muted">{{ optional($test->vacancy)->position_title }}</small></td>
+                        <td>{{ $test->title }}</td>
+                        <td><span class="badge badge-info">Skills</span></td>
+                        <td>{{ optional($test->vacancy)->position_title }}</td>
                         <td>
                             @if($test->is_paused)<span class="badge badge-warning">Paused</span>
                             @elseif($test->status)<span class="badge badge-success">Published</span>
                             @else<span class="badge badge-secondary">Draft</span>@endif
                         </td>
-                        <td><a href="{{ route('admin.skills.edit',$test) }}" class="btn btn-xs btn-outline-info">Open</a></td>
+                        <td><a href="{{ route('admin.skills.edit',$test) }}" class="btn btn-xs btn-outline-info">Manage</a></td>
                     </tr>
-                    @empty<tr><td colspan="3">No standalone skills tests.</td></tr>@endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <div class="alert alert-light border">
-            <strong>AI throughput:</strong>
-            {{ $queue['assessment_ai']===null ? 'Queue table unavailable.' : number_format($queue['assessment_ai']).' assessment-AI job(s) waiting.' }}
-            Use dedicated workers for the <code>assessment-ai</code> queue so AI work cannot block email and normal application jobs.
+                    @endforeach
+                    @if($standaloneExams->isEmpty() && $standaloneSkillTests->isEmpty())
+                    <tr><td colspan="5" class="text-muted text-center py-3">No standalone assessments.</td></tr>
+                    @endif
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
+
+<div class="alert alert-light border">
+    <strong>AI throughput:</strong>
+    {{ $queue['assessment_ai']===null ? 'Queue table unavailable.' : number_format($queue['assessment_ai']).' assessment-AI job(s) waiting.' }}
+    Use dedicated workers for the <code>assessment-ai</code> queue so AI work cannot block email and normal application jobs.
+</div>
+
+@stop
+
+@section('js')
+<script>
+$(function () {
+    $('.assessment-filter').on('click', function () {
+        var filter = $(this).data('filter');
+
+        $('.assessment-filter').removeClass('active btn-primary btn-warning btn-success')
+            .addClass(function () {
+                return $(this).data('filter') === 'attention'
+                    ? 'btn-outline-warning'
+                    : ($(this).data('filter') === 'open' ? 'btn-outline-success' : 'btn-outline-primary');
+            });
+
+        $(this).removeClass('btn-outline-primary btn-outline-warning btn-outline-success').addClass(
+            filter === 'attention' ? 'active btn-warning'
+                : (filter === 'open' ? 'active btn-success' : 'active btn-primary')
+        );
+
+        $('#assessmentOverviewTable tbody tr[data-type]').each(function () {
+            var row = $(this);
+            var show = filter === 'all'
+                || row.data('type') === filter
+                || (filter === 'attention' && String(row.data('attention')) === '1')
+                || (filter === 'open' && String(row.data('open')) === '1');
+
+            row.toggle(show);
+        });
+    });
+});
+</script>
 @stop

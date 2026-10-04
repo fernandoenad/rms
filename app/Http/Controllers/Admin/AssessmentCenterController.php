@@ -182,7 +182,13 @@ class AssessmentCenterController extends Controller
 
         $groups = AssessmentGroup::with([
                 'vacancy:id,position_title',
-                'exams:id,assessment_group_id,status,is_paused,archived_at',
+                'exams' => fn ($q) => $q
+                    ->select('id','assessment_group_id','status','is_paused','archived_at','start_date','end_date','set_code')
+                    ->whereNull('archived_at')
+                    ->withCount([
+                        'attempts',
+                        'attempts as active_attempts_count' => fn ($attempts) => $attempts->where('status',1),
+                    ]),
             ])
             ->whereNull('archived_at')
             ->orderByDesc('id')
@@ -191,12 +197,112 @@ class AssessmentCenterController extends Controller
 
         $skillGroups = SkillTestGroup::with([
                 'vacancy:id,position_title',
-                'skillTests:id,skill_test_group_id,status,is_paused,archived_at',
+                'skillTests' => fn ($q) => $q
+                    ->select('id','skill_test_group_id','status','is_paused','archived_at','start_date','end_date','set_code')
+                    ->whereNull('archived_at')
+                    ->withCount([
+                        'attempts',
+                        'attempts as active_attempts_count' => fn ($attempts) => $attempts->where('status',1),
+                    ]),
             ])
             ->whereNull('archived_at')
             ->orderByDesc('id')
             ->limit(20)
             ->get();
+
+        $assessmentRows = collect();
+
+        foreach ($groups as $group) {
+            $sets = $group->exams;
+            $currentSet = $sets
+                ->filter(fn ($set) => $set->status
+                    && $set->start_date
+                    && $set->end_date
+                    && $now->gte($set->start_date)
+                    && $now->lt($set->end_date))
+                ->sortByDesc('start_date')
+                ->first();
+
+            $nextSet = $sets
+                ->filter(fn ($set) => $set->status && $set->start_date && $now->lt($set->start_date))
+                ->sortBy('start_date')
+                ->first();
+
+            $published = $sets->where('status', true)->count();
+            $scheduled = $sets->filter(fn ($set) => $set->start_date && $set->end_date)->count();
+            $ready = $sets->isNotEmpty()
+                && $published === $sets->count()
+                && $scheduled === $sets->count()
+                && !$sets->contains(fn ($set) => (bool)$set->is_paused);
+
+            $assessmentRows->push([
+                'type' => 'written',
+                'type_label' => 'Written',
+                'title' => $group->title,
+                'position' => optional($group->vacancy)->position_title,
+                'sets' => $sets->count(),
+                'current_set' => $currentSet?->set_code,
+                'next_set' => $nextSet?->set_code,
+                'next_at' => $nextSet?->start_date,
+                'active_attempts' => (int)$sets->sum('active_attempts_count'),
+                'attempts' => (int)$sets->sum('attempts_count'),
+                'ready' => $ready,
+                'readiness_detail' => $ready
+                    ? 'All sets are published and scheduled.'
+                    : $published.' / '.$sets->count().' published · '.$scheduled.' / '.$sets->count().' scheduled',
+                'state' => $group->is_paused ? 'Paused' : ($group->status ? 'Active' : 'Inactive'),
+                'state_class' => $group->is_paused ? 'warning' : ($group->status ? 'success' : 'secondary'),
+                'manage_url' => route('admin.assessment_groups.edit',$group),
+            ]);
+        }
+
+        foreach ($skillGroups as $group) {
+            $sets = $group->skillTests;
+            $currentSet = $sets
+                ->filter(fn ($set) => $set->status
+                    && $set->start_date
+                    && $set->end_date
+                    && $now->gte($set->start_date)
+                    && $now->lt($set->end_date))
+                ->sortByDesc('start_date')
+                ->first();
+
+            $nextSet = $sets
+                ->filter(fn ($set) => $set->status && $set->start_date && $now->lt($set->start_date))
+                ->sortBy('start_date')
+                ->first();
+
+            $published = $sets->where('status', true)->count();
+            $scheduled = $sets->filter(fn ($set) => $set->start_date && $set->end_date)->count();
+            $ready = $sets->isNotEmpty()
+                && $published === $sets->count()
+                && $scheduled === $sets->count()
+                && !$sets->contains(fn ($set) => (bool)$set->is_paused);
+
+            $assessmentRows->push([
+                'type' => 'skills',
+                'type_label' => 'Skills',
+                'title' => $group->title,
+                'position' => optional($group->vacancy)->position_title,
+                'sets' => $sets->count(),
+                'current_set' => $currentSet?->set_code,
+                'next_set' => $nextSet?->set_code,
+                'next_at' => $nextSet?->start_date,
+                'active_attempts' => (int)$sets->sum('active_attempts_count'),
+                'attempts' => (int)$sets->sum('attempts_count'),
+                'ready' => $ready,
+                'readiness_detail' => $ready
+                    ? 'All sets are published and scheduled.'
+                    : $published.' / '.$sets->count().' published · '.$scheduled.' / '.$sets->count().' scheduled',
+                'state' => $group->is_paused ? 'Paused' : ($group->status ? 'Active' : 'Inactive'),
+                'state_class' => $group->is_paused ? 'warning' : ($group->status ? 'success' : 'secondary'),
+                'manage_url' => route('admin.skill_groups.edit',$group),
+            ]);
+        }
+
+        $assessmentRows = $assessmentRows
+            ->sortBy(fn ($row) => [$row['position'] ?? '', $row['title']])
+            ->values();
 
         $standaloneSkillTests = SkillTest::with('vacancy:id,position_title')
             ->whereNull('skill_test_group_id')
@@ -223,6 +329,7 @@ class AssessmentCenterController extends Controller
             'schedulerHealthy',
             'groups',
             'skillGroups',
+            'assessmentRows',
             'standaloneSkillTests',
             'standaloneExams'
         ));

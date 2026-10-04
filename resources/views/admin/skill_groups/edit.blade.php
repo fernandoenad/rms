@@ -10,7 +10,55 @@
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
 
-<div class="card card-outline {{ $skillTestGroup->is_paused ? 'card-warning':'card-secondary' }}">
+<div class="card card-outline card-primary mb-3">
+    <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-start flex-wrap">
+            <div>
+                <div class="small text-uppercase text-muted font-weight-bold">Assessment workflow</div>
+                <div class="mt-1">
+                    @if($skillTestGroup->archived_at)
+                        <span class="badge badge-secondary mr-1">Archived</span>
+                    @elseif($skillTestGroup->is_paused)
+                        <span class="badge badge-warning mr-1">Paused</span>
+                    @elseif($skillTestGroup->status)
+                        <span class="badge badge-success mr-1">Active</span>
+                    @else
+                        <span class="badge badge-secondary mr-1">Inactive</span>
+                    @endif
+                    <span class="badge badge-light border">{{ $skillTestGroup->skillTests->count() }} set(s)</span>
+                </div>
+            </div>
+            <div class="btn-group btn-group-sm flex-wrap mt-2 mt-md-0">
+                <a href="#sharedSettings" class="btn btn-outline-primary">1. Shared Settings</a>
+                <a href="#aiGeneration" class="btn btn-outline-primary">2. Generate</a>
+                <a href="#setManagement" class="btn btn-outline-primary">3. Review Sets</a>
+                <a href="#operations" class="btn btn-outline-primary">4. Operations</a>
+            </div>
+        </div>
+        <div class="small text-muted mt-2">Configure what every set shares, then manage each Set A/B/C workspace for its own schedule, task, rubric, review, and attempts.</div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card border-success h-100">
+            <div class="card-body py-3">
+                <div class="small text-uppercase text-success font-weight-bold mb-2"><i class="fas fa-layer-group mr-1"></i> Shared across all sets</div>
+                <div class="small text-muted">Position · title · access · submission rules · score criterion · score release · group status</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-info h-100">
+            <div class="card-body py-3">
+                <div class="small text-uppercase text-info font-weight-bold mb-2"><i class="fas fa-clone mr-1"></i> Configured per set</div>
+                <div class="small text-muted">Schedule · task · rubric · duration · review/readiness · publication · attempts/evaluation</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="operations" class="card card-outline {{ $skillTestGroup->is_paused ? 'card-warning':'card-secondary' }}">
 <div class="card-header"><strong>Group Operations</strong></div>
 <div class="card-body">
 @if($skillTestGroup->is_paused)
@@ -51,7 +99,7 @@ onsubmit="return confirm('Permanently delete this Skills Test Group and all of i
 </div>
 </div>
 
-<div class="card card-outline card-info">
+<div id="aiGeneration" class="card card-outline card-info">
 <div class="card-header"><strong><i class="fas fa-magic mr-1"></i> Generate All Empty Sets with AI</strong></div>
 <div class="card-body">
 <p class="small text-muted">
@@ -79,8 +127,8 @@ onsubmit="return confirm('Queue AI generation for every empty draft set in this 
 </div>
 </div>
 
-<div class="card card-outline card-primary">
-<div class="card-header"><strong>Equivalent Sets</strong></div>
+<div id="setManagement" class="card card-outline card-primary">
+<div class="card-header"><strong>Set Workspaces · Configure Each Set</strong><div class="small text-muted">Each set owns its schedule and assessment content. Applicants are locked to the scheduled set only when they start.</div></div>
 <div class="card-body table-responsive p-0">
 <table class="table table-hover mb-0">
 <thead><tr><th>Set</th><th>Task</th><th>Schedule</th><th>Attempts</th><th>Assignments</th><th>Readiness</th><th>Status</th><th></th></tr></thead>
@@ -100,10 +148,19 @@ onsubmit="return confirm('Queue AI generation for every empty draft set in this 
 <td>{{ $set->attempts_count }}</td>
 <td>{{ $set->assignments_count }}</td>
 <td>@if($ready['ready'])<span class="badge badge-success">Ready</span>@else<span class="badge badge-warning" title="{{ implode(' ',array_slice($ready['issues'],0,4)) }}">Needs review</span>@endif</td>
-<td>{{ $set->status ? 'Published' : 'Draft' }}</td>
+<td>
+@php
+    $setState = !$set->status ? 'Draft' : (
+        ($set->start_date && now()->lt($set->start_date)) ? 'Scheduled' : (
+            ($set->end_date && now()->gte($set->end_date)) ? 'Closed' : 'Open'
+        )
+    );
+@endphp
+<span class="badge badge-{{ $setState==='Open' ? 'success' : ($setState==='Scheduled' ? 'info' : ($setState==='Draft' ? 'secondary' : 'light border')) }}">{{ $setState }}</span>
+</td>
 <td class="text-nowrap">
-<a href="{{ route('admin.skills.edit',$set) }}" class="btn btn-sm btn-warning">Edit</a>
-<a href="{{ route('admin.skills.preview',$set) }}" class="btn btn-sm btn-outline-info">Preview</a>
+<a href="{{ route('admin.skills.edit',$set) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-cog mr-1"></i> Manage Set</a>
+<a href="{{ route('admin.skills.preview',$set) }}" class="btn btn-sm btn-outline-info"><i class="fas fa-eye mr-1"></i> Preview</a>
 @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1 && $set->attempts_count===0)
 <form method="post" action="{{ route('admin.skills.destroy',$set) }}" class="d-inline"
 onsubmit="return confirm('Delete Set {{ $set->set_code }} permanently? No applicant attempt may exist.');">
@@ -131,8 +188,8 @@ onsubmit="return confirm('Delete Set {{ $set->set_code }} permanently? No applic
 </div>
 </div>
 
-<div class="card">
-<div class="card-header"><strong>Shared Group Settings</strong></div>
+<div id="sharedSettings" class="card">
+<div class="card-header"><strong>Shared Across All Sets · Group Settings</strong><div class="small text-muted">These settings govern every Set A/B/C in this Skills Test Group.</div></div>
 <div class="card-body">
 <form method="post" action="{{ route('admin.skill_groups.update',$skillTestGroup) }}">@csrf @method('put')
 <input type="hidden" name="vacancy_id" value="{{ $skillTestGroup->vacancy_id }}">
