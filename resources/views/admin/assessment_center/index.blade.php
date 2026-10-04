@@ -281,6 +281,8 @@
     Use dedicated workers for the <code>assessment-ai</code> queue so AI work cannot block email and normal application jobs.
 </div>
 
+@stop
+
 @section('js')
 <script>
 $(function () {
@@ -311,6 +313,4 @@ $(function () {
     });
 });
 </script>
-@stop
-
 @stop
