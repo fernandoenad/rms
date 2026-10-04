@@ -180,6 +180,23 @@ class AssessmentCenterController extends Controller
         $heartbeat = $heartbeatRaw ? now()->parse($heartbeatRaw) : null;
         $schedulerHealthy = $heartbeat && $heartbeat->gte(now()->subMinutes(3));
 
+        $writtenPendingReviewByGroup = WrittenExam::query()
+            ->join('exams', 'exams.id', '=', 'written_exams.exam_id')
+            ->whereNotNull('exams.assessment_group_id')
+            ->where('written_exams.status', 1)
+            ->where('written_exams.review_status', '!=', 'approved')
+            ->groupBy('exams.assessment_group_id')
+            ->selectRaw('exams.assessment_group_id as group_id, COUNT(*) as total')
+            ->pluck('total', 'group_id');
+
+        $skillPendingReviewByGroup = SkillTest::query()
+            ->whereNotNull('skill_test_group_id')
+            ->whereNull('archived_at')
+            ->where('review_status', '!=', 'approved')
+            ->groupBy('skill_test_group_id')
+            ->selectRaw('skill_test_group_id as group_id, COUNT(*) as total')
+            ->pluck('total', 'group_id');
+
         $groups = AssessmentGroup::with([
                 'vacancy:id,position_title',
                 'exams' => fn ($q) => $q
@@ -230,10 +247,15 @@ class AssessmentCenterController extends Controller
 
             $published = $sets->where('status', true)->count();
             $scheduled = $sets->filter(fn ($set) => $set->start_date && $set->end_date)->count();
-            $ready = $sets->isNotEmpty()
-                && $published === $sets->count()
-                && $scheduled === $sets->count()
-                && !$sets->contains(fn ($set) => (bool)$set->is_paused);
+            $pendingReview = (int) ($writtenPendingReviewByGroup[$group->id] ?? 0);
+            $issues = collect();
+            if ($sets->isEmpty()) $issues->push('No equivalent sets have been created.');
+            if ($published < $sets->count()) $issues->push(($sets->count() - $published).' set(s) are still draft.');
+            if ($scheduled < $sets->count()) $issues->push(($sets->count() - $scheduled).' set(s) are missing a complete schedule.');
+            if ($sets->contains(fn ($set) => (bool)$set->is_paused)) $issues->push('One or more sets are paused.');
+            if ($pendingReview > 0) $issues->push($pendingReview.' written item(s) are pending review.');
+
+            $ready = $issues->isEmpty();
 
             $assessmentRows->push([
                 'type' => 'written',
@@ -248,8 +270,9 @@ class AssessmentCenterController extends Controller
                 'attempts' => (int)$sets->sum('attempts_count'),
                 'ready' => $ready,
                 'readiness_detail' => $ready
-                    ? 'All sets are published and scheduled.'
-                    : $published.' / '.$sets->count().' published · '.$scheduled.' / '.$sets->count().' scheduled',
+                    ? 'All sets are published, scheduled, and reviewed.'
+                    : $issues->first(),
+                'readiness_issues' => $issues->values()->all(),
                 'state' => $group->is_paused ? 'Paused' : ($group->status ? 'Active' : 'Inactive'),
                 'state_class' => $group->is_paused ? 'warning' : ($group->status ? 'success' : 'secondary'),
                 'manage_url' => route('admin.assessment_groups.edit',$group),
@@ -274,10 +297,15 @@ class AssessmentCenterController extends Controller
 
             $published = $sets->where('status', true)->count();
             $scheduled = $sets->filter(fn ($set) => $set->start_date && $set->end_date)->count();
-            $ready = $sets->isNotEmpty()
-                && $published === $sets->count()
-                && $scheduled === $sets->count()
-                && !$sets->contains(fn ($set) => (bool)$set->is_paused);
+            $pendingReview = (int) ($skillPendingReviewByGroup[$group->id] ?? 0);
+            $issues = collect();
+            if ($sets->isEmpty()) $issues->push('No equivalent sets have been created.');
+            if ($published < $sets->count()) $issues->push(($sets->count() - $published).' set(s) are still draft.');
+            if ($scheduled < $sets->count()) $issues->push(($sets->count() - $scheduled).' set(s) are missing a complete schedule.');
+            if ($sets->contains(fn ($set) => (bool)$set->is_paused)) $issues->push('One or more sets are paused.');
+            if ($pendingReview > 0) $issues->push($pendingReview.' skills task(s) are pending review.');
+
+            $ready = $issues->isEmpty();
 
             $assessmentRows->push([
                 'type' => 'skills',
@@ -292,8 +320,9 @@ class AssessmentCenterController extends Controller
                 'attempts' => (int)$sets->sum('attempts_count'),
                 'ready' => $ready,
                 'readiness_detail' => $ready
-                    ? 'All sets are published and scheduled.'
-                    : $published.' / '.$sets->count().' published · '.$scheduled.' / '.$sets->count().' scheduled',
+                    ? 'All sets are published, scheduled, and reviewed.'
+                    : $issues->first(),
+                'readiness_issues' => $issues->values()->all(),
                 'state' => $group->is_paused ? 'Paused' : ($group->status ? 'Active' : 'Inactive'),
                 'state_class' => $group->is_paused ? 'warning' : ($group->status ? 'success' : 'secondary'),
                 'manage_url' => route('admin.skill_groups.edit',$group),
@@ -303,6 +332,165 @@ class AssessmentCenterController extends Controller
         $assessmentRows = $assessmentRows
             ->sortBy(fn ($row) => [$row['position'] ?? '', $row['title']])
             ->values();
+
+        $todayStart = $now->copy()->startOfDay();
+        $todayEnd = $now->copy()->endOfDay();
+
+        $todayWritten = Exam::with(['assessmentGroup:id,title', 'vacancy:id,position_title'])
+            ->whereNull('archived_at')
+            ->where('status', 1)
+            ->where(function ($q) use ($todayStart, $todayEnd) {
+                $q->whereBetween('start_date', [$todayStart, $todayEnd])
+                    ->orWhereBetween('end_date', [$todayStart, $todayEnd]);
+            })
+            ->get(['id','assessment_group_id','vacancy_id','title','set_code','start_date','end_date']);
+
+        $todaySkills = SkillTest::with(['skillTestGroup:id,title', 'vacancy:id,position_title'])
+            ->whereNull('archived_at')
+            ->where('status', 1)
+            ->where(function ($q) use ($todayStart, $todayEnd) {
+                $q->whereBetween('start_date', [$todayStart, $todayEnd])
+                    ->orWhereBetween('end_date', [$todayStart, $todayEnd]);
+            })
+            ->get(['id','skill_test_group_id','vacancy_id','title','set_code','start_date','end_date']);
+
+        $todayTimeline = collect();
+
+        foreach ($todayWritten as $set) {
+            if ($set->start_date && $set->start_date->between($todayStart, $todayEnd)) {
+                $todayTimeline->push([
+                    'at'=>$set->start_date,
+                    'type'=>'Written',
+                    'event'=>'opens',
+                    'title'=>$set->assessmentGroup?->title ?: $set->title,
+                    'set'=>$set->set_code,
+                    'position'=>$set->vacancy?->position_title,
+                    'url'=>route('admin.assessments.edit',$set),
+                ]);
+            }
+            if ($set->end_date && $set->end_date->between($todayStart, $todayEnd)) {
+                $todayTimeline->push([
+                    'at'=>$set->end_date,
+                    'type'=>'Written',
+                    'event'=>'closes',
+                    'title'=>$set->assessmentGroup?->title ?: $set->title,
+                    'set'=>$set->set_code,
+                    'position'=>$set->vacancy?->position_title,
+                    'url'=>route('admin.assessments.edit',$set),
+                ]);
+            }
+        }
+
+        foreach ($todaySkills as $set) {
+            if ($set->start_date && $set->start_date->between($todayStart, $todayEnd)) {
+                $todayTimeline->push([
+                    'at'=>$set->start_date,
+                    'type'=>'Skills',
+                    'event'=>'opens',
+                    'title'=>$set->skillTestGroup?->title ?: $set->title,
+                    'set'=>$set->set_code,
+                    'position'=>$set->vacancy?->position_title,
+                    'url'=>route('admin.skills.edit',$set),
+                ]);
+            }
+            if ($set->end_date && $set->end_date->between($todayStart, $todayEnd)) {
+                $todayTimeline->push([
+                    'at'=>$set->end_date,
+                    'type'=>'Skills',
+                    'event'=>'closes',
+                    'title'=>$set->skillTestGroup?->title ?: $set->title,
+                    'set'=>$set->set_code,
+                    'position'=>$set->vacancy?->position_title,
+                    'url'=>route('admin.skills.edit',$set),
+                ]);
+            }
+        }
+
+        $todayTimeline = $todayTimeline->sortBy('at')->values();
+
+        $liveWritten = ExamAttempt::with([
+                'application:id,application_code',
+                'exam:id,title,set_code,assessment_group_id',
+                'exam.assessmentGroup:id,title',
+            ])
+            ->where('status',1)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('expires_at')->orWhere('expires_at','>',$now);
+            })
+            ->orderByDesc('started_at')
+            ->limit(10)
+            ->get()
+            ->map(fn ($attempt) => [
+                'type'=>'Written',
+                'application_code'=>$attempt->application?->application_code,
+                'assessment'=>$attempt->exam?->assessmentGroup?->title ?: $attempt->exam?->title,
+                'set'=>$attempt->exam?->set_code,
+                'started_at'=>$attempt->started_at,
+                'expires_at'=>$attempt->expires_at,
+                'url'=>$attempt->exam ? route('admin.assessments.results',$attempt->exam) : null,
+            ]);
+
+        $liveSkills = SkillTestAttempt::with([
+                'application:id,application_code',
+                'skillTest:id,title,set_code,skill_test_group_id',
+                'skillTest.skillTestGroup:id,title',
+            ])
+            ->where('status',1)
+            ->where(function ($q) use ($now) {
+                $q->whereNull('expires_at')->orWhere('expires_at','>',$now);
+            })
+            ->orderByDesc('started_at')
+            ->limit(10)
+            ->get()
+            ->map(fn ($attempt) => [
+                'type'=>'Skills',
+                'application_code'=>$attempt->application?->application_code,
+                'assessment'=>$attempt->skillTest?->skillTestGroup?->title ?: $attempt->skillTest?->title,
+                'set'=>$attempt->skillTest?->set_code,
+                'started_at'=>$attempt->started_at,
+                'expires_at'=>$attempt->expires_at,
+                'url'=>$attempt->skillTest ? route('admin.skills.results',$attempt->skillTest) : null,
+            ]);
+
+        $liveSessions = $liveWritten
+            ->concat($liveSkills)
+            ->sortByDesc('started_at')
+            ->take(15)
+            ->values();
+
+        $reviewQueue = collect([
+            [
+                'label'=>'Written items pending review',
+                'count'=>(int)$written['pending_item_review'],
+                'icon'=>'fas fa-list-check',
+                'type'=>'Written',
+                'url'=>route('admin.assessment_center.index').'#assessments',
+            ],
+            [
+                'label'=>'Skills tasks pending review',
+                'count'=>(int)$skillPendingReviewByGroup->sum(),
+                'icon'=>'fas fa-tools',
+                'type'=>'Skills',
+                'url'=>route('admin.assessment_center.index').'#assessments',
+            ],
+            [
+                'label'=>'Skills submissions awaiting human evaluation',
+                'count'=>(int)$skills['pending_human'],
+                'icon'=>'fas fa-user-check',
+                'type'=>'Evaluation',
+                'url'=>route('admin.skill_groups.index'),
+            ],
+        ])->filter(fn ($item) => $item['count'] > 0)->values();
+
+        $commandStats = [
+            'open_now'=>$assessmentRows->whereNotNull('current_set')->count(),
+            'starting_today'=>$todayTimeline->where('event','opens')->count(),
+            'closing_today'=>$todayTimeline->where('event','closes')->count(),
+            'needs_attention'=>$assessmentRows->where('ready',false)->count(),
+            'taking_now'=>(int)$written['taking_now'] + (int)$skills['taking_now'],
+            'pending_review'=>(int)$written['pending_item_review'] + (int)$skillPendingReviewByGroup->sum(),
+            'pending_evaluation'=>(int)$skills['pending_human'],
+        ];
 
         $standaloneSkillTests = SkillTest::with('vacancy:id,position_title')
             ->whereNull('skill_test_group_id')
@@ -330,6 +518,10 @@ class AssessmentCenterController extends Controller
             'groups',
             'skillGroups',
             'assessmentRows',
+            'commandStats',
+            'todayTimeline',
+            'liveSessions',
+            'reviewQueue',
             'standaloneSkillTests',
             'standaloneExams'
         ));
