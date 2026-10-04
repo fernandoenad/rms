@@ -14,7 +14,8 @@ class VacancyController extends Controller
 {
     public function index()
     {
-        $vacancies = Vacancy::where('status', '=', '1')
+        $vacancies = Vacancy::openForApplications()
+            ->orderByDesc('id')
             ->get();
 
         return view('guest.vacancies.index', ['vacancies' => $vacancies]);
@@ -27,7 +28,7 @@ class VacancyController extends Controller
 
     public function apply(Vacancy $vacancy)
     {
-        if($vacancy->status != 1){
+        if(!$vacancy->isOpenForApplications()){
             abort(404);
         }
 
