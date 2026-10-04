@@ -4,10 +4,20 @@
 <div class="d-flex justify-content-between align-items-center flex-wrap">
     <div>
         <h1 class="mb-0">{{ $skillTest->title }}</h1>
-        <small class="text-muted">
-            Task v{{ $skillTest->task_version }} · {{ optional($skillTest->vacancy)->position_title }}
-            @if($skillTest->skill_test_group_id) · Set {{ $skillTest->set_code }} @endif
-        </small>
+        <div class="small text-muted mb-1">
+            <a href="{{ route('admin.assessment_center.index') }}">Assessment Center</a>
+            <span class="mx-1">›</span>
+            <a href="{{ route('admin.assessment_center.index') }}#assessments">Assessments</a>
+            @if($skillTest->skill_test_group_id)
+                <span class="mx-1">›</span>
+                <a href="{{ route('admin.skill_groups.edit',$skillTest->skill_test_group_id) }}">{{ optional($skillTest->skillTestGroup)->title ?: 'Skills Group' }}</a>
+                <span class="mx-1">›</span>
+                Set {{ $skillTest->set_code }}
+            @else
+                <span class="mx-1">›</span> Standalone Skills
+            @endif
+        </div>
+        <small class="text-muted">Task v{{ $skillTest->task_version }} · {{ optional($skillTest->vacancy)->position_title }}</small>
     </div>
     <div class="mt-2 mt-md-0">
         @if($skillTest->skill_test_group_id)
@@ -23,6 +33,21 @@
 @stop
 
 @section('content')
+@include('admin.assessment_center._nav')
+
+@if($skillTest->skill_test_group_id)
+<div class="card card-outline card-light mb-3">
+    <div class="card-body py-2">
+        <nav class="nav nav-pills nav-sm">
+            <a class="nav-link active" href="{{ route('admin.skills.edit',$skillTest) }}">Overview & Schedule</a>
+            <a class="nav-link" href="{{ route('admin.skills.edit',$skillTest) }}#taskRubric">Task & Rubric</a>
+            <a class="nav-link" href="{{ route('admin.skills.results',$skillTest) }}">Attempts & Evaluation</a>
+            <a class="nav-link" href="{{ route('admin.skills.preview',$skillTest) }}">Preview</a>
+        </nav>
+    </div>
+</div>
+@endif
+
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
 
