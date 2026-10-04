@@ -39,19 +39,19 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card border-success h-100">
-            <div class="card-body py-3">
-                <div class="small text-uppercase text-success font-weight-bold mb-2"><i class="fas fa-layer-group mr-1"></i> Shared across all sets</div>
+<div class="row mb-2 assessment-scope-guide">
+    <div class="col-md-6 mb-2">
+        <div class="card border-success mb-0">
+            <div class="card-body py-2 px-3">
+                <div class="small text-uppercase text-success font-weight-bold mb-1"><i class="fas fa-layer-group mr-1"></i> Shared across all sets</div>
                 <div class="small text-muted">Position · title · access · submission rules · score criterion · score release · group status</div>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card border-info h-100">
-            <div class="card-body py-3">
-                <div class="small text-uppercase text-info font-weight-bold mb-2"><i class="fas fa-clone mr-1"></i> Configured per set</div>
+    <div class="col-md-6 mb-2">
+        <div class="card border-info mb-0">
+            <div class="card-body py-2 px-3">
+                <div class="small text-uppercase text-info font-weight-bold mb-1"><i class="fas fa-clone mr-1"></i> Configured per set</div>
                 <div class="small text-muted">Schedule · task · rubric · duration · review/readiness · publication · attempts/evaluation</div>
             </div>
         </div>

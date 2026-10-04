@@ -53,36 +53,39 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card border-success h-100">
-            <div class="card-body py-3">
-                <div class="small text-uppercase text-success font-weight-bold mb-2"><i class="fas fa-layer-group mr-1"></i> Shared across all sets</div>
-                <div class="small text-muted">Position · assessment title · applicant score criterion · score release policy · blueprint/TOS · group access/governance</div>
+<div class="row mb-2 assessment-scope-guide">
+    <div class="col-md-6 mb-2">
+        <div class="card border-success mb-0">
+            <div class="card-body py-2 px-3">
+                <div class="small text-uppercase text-success font-weight-bold mb-1"><i class="fas fa-layer-group mr-1"></i> Shared across all sets</div>
+                <div class="small text-muted">Position · title · score criterion · score release · blueprint/TOS · group governance</div>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card border-primary h-100">
-            <div class="card-body py-3">
-                <div class="small text-uppercase text-primary font-weight-bold mb-2"><i class="fas fa-clone mr-1"></i> Configured per set</div>
-                <div class="small text-muted">Schedule · questions/items · duration · review/readiness · publication · attempts</div>
+    <div class="col-md-6 mb-2">
+        <div class="card border-primary mb-0">
+            <div class="card-body py-2 px-3">
+                <div class="small text-uppercase text-primary font-weight-bold mb-1"><i class="fas fa-clone mr-1"></i> Configured per set</div>
+                <div class="small text-muted">Schedule · items · duration · review/readiness · publication · attempts</div>
             </div>
         </div>
     </div>
 </div>
 
-<div id="accommodations" class="card border-info">
-    <div class="card-header"><strong>Applicant Accommodation</strong></div>
-    <div class="card-body">
+<div id="accommodations" class="card border-info mb-3">
+    <div class="card-header py-2"><strong>Applicant Accommodation</strong></div>
+    <div class="card-body py-3">
         <form method="post" action="{{ route('admin.assessment_groups.accommodations',$assessmentGroup) }}">@csrf
-            <div class="form-row">
-                <div class="form-group col-md-3"><label>Application code</label><input name="application_code" class="form-control" required></div>
-                <div class="form-group col-md-2"><label>Extra minutes</label><input type="number" min="0" max="240" name="extra_minutes" value="0" class="form-control" required></div>
-                <div class="form-group col-md-2"><label>Large text</label><select name="large_text" class="form-control"><option value="0">No</option><option value="1">Yes</option></select></div>
-                <div class="form-group col-md-5"><label>Approval note</label><input name="notes" class="form-control" placeholder="Document the approved accommodation"></div>
+            <div class="form-row align-items-end">
+                <div class="form-group col-md-3 mb-2"><label class="mb-1">Application code</label><input name="application_code" class="form-control" required></div>
+                <div class="form-group col-md-2 mb-2"><label class="mb-1">Extra minutes</label><input type="number" min="0" max="240" name="extra_minutes" value="0" class="form-control" required></div>
+                <div class="form-group col-md-2 mb-2"><label class="mb-1">Large text</label><select name="large_text" class="form-control"><option value="0">No</option><option value="1">Yes</option></select></div>
+                <div class="form-group col-md-3 mb-2"><label class="mb-1">Approval note</label><input name="notes" class="form-control" placeholder="Approved accommodation note"></div>
+                <div class="form-group col-md-2 mb-2">
+                    <button class="btn btn-info btn-block text-nowrap"><i class="fas fa-save mr-1"></i> Save</button>
+                </div>
             </div>
-            <button class="btn btn-sm btn-info">Save Accommodation for All Sets</button>
+            <small class="text-muted">Applies the approved accommodation to all equivalent sets in this assessment group.</small>
         </form>
     </div>
 </div>
