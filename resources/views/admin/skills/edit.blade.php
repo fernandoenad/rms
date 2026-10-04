@@ -132,7 +132,7 @@
 <div class="alert alert-primary">
     <strong>Equivalent Set {{ $skillTest->set_code }}</strong> in
     <a href="{{ route('admin.skill_groups.edit',$skillTest->skill_test_group_id) }}">{{ optional($skillTest->skillTestGroup)->title }}</a>.
-    Shared schedule/access/release settings are managed from the Skills Test Group. This page is for this set's task, rubric, review, assignments, and results.
+    Shared access, score release, and applicant-score mapping are managed from the Skills Test Group. This page controls this set's schedule, task, rubric, review, assignments, and results.
 </div>
 @endif
 
@@ -182,16 +182,46 @@
 
             <div class="form-group">
                 <label>Applicant score criterion</label>
-                <select name="assessment_score_key" class="form-control" {{ $locked?'disabled':'' }}>
-                    <option value="">Do not write this test into applicant scores</option>
-                    @foreach($scoreCriteria as $key=>$max)
-                        <option value="{{ $key }}" {{ old('assessment_score_key',$skillTest->assessment_score_key)===$key?'selected':'' }}>
-                            {{ $key }} ({{ number_format($max,2) }} pts)
-                        </option>
-                    @endforeach
-                </select>
-                @if($locked)<input type="hidden" name="assessment_score_key" value="{{ $skillTest->assessment_score_key }}">@endif
-                <small class="text-muted">Official 100-point rubric scores are scaled to the selected recruitment-template criterion. Other applicant-score criteria are preserved.</small>
+
+                @if($skillTest->skill_test_group_id)
+                    @php
+                        $groupScoreKey = optional($skillTest->skillTestGroup)->assessment_score_key;
+                        $groupScoreMax = $groupScoreKey ? ($scoreCriteria[$groupScoreKey] ?? null) : null;
+                    @endphp
+
+                    <div class="form-control bg-light" style="height:auto; min-height:38px;">
+                        @if($groupScoreKey)
+                            <strong>{{ $groupScoreKey }}</strong>
+                            @if($groupScoreMax !== null)
+                                <span class="text-muted">({{ number_format((float)$groupScoreMax,2) }} pts)</span>
+                            @endif
+                            <span class="badge badge-info ml-2">Inherited from group</span>
+                        @else
+                            <span class="text-muted">Do not write this test into applicant scores</span>
+                            <span class="badge badge-secondary ml-2">Inherited from group</span>
+                        @endif
+                    </div>
+
+                    <small class="text-muted d-block mt-1">
+                        Equivalent sets share one applicant-score mapping.
+                        <a href="{{ route('admin.skill_groups.edit',$skillTest->skill_test_group_id) }}">Change this in Skills Test Group settings.</a>
+                        Official 100-point rubric scores are scaled to the selected recruitment-template criterion.
+                    </small>
+
+                    <input type="hidden" name="assessment_score_key" value="{{ $skillTest->assessment_score_key }}">
+                @else
+                    <select name="assessment_score_key" class="form-control" {{ $locked?'disabled':'' }}>
+                        <option value="">Do not write this test into applicant scores</option>
+                        @foreach($scoreCriteria as $key=>$max)
+                            <option value="{{ $key }}" {{ old('assessment_score_key',$skillTest->assessment_score_key)===$key?'selected':'' }}>
+                                {{ $key }} ({{ number_format($max,2) }} pts)
+                            </option>
+                        @endforeach
+                    </select>
+                    @if($locked)<input type="hidden" name="assessment_score_key" value="{{ $skillTest->assessment_score_key }}">@endif
+                    <small class="text-muted">Official 100-point rubric scores are scaled to the selected recruitment-template criterion. Other applicant-score criteria are preserved.</small>
+                @endif
+
                 @if($skillTest->scores_synced_at)
                     <div class="small text-success mt-1">Last applicant-score sync: {{ $skillTest->scores_synced_at->format('M d, Y h:i A') }}</div>
                 @endif
