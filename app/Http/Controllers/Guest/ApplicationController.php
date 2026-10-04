@@ -192,23 +192,48 @@ class ApplicationController extends Controller
                 ->sortBy(fn ($set) => (string)($set->set_code ?: $set->id))
                 ->values();
 
-            $openSets = $sets->filter(fn ($set) =>
-                $set->status == 1
-                && (!$set->start_date || now()->gte($set->start_date))
-                && (!$set->end_date || now()->lt($set->end_date))
-            )->values();
+            // Equivalent Skills Test sets are schedule-driven, not pre-assigned.
+            // If schedules overlap, prefer the set that opened most recently so
+            // a Day 2/Day 3 set supersedes an older still-open set.
+            $openSet = $sets
+                ->filter(fn ($set) =>
+                    $set->status == 1
+                    && $set->start_date
+                    && $set->end_date
+                    && now()->gte($set->start_date)
+                    && now()->lt($set->end_date)
+                )
+                ->sort(function ($a, $b) {
+                    $startCompare = $b->start_date <=> $a->start_date;
+                    return $startCompare !== 0
+                        ? $startCompare
+                        : strcmp((string)$a->set_code, (string)$b->set_code);
+                })
+                ->first();
 
-            $upcomingSets = $sets->filter(fn ($set) =>
-                $set->status == 1
-                && $set->start_date
-                && now()->lt($set->start_date)
-            )->values();
+            if ($openSet) {
+                $visibleSkillTests->push($openSet);
+                continue;
+            }
 
-            $candidates = $openSets->isNotEmpty() ? $openSets : $upcomingSets;
+            // Before the assessment window opens, show only the next scheduled
+            // set. This is informational and does not lock the applicant.
+            $upcomingSet = $sets
+                ->filter(fn ($set) =>
+                    $set->status == 1
+                    && $set->start_date
+                    && now()->lt($set->start_date)
+                )
+                ->sort(function ($a, $b) {
+                    $startCompare = $a->start_date <=> $b->start_date;
+                    return $startCompare !== 0
+                        ? $startCompare
+                        : strcmp((string)$a->set_code, (string)$b->set_code);
+                })
+                ->first();
 
-            if ($candidates->isNotEmpty()) {
-                $index = abs(crc32($groupId.':'.$application->id)) % $candidates->count();
-                $visibleSkillTests->push($candidates->get($index));
+            if ($upcomingSet) {
+                $visibleSkillTests->push($upcomingSet);
             }
         }
 
