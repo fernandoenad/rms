@@ -161,7 +161,7 @@
 </div>
 @endif
 
-<div class="card">
+<div id="taskRubric" class="card">
     <div class="card-header"><strong>Task & Settings</strong></div>
     <div class="card-body">
         <form method="post" action="{{ route('admin.skills.update',$skillTest) }}">@csrf @method('put')
