@@ -17,6 +17,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Services\EquivalentSetScheduleResolver;
 
 class SkillTestAttemptController extends Controller
 {
@@ -64,7 +65,7 @@ class SkillTestAttemptController extends Controller
         return $expiry;
     }
 
-    public function start(Request $request, Application $application, SkillTest $skillTest)
+    public function start(Request $request, Application $application, SkillTest $skillTest, EquivalentSetScheduleResolver $setResolver)
     {
         $this->authorizeAccess($request,$application,$skillTest);
 
@@ -102,26 +103,7 @@ class SkillTestAttemptController extends Controller
             }
 
             if (!$existingLock) {
-                $currentSet = SkillTest::where('skill_test_group_id',$skillTest->skill_test_group_id)
-                    ->where('vacancy_id',$application->vacancy_id)
-                    ->where('status',1)
-                    ->whereNotNull('start_date')
-                    ->whereNotNull('end_date')
-                    ->where('start_date','<=',now())
-                    ->where('end_date','>',now())
-                    ->where(function($q) use ($application) {
-                        $q->where('access_mode','all_taken_in')
-                          ->orWhereExists(function($sub) use ($application) {
-                              $sub->selectRaw('1')->from('skill_test_assignments')
-                                  ->whereColumn('skill_test_assignments.skill_test_id','skill_tests.id')
-                                  ->where('skill_test_assignments.application_id',$application->id);
-                          });
-                    })
-                    // Schedule determines the equivalent set. If two windows
-                    // overlap, the set that opened most recently takes priority.
-                    ->orderByDesc('start_date')
-                    ->orderBy('set_code')
-                    ->first(['id','set_code']);
+                $currentSet = $setResolver->currentSkillSet((int)$skillTest->skill_test_group_id, $application);
 
                 if (!$currentSet || (int)$currentSet->id !== (int)$skillTest->id) {
                     return back()->with(

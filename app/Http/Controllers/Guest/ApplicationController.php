@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Validation\Rule;
 use Mail;
 use App\Mail\UpdateMail;
+use App\Services\EquivalentSetScheduleResolver;
 
 class ApplicationController extends Controller
 {
@@ -43,7 +44,7 @@ class ApplicationController extends Controller
         return view('guest.applications.result', ['applications' => $applications, 'email' => $request->session()->get('guest_email')]);
     }
 
-    public function show(Request $request, Application $application)
+    public function show(Request $request, Application $application, EquivalentSetScheduleResolver $setResolver)
     {
         $applicationInquiries = $application->inquiries;
         $exams = \App\Models\Exam::where('vacancy_id', $application->vacancy_id)
@@ -102,26 +103,11 @@ class ApplicationController extends Controller
                 continue;
             }
 
-            $sets = $sets
-                ->filter(fn ($set) => !$set->assessmentGroup || $set->assessmentGroup->status)
-                ->sortBy(fn ($set) => (string)($set->set_code ?: $set->id))
-                ->values();
+            $visibleSet = $setResolver->currentWrittenSet((int)$groupId, $application)
+                ?: $setResolver->nextWrittenSet((int)$groupId, $application);
 
-            $openSets = $sets->filter(function ($set) {
-                return $set->status == 1
-                    && (!$set->start_date || now()->gte($set->start_date))
-                    && (!$set->end_date || now()->lt($set->end_date));
-            })->values();
-
-            $upcomingSets = $sets->filter(function ($set) {
-                return $set->status == 1 && $set->start_date && now()->lt($set->start_date);
-            })->values();
-
-            $candidates = $openSets->isNotEmpty() ? $openSets : $upcomingSets;
-
-            if ($candidates->isNotEmpty()) {
-                $index = abs(crc32($groupId.':'.$application->id)) % $candidates->count();
-                $visibleExams->push($candidates->get($index));
+            if ($visibleSet) {
+                $visibleExams->push($visibleSet);
             }
         }
 
@@ -182,56 +168,11 @@ class ApplicationController extends Controller
                 continue;
             }
 
-            // Resolve equivalent-set visibility from the full published group schedule.
-            // Applicants are not pre-assigned; the schedule determines which set is current.
-            $scheduledSets = \App\Models\SkillTest::where('skill_test_group_id',$groupId)
-                ->where('vacancy_id',$application->vacancy_id)
-                ->where('status',1)
-                ->whereNotNull('start_date')
-                ->whereNotNull('end_date')
-                ->where(function ($q) use ($application) {
-                    $q->where('access_mode','all_taken_in')
-                      ->orWhereExists(function ($sub) use ($application) {
-                          $sub->selectRaw('1')->from('skill_test_assignments')
-                              ->whereColumn('skill_test_assignments.skill_test_id','skill_tests.id')
-                              ->where('skill_test_assignments.application_id',$application->id);
-                      });
-                })
-                ->with([
-                    'skillTestGroup:id,title,status,is_paused,archived_at,score_release_policy,scores_released_at',
-                    'attempts'=>fn($q)=>$q->where('application_id',$application->id),
-                ])
-                ->orderBy('start_date')
-                ->orderBy('set_code')
-                ->get()
-                ->filter(fn ($set) =>
-                    $set->skillTestGroup
-                    && $set->skillTestGroup->status
-                    && !$set->skillTestGroup->archived_at
-                    && !$set->skillTestGroup->is_paused
-                )
-                ->values();
+            $visibleSet = $setResolver->currentSkillSet((int)$groupId, $application)
+                ?: $setResolver->nextSkillSet((int)$groupId, $application);
 
-            $openSet = $scheduledSets
-                ->filter(fn ($set) =>
-                    now()->gte($set->start_date)
-                    && now()->lt($set->end_date)
-                )
-                ->sortByDesc(fn ($set) => $set->start_date->getTimestamp())
-                ->first();
-
-            if ($openSet) {
-                $visibleSkillTests->push($openSet);
-                continue;
-            }
-
-            $upcomingSet = $scheduledSets
-                ->filter(fn ($set) => now()->lt($set->start_date))
-                ->sortBy(fn ($set) => $set->start_date->getTimestamp())
-                ->first();
-
-            if ($upcomingSet) {
-                $visibleSkillTests->push($upcomingSet);
+            if ($visibleSet) {
+                $visibleSkillTests->push($visibleSet);
             }
         }
 
