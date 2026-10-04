@@ -186,12 +186,35 @@
 
     <div class="col-lg-6">
         <div class="card">
-            <div class="card-header"><strong>Skills Tests</strong></div>
+            <div class="card-header"><strong>Skills Test Groups</strong></div>
+            <div class="card-body table-responsive p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead><tr><th>Assessment</th><th>Sets</th><th>State</th><th></th></tr></thead>
+                    <tbody>
+                    @forelse($skillGroups as $group)
+                    <tr>
+                        <td>{{ $group->title }}<br><small class="text-muted">{{ optional($group->vacancy)->position_title }}</small></td>
+                        <td>{{ $group->skillTests->count() }}</td>
+                        <td>
+                            @if($group->is_paused)<span class="badge badge-warning">Paused</span>
+                            @elseif($group->status)<span class="badge badge-success">Active</span>
+                            @else<span class="badge badge-secondary">Inactive</span>@endif
+                        </td>
+                        <td><a href="{{ route('admin.skill_groups.edit',$group) }}" class="btn btn-xs btn-outline-info">Open</a></td>
+                    </tr>
+                    @empty<tr><td colspan="4">No skills test groups.</td></tr>@endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><strong>Standalone Skills Tests</strong></div>
             <div class="card-body table-responsive p-0">
                 <table class="table table-sm table-hover mb-0">
                     <thead><tr><th>Test</th><th>State</th><th></th></tr></thead>
                     <tbody>
-                    @forelse($skillTests as $test)
+                    @forelse($standaloneSkillTests as $test)
                     <tr>
                         <td>{{ $test->title }}<br><small class="text-muted">{{ optional($test->vacancy)->position_title }}</small></td>
                         <td>
@@ -201,7 +224,7 @@
                         </td>
                         <td><a href="{{ route('admin.skills.edit',$test) }}" class="btn btn-xs btn-outline-info">Open</a></td>
                     </tr>
-                    @empty<tr><td colspan="3">No skills tests.</td></tr>@endforelse
+                    @empty<tr><td colspan="3">No standalone skills tests.</td></tr>@endforelse
                     </tbody>
                 </table>
             </div>
