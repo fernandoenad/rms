@@ -51,30 +51,146 @@
 @endforeach
 
 <div class="row">
-    <div class="col-lg-3 col-6">
+    <div class="col-lg-2 col-md-4 col-6">
+        <div class="small-box bg-success">
+            <div class="inner"><h3>{{ number_format($commandStats['open_now']) }}</h3><p>Open Now</p></div>
+            <div class="icon"><i class="fas fa-door-open"></i></div>
+        </div>
+    </div>
+    <div class="col-lg-2 col-md-4 col-6">
         <div class="small-box bg-info">
-            <div class="inner"><h3>{{ number_format($written['taking_now']) }}</h3><p>Written Taking Now</p></div>
-            <div class="icon"><i class="fas fa-pen"></i></div>
+            <div class="inner"><h3>{{ number_format($commandStats['taking_now']) }}</h3><p>Taking Now</p></div>
+            <div class="icon"><i class="fas fa-user-clock"></i></div>
         </div>
     </div>
-    <div class="col-lg-3 col-6">
+    <div class="col-lg-2 col-md-4 col-6">
+        <div class="small-box bg-primary">
+            <div class="inner"><h3>{{ number_format($commandStats['starting_today']) }}</h3><p>Starting Today</p></div>
+            <div class="icon"><i class="fas fa-play-circle"></i></div>
+        </div>
+    </div>
+    <div class="col-lg-2 col-md-4 col-6">
+        <div class="small-box bg-secondary">
+            <div class="inner"><h3>{{ number_format($commandStats['closing_today']) }}</h3><p>Closing Today</p></div>
+            <div class="icon"><i class="fas fa-stop-circle"></i></div>
+        </div>
+    </div>
+    <div class="col-lg-2 col-md-4 col-6">
         <div class="small-box bg-warning">
-            <div class="inner"><h3>{{ number_format($skills['taking_now']) }}</h3><p>Skills Taking Now</p></div>
-            <div class="icon"><i class="fas fa-tools"></i></div>
+            <div class="inner"><h3>{{ number_format($commandStats['needs_attention']) }}</h3><p>Needs Attention</p></div>
+            <div class="icon"><i class="fas fa-exclamation-circle"></i></div>
         </div>
     </div>
-    <div class="col-lg-3 col-6">
-        <div class="small-box bg-light">
-            <div class="inner"><h3>{{ $queue['assessment_ai']===null ? 'N/A' : number_format($queue['assessment_ai']) }}</h3><p>AI Queue</p></div>
-            <div class="icon"><i class="fas fa-robot"></i></div>
-        </div>
-    </div>
-    <div class="col-lg-3 col-6">
-        <div class="small-box {{ $schedulerHealthy ? 'bg-success' : 'bg-danger' }}">
-            <div class="inner"><h3>{{ $schedulerHealthy ? 'OK' : 'CHECK' }}</h3><p>Scheduler</p></div>
+    <div class="col-lg-2 col-md-4 col-6">
+        <div class="small-box {{ $schedulerHealthy ? 'bg-light' : 'bg-danger' }}">
+            <div class="inner"><h3>{{ $schedulerHealthy ? 'OK' : 'CHECK' }}</h3><p>System Health</p></div>
             <div class="icon"><i class="fas fa-heartbeat"></i></div>
         </div>
     </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-7">
+        <div class="card card-outline card-primary h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <strong><i class="far fa-calendar-alt mr-1"></i> Today</strong>
+                <span class="small text-muted">{{ now()->format('M d, Y') }}</span>
+            </div>
+            <div class="card-body p-0">
+                @if($todayTimeline->isEmpty())
+                    <div class="p-3 text-muted">No assessment set opens or closes today.</div>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead><tr><th>Time</th><th>Assessment</th><th>Type</th><th>Event</th><th></th></tr></thead>
+                            <tbody>
+                            @foreach($todayTimeline as $event)
+                                <tr>
+                                    <td class="text-nowrap"><strong>{{ $event['at']->format('h:i A') }}</strong></td>
+                                    <td>
+                                        {{ $event['title'] }}
+                                        @if($event['set'])<span class="badge badge-light border ml-1">Set {{ $event['set'] }}</span>@endif
+                                        @if($event['position'])<div class="small text-muted">{{ $event['position'] }}</div>@endif
+                                    </td>
+                                    <td><span class="badge {{ $event['type']==='Written' ? 'badge-primary' : 'badge-info' }}">{{ $event['type'] }}</span></td>
+                                    <td>
+                                        <span class="badge {{ $event['event']==='opens' ? 'badge-success' : 'badge-secondary' }}">
+                                            {{ ucfirst($event['event']) }}
+                                        </span>
+                                    </td>
+                                    <td><a href="{{ $event['url'] }}" class="btn btn-xs btn-outline-primary">Manage</a></td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5 mt-3 mt-lg-0">
+        <div class="card card-outline card-warning h-100">
+            <div class="card-header"><strong><i class="fas fa-tasks mr-1"></i> Unified Review Queue</strong></div>
+            <div class="card-body p-0">
+                @if($reviewQueue->isEmpty())
+                    <div class="p-3 text-success"><i class="fas fa-check-circle mr-1"></i> No pending review or evaluation work.</div>
+                @else
+                    <div class="list-group list-group-flush">
+                    @foreach($reviewQueue as $review)
+                        <a href="{{ $review['url'] }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            <span><i class="{{ $review['icon'] }} mr-2 text-muted"></i>{{ $review['label'] }}</span>
+                            <span class="badge badge-warning badge-pill">{{ number_format($review['count']) }}</span>
+                        </a>
+                    @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="liveSessions" class="card card-outline card-info mt-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <strong><i class="fas fa-broadcast-tower mr-1"></i> Live Sessions</strong>
+            <div class="small text-muted">Applicants currently taking a Written or Skills assessment.</div>
+        </div>
+        <span class="badge badge-info">{{ number_format($liveSessions->count()) }} shown</span>
+    </div>
+    <div class="card-body table-responsive p-0">
+        <table class="table table-sm table-hover mb-0">
+            <thead><tr><th>Applicant</th><th>Assessment</th><th>Type</th><th>Set</th><th>Started</th><th>Time left</th><th></th></tr></thead>
+            <tbody>
+            @forelse($liveSessions as $session)
+                @php
+                    $minutesLeft = $session['expires_at'] ? max(0, now()->diffInMinutes($session['expires_at'], false)) : null;
+                @endphp
+                <tr>
+                    <td><strong>{{ $session['application_code'] ?: '—' }}</strong></td>
+                    <td>{{ $session['assessment'] ?: '—' }}</td>
+                    <td><span class="badge {{ $session['type']==='Written' ? 'badge-primary' : 'badge-info' }}">{{ $session['type'] }}</span></td>
+                    <td>{{ $session['set'] ?: '—' }}</td>
+                    <td class="text-nowrap">{{ optional($session['started_at'])->format('h:i A') ?: '—' }}</td>
+                    <td>
+                        @if($minutesLeft === null)
+                            <span class="text-muted">No expiry</span>
+                        @elseif($minutesLeft <= 5)
+                            <span class="badge badge-danger">{{ $minutesLeft }} min</span>
+                        @else
+                            {{ $minutesLeft }} min
+                        @endif
+                    </td>
+                    <td>@if($session['url'])<a href="{{ $session['url'] }}" class="btn btn-xs btn-outline-info">View</a>@endif</td>
+                </tr>
+            @empty
+                <tr><td colspan="7" class="text-muted text-center py-3">No active assessment sessions.</td></tr>
+            @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+
 </div>
 
 <div id="operationsHealth" class="card card-outline card-secondary">
@@ -222,13 +338,21 @@
                         @endif
                         <div class="small text-muted">{{ number_format($row['attempts']) }} total attempt(s)</div>
                     </td>
-                    <td>
+                    <td style="min-width:220px;">
                         @if($row['ready'])
                             <span class="badge badge-success">Ready</span>
+                            <div class="small text-muted mt-1">{{ $row['readiness_detail'] }}</div>
                         @else
                             <span class="badge badge-warning">Needs attention</span>
+                            <details class="small mt-1">
+                                <summary class="text-muted" style="cursor:pointer;">{{ $row['readiness_detail'] }}</summary>
+                                <ul class="pl-3 mb-0 mt-1">
+                                    @foreach($row['readiness_issues'] ?? [] as $issue)
+                                        <li>{{ $issue }}</li>
+                                    @endforeach
+                                </ul>
+                            </details>
                         @endif
-                        <div class="small text-muted mt-1">{{ $row['readiness_detail'] }}</div>
                     </td>
                     <td><span class="badge badge-{{ $row['state_class'] }}">{{ $row['state'] }}</span></td>
                     <td><a href="{{ $row['manage_url'] }}" class="btn btn-sm btn-outline-primary">Manage</a></td>
