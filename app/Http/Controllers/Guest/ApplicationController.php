@@ -102,9 +102,88 @@ class ApplicationController extends Controller
                 continue;
             }
 
-            // Resolve the visible equivalent set from the group's full published
-            // schedule, rather than from the already-filtered applicant collection.
-            // This prevents an earlier set from disappearing before schedule selection.
+            $sets = $sets
+                ->filter(fn ($set) => !$set->assessmentGroup || $set->assessmentGroup->status)
+                ->sortBy(fn ($set) => (string)($set->set_code ?: $set->id))
+                ->values();
+
+            $openSets = $sets->filter(function ($set) {
+                return $set->status == 1
+                    && (!$set->start_date || now()->gte($set->start_date))
+                    && (!$set->end_date || now()->lt($set->end_date));
+            })->values();
+
+            $upcomingSets = $sets->filter(function ($set) {
+                return $set->status == 1 && $set->start_date && now()->lt($set->start_date);
+            })->values();
+
+            $candidates = $openSets->isNotEmpty() ? $openSets : $upcomingSets;
+
+            if ($candidates->isNotEmpty()) {
+                $index = abs(crc32($groupId.':'.$application->id)) % $candidates->count();
+                $visibleExams->push($candidates->get($index));
+            }
+        }
+
+        $exams = $visibleExams->sortBy('start_date')->values();
+
+        $skillTests = \App\Models\SkillTest::where('vacancy_id', $application->vacancy_id)
+            ->where(function ($q) use ($application) {
+                $q->where('status', 1)
+                  ->orWhereHas('attempts', fn ($attempts) => $attempts->where('application_id', $application->id));
+            })
+            ->where(function ($q) use ($application) {
+                $q->where('access_mode', 'all_taken_in')
+                  ->orWhereExists(function ($sub) use ($application) {
+                      $sub->selectRaw('1')->from('skill_test_assignments')
+                          ->whereColumn('skill_test_assignments.skill_test_id', 'skill_tests.id')
+                          ->where('skill_test_assignments.application_id', $application->id);
+                  })
+                  ->orWhereHas('attempts', fn ($attempts) => $attempts->where('application_id', $application->id));
+            })
+            ->with([
+                'skillTestGroup:id,title,status,is_paused,archived_at,score_release_policy,scores_released_at',
+                'attempts' => function($q) use ($application) {
+                    $q->where('application_id', $application->id);
+                },
+            ])
+            ->orderBy('start_date')
+            ->get();
+
+        $skillGroupLocks = \App\Models\SkillTestGroupAttemptLock::where('application_id',$application->id)
+            ->get()
+            ->keyBy('skill_test_group_id');
+
+        $visibleSkillTests = collect();
+
+        foreach ($skillTests->whereNull('skill_test_group_id') as $standalone) {
+            $visibleSkillTests->push($standalone);
+        }
+
+        foreach ($skillTests->whereNotNull('skill_test_group_id')->groupBy('skill_test_group_id') as $groupId => $sets) {
+            $lock = $skillGroupLocks->get($groupId);
+
+            if ($lock) {
+                $lockedSet = $sets->firstWhere('id',$lock->skill_test_id);
+
+                if (!$lockedSet) {
+                    $lockedSet = \App\Models\SkillTest::with([
+                            'skillTestGroup:id,title,status,is_paused,archived_at,score_release_policy,scores_released_at',
+                            'attempts'=>fn($q)=>$q->where('application_id',$application->id),
+                        ])
+                        ->whereKey($lock->skill_test_id)
+                        ->where('vacancy_id',$application->vacancy_id)
+                        ->first();
+                }
+
+                if ($lockedSet) {
+                    $visibleSkillTests->push($lockedSet);
+                }
+                continue;
+            }
+
+            // Resolve equivalent-set visibility from the full published group schedule.
+            // Applicants are not pre-assigned; the schedule determines which set is current.
             $scheduledSets = \App\Models\SkillTest::where('skill_test_group_id',$groupId)
                 ->where('vacancy_id',$application->vacancy_id)
                 ->where('status',1)
@@ -124,17 +203,15 @@ class ApplicationController extends Controller
                 ])
                 ->orderBy('start_date')
                 ->orderBy('set_code')
-                ->get();
+                ->get()
+                ->filter(fn ($set) =>
+                    $set->skillTestGroup
+                    && $set->skillTestGroup->status
+                    && !$set->skillTestGroup->archived_at
+                    && !$set->skillTestGroup->is_paused
+                )
+                ->values();
 
-            $scheduledSets = $scheduledSets->filter(fn ($set) =>
-                $set->skillTestGroup
-                && $set->skillTestGroup->status
-                && !$set->skillTestGroup->archived_at
-                && !$set->skillTestGroup->is_paused
-            )->values();
-
-            // If a set is open now, use the one whose window opened most recently.
-            // This allows a new day's set to take over if an older window overlaps.
             $openSet = $scheduledSets
                 ->filter(fn ($set) =>
                     now()->gte($set->start_date)
@@ -148,8 +225,6 @@ class ApplicationController extends Controller
                 continue;
             }
 
-            // Otherwise show the earliest future window. This is only a preview;
-            // no group lock is created until the applicant actually starts.
             $upcomingSet = $scheduledSets
                 ->filter(fn ($set) => now()->lt($set->start_date))
                 ->sortBy(fn ($set) => $set->start_date->getTimestamp())
