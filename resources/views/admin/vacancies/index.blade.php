@@ -45,7 +45,6 @@
                     </a>
                 </div>
             </div>
-
             <div class="card-body border-bottom">
                 <form method="get" action="{{ route('admin.vacancies.index') }}" class="form-row align-items-end">
                     <div class="form-group col-md-5 mb-2">
@@ -70,19 +69,12 @@
                     </div>
                 </form>
             </div>
-
             <div class="card-body table-responsive p-0">
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
-                            <th>Position</th>
-                            <th>Cycle</th>
-                            <th>Office</th>
-                            <th>Posting</th>
-                            <th>Station Stage</th>
-                            <th>Division Stage</th>
-                            <th class="text-right">Applicants</th>
-                            <th style="width:190px;">Actions</th>
+                            <th>Position</th><th>Cycle</th><th>Office</th><th>Posting</th>
+                            <th>Station Stage</th><th>Division Stage</th><th class="text-right">Applicants</th><th style="width:190px;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -108,74 +100,44 @@
                             </td>
                             <td><span class="badge badge-light border">{{ $vacancy->getLevel1Status() }}</span></td>
                             <td><span class="badge badge-light border">{{ $vacancy->getLevel2Status() }}</span></td>
-                            <td class="text-right">
-                                <strong>{{ $vacancy->applications_count }}</strong>
-                                <div class="small text-muted">{{ $vacancy->applications_with_station_count }} assigned</div>
-                            </td>
+                            <td class="text-right"><strong>{{ $vacancy->applications_count }}</strong><div class="small text-muted">{{ $vacancy->applications_with_station_count }} assigned</div></td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="{{ route('admin.vacancies.edit', $vacancy) }}" class="btn btn-outline-primary" title="Edit vacancy">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown">
-                                        <span class="sr-only">More actions</span>
-                                    </button>
+                                    <a href="{{ route('admin.vacancies.edit', $vacancy) }}" class="btn btn-outline-primary" title="Edit vacancy"><i class="fas fa-edit"></i></a>
+                                    <button type="button" class="btn btn-outline-secondary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown"><span class="sr-only">More actions</span></button>
                                     <div class="dropdown-menu dropdown-menu-right">
-                                        <a href="{{ route('admin.applications.vacancy.show', $vacancy) }}" class="dropdown-item">
-                                            <i class="fas fa-users mr-2 text-muted"></i> View Applicants
-                                        </a>
-                                        <a href="{{ route('admin.vacancies.apply', $vacancy) }}" class="dropdown-item" target="_blank"
-                                           onclick="return confirm('Add an applicant manually only when authorized by the HRMPSB Chair. Continue?')">
-                                            <i class="fas fa-user-plus mr-2 text-muted"></i> Add Applicant Manually
-                                        </a>
+                                        <a href="{{ route('admin.applications.vacancy.show', $vacancy) }}" class="dropdown-item"><i class="fas fa-users mr-2 text-muted"></i> View Applicants</a>
+                                        <a href="{{ route('admin.vacancies.apply', $vacancy) }}" class="dropdown-item" target="_blank" onclick="return confirm('Add an applicant manually only when authorized by the HRMPSB Chair. Continue?')"><i class="fas fa-user-plus mr-2 text-muted"></i> Add Applicant Manually</a>
                                         <div class="dropdown-divider"></div>
-
                                         @if($posting==='Draft')
                                         <form method="post" action="{{ route('admin.vacancies.publish',$vacancy) }}">@csrf
-                                            <button class="dropdown-item text-success" onclick="return confirm('Publish this vacancy and open applications now?')">
-                                                <i class="fas fa-bullhorn mr-2"></i> Publish Now
-                                            </button>
+                                            <button class="dropdown-item text-success" onclick="return confirm('Publish this vacancy and open applications now?')"><i class="fas fa-bullhorn mr-2"></i> Publish Now</button>
                                         </form>
                                         @elseif($posting==='Open for Applications')
                                         <form method="post" action="{{ route('admin.vacancies.close_posting',$vacancy) }}">@csrf
-                                            <button class="dropdown-item text-warning" onclick="return confirm('Close applications for this vacancy now?')">
-                                                <i class="fas fa-door-closed mr-2"></i> Close Applications
-                                            </button>
+                                            <button class="dropdown-item text-warning" onclick="return confirm('Close applications for this vacancy now?')"><i class="fas fa-door-closed mr-2"></i> Close Applications</button>
                                         </form>
                                         <form method="post" action="{{ route('admin.vacancies.draft',$vacancy) }}">@csrf
-                                            <button class="dropdown-item" onclick="return confirm('Return this vacancy to Draft? Posting dates will be preserved.')">
-                                                <i class="fas fa-undo mr-2 text-muted"></i> Return to Draft
-                                            </button>
+                                            <button class="dropdown-item" onclick="return confirm('Return this vacancy to Draft? Posting dates will be preserved.')"><i class="fas fa-undo mr-2 text-muted"></i> Return to Draft</button>
                                         </form>
                                         @elseif($posting==='Closed')
                                         <form method="post" action="{{ route('admin.vacancies.reopen',$vacancy) }}">@csrf
-                                            <button class="dropdown-item text-success" onclick="return confirm('Reopen applications now with no automatic closing date?')">
-                                                <i class="fas fa-door-open mr-2"></i> Reopen Applications
-                                            </button>
+                                            <button class="dropdown-item text-success" onclick="return confirm('Reopen applications now with no automatic closing date?')"><i class="fas fa-door-open mr-2"></i> Reopen Applications</button>
                                         </form>
                                         <form method="post" action="{{ route('admin.vacancies.draft',$vacancy) }}">@csrf
-                                            <button class="dropdown-item">
-                                                <i class="fas fa-undo mr-2 text-muted"></i> Return to Draft
-                                            </button>
+                                            <button class="dropdown-item"><i class="fas fa-undo mr-2 text-muted"></i> Return to Draft</button>
                                         </form>
                                         @elseif($posting==='Scheduled')
                                         <form method="post" action="{{ route('admin.vacancies.publish',$vacancy) }}">@csrf
-                                            <button class="dropdown-item text-success" onclick="return confirm('Override the schedule and open applications now?')">
-                                                <i class="fas fa-play mr-2"></i> Open Now
-                                            </button>
+                                            <button class="dropdown-item text-success" onclick="return confirm('Override the schedule and open applications now?')"><i class="fas fa-play mr-2"></i> Open Now</button>
                                         </form>
                                         <form method="post" action="{{ route('admin.vacancies.draft',$vacancy) }}">@csrf
-                                            <button class="dropdown-item">
-                                                <i class="fas fa-undo mr-2 text-muted"></i> Return to Draft
-                                            </button>
+                                            <button class="dropdown-item"><i class="fas fa-undo mr-2 text-muted"></i> Return to Draft</button>
                                         </form>
                                         @endif
-
                                         @if($vacancy->applications_count===0)
                                             <div class="dropdown-divider"></div>
-                                            <a href="{{ route('admin.vacancies.delete',$vacancy) }}" class="dropdown-item text-danger">
-                                                <i class="fas fa-trash mr-2"></i> Delete
-                                            </a>
+                                            <a href="{{ route('admin.vacancies.delete',$vacancy) }}" class="dropdown-item text-danger"><i class="fas fa-trash mr-2"></i> Delete</a>
                                         @endif
                                     </div>
                                 </div>
@@ -187,10 +149,7 @@
                     </tbody>
                 </table>
             </div>
-
-            <div class="card-footer">
-                {{ $vacancies->links('pagination::simple-bootstrap-4') }}
-            </div>
+            <div class="card-footer">{{ $vacancies->links('pagination::simple-bootstrap-4') }}</div>
         </div>
     </div>
 @stop
