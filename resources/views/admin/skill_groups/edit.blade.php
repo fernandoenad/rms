@@ -2,11 +2,42 @@
 @section('title','Manage Skills Test Sets')
 @section('content_header')
 <div class="d-flex justify-content-between align-items-center">
-<div><h1 class="mb-0">{{ $skillTestGroup->title }}</h1><small class="text-muted">{{ optional($skillTestGroup->vacancy)->position_title }} · {{ $skillTestGroup->code }}</small></div>
+<div>
+    <h1 class="mb-0">{{ $skillTestGroup->title }}</h1>
+    <div class="small text-muted mb-1">
+        <a href="{{ route('admin.assessment_center.index') }}">Assessment Center</a>
+        <span class="mx-1">›</span>
+        <a href="{{ route('admin.assessment_center.index') }}#assessments">Assessments</a>
+        <span class="mx-1">›</span>
+        Skills
+        <span class="mx-1">›</span>
+        {{ $skillTestGroup->title }}
+    </div>
+    <small class="text-muted">{{ optional($skillTestGroup->vacancy)->position_title }} · {{ $skillTestGroup->code }}</small>
+</div>
 <a href="{{ route('admin.skill_groups.index') }}" class="btn btn-outline-secondary">Back to Groups</a>
 </div>
 @stop
 @section('content')
+@include('admin.assessment_center._nav')
+
+@php
+    $nextSetIssue = collect($skillTestGroup->skillTests)->first(function ($set) use ($readiness) {
+        return !($readiness[$set->id]['ready'] ?? false);
+    });
+    $nextSetIssueData = $nextSetIssue ? ($readiness[$nextSetIssue->id] ?? null) : null;
+@endphp
+@if($nextSetIssue && $nextSetIssueData)
+<div class="alert alert-warning py-2 d-flex justify-content-between align-items-center flex-wrap">
+    <div>
+        <strong>Next recommended action:</strong>
+        Review Set {{ $nextSetIssue->set_code ?: '?' }}
+        @if(!empty($nextSetIssueData['issues'][0])) — {{ $nextSetIssueData['issues'][0] }} @endif
+    </div>
+    <a href="{{ route('admin.skills.edit',$nextSetIssue) }}" class="btn btn-sm btn-outline-warning mt-2 mt-md-0">Manage Set</a>
+</div>
+@endif
+
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
 
