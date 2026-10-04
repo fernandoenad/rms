@@ -363,7 +363,13 @@
                                                             <div class="small text-muted">
                                                                 Skills Test
                                                                 @if($skillTest->skill_test_group_id && $skillTest->set_code)
-                                                                    · Assigned set: {{ $skillTest->set_code }}
+                                                                    @if($skillAttempt)
+                                                                        · Assigned set: {{ $skillTest->set_code }}
+                                                                    @elseif($skillOpen)
+                                                                        · Current set: {{ $skillTest->set_code }}
+                                                                    @elseif($skillUpcoming)
+                                                                        · Scheduled set: {{ $skillTest->set_code }}
+                                                                    @endif
                                                                 @endif
                                                             </div>
                                                         </td>
@@ -608,7 +614,7 @@
                                                                     <li class="mb-2">Use a stable connection. Connectivity and page-visibility events may be recorded for audit purposes.</li>
                                                                     <li class="mb-2">Submit only when your work is final. After submission, you can no longer edit the response or replace the file.</li>
                                                                     @if($skillTest->skill_test_group_id)
-                                                                        <li class="mb-2">You will be locked to the equivalent skills-test set assigned to you.</li>
+                                                                        <li class="mb-2">The equivalent set is determined by the schedule in effect when you start. Once started, you will be locked to that set.</li>
                                                                     @endif
                                                                 </ol>
 
