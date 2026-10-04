@@ -53,6 +53,25 @@
     </div>
 </div>
 
+<div class="row">
+    <div class="col-md-6">
+        <div class="card border-success h-100">
+            <div class="card-body py-3">
+                <div class="small text-uppercase text-success font-weight-bold mb-2"><i class="fas fa-layer-group mr-1"></i> Shared across all sets</div>
+                <div class="small text-muted">Position · assessment title · applicant score criterion · score release policy · blueprint/TOS · group access/governance</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-primary h-100">
+            <div class="card-body py-3">
+                <div class="small text-uppercase text-primary font-weight-bold mb-2"><i class="fas fa-clone mr-1"></i> Configured per set</div>
+                <div class="small text-muted">Schedule · questions/items · duration · review/readiness · publication · attempts</div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="accommodations" class="card border-info">
     <div class="card-header"><strong>Applicant Accommodation</strong></div>
     <div class="card-body">
@@ -119,7 +138,7 @@
 
 <form method="post" action="{{ route('admin.assessment_groups.update',$assessmentGroup) }}">@csrf @method('put')
 <div id="groupSettings" class="card">
-    <div class="card-header"><strong>Assessment Structure & Governance</strong></div>
+    <div class="card-header"><strong>Shared Across All Sets · Structure & Governance</strong><div class="small text-muted">Changes here apply to the assessment group, not to an individual Set A/B/C.</div></div>
     <div class="card-body">
         <div class="form-group">
             <label>Position</label>
@@ -270,7 +289,7 @@
 
 <div id="setManagement" class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <strong>Equivalent Sets</strong>
+        <strong>Set Workspaces · Configure Each Set</strong>
         <form method="post" action="{{ route('admin.assessment_groups.equivalent_set',$assessmentGroup) }}" class="form-inline">@csrf
             <select name="source_exam_id" class="form-control form-control-sm mr-2">
                 <option value="">Blank settings</option>
@@ -321,10 +340,13 @@
                             </details>
                         @endif
                     </td>
-                    <td>{{ $exam->getStatus() }}</td>
+                    <td>
+                        @php $setState=$exam->getStatus(); @endphp
+                        <span class="badge badge-{{ $setState==='Open' ? 'success' : ($setState==='Scheduled' ? 'info' : ($setState==='Draft' ? 'secondary' : 'light border')) }}">{{ $setState }}</span>
+                    </td>
                     <td class="text-nowrap">
-                        <a href="{{ route('admin.assessments.edit',$exam) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                        <a href="{{ route('admin.assessments.items.index',$exam) }}" class="btn btn-sm btn-info"><i class="fas fa-list"></i></a>
+                        <a href="{{ route('admin.assessments.edit',$exam) }}" class="btn btn-sm btn-outline-primary"><i class="fas fa-cog mr-1"></i> Manage Set</a>
+                        <a href="{{ route('admin.assessments.items.index',$exam) }}" class="btn btn-sm btn-outline-info"><i class="fas fa-list mr-1"></i> Items</a>
                         @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1 && $exam->attempts_count===0)
                         <form method="post" action="{{ route('admin.assessments.destroy',$exam) }}" class="d-inline"
                               onsubmit="return confirm('Delete Set {{ $exam->set_code }} permanently? No applicant attempt may exist.');">
