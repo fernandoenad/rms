@@ -17,6 +17,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Services\AssessmentScoreSyncService;
+use App\Services\EquivalentSetScheduleResolver;
 
 class ExamAttemptController extends Controller
 {
@@ -253,7 +254,7 @@ class ExamAttemptController extends Controller
         }
     }
 
-    public function start(Request $request, Application $application, Exam $exam)
+    public function start(Request $request, Application $application, Exam $exam, EquivalentSetScheduleResolver $setResolver)
     {
         $this->authorizeApplication($request, $application);
         $this->authorizeExam($application, $exam);
@@ -297,31 +298,15 @@ class ExamAttemptController extends Controller
             }
 
             if (!$existingLock) {
-                $candidates = Exam::where('assessment_group_id',$exam->assessment_group_id)
-                    ->where('vacancy_id',$application->vacancy_id)
-                    ->where('status',1)
-                    ->where(function($q){
-                        $q->whereNull('start_date')->orWhere('start_date','<=',now());
-                    })
-                    ->where(function($q){
-                        $q->whereNull('end_date')->orWhere('end_date','>',now());
-                    })
-                    ->where(function($q) use ($application) {
-                        $q->where('access_mode','all_taken_in')
-                          ->orWhereExists(function($sub) use ($application) {
-                              $sub->selectRaw('1')->from('exam_assignments')
-                                  ->whereColumn('exam_assignments.exam_id','exams.id')
-                                  ->where('exam_assignments.application_id',$application->id);
-                          });
-                    })
-                    ->orderBy('set_code')
-                    ->get(['id']);
+                $currentSet = $setResolver->currentWrittenSet((int)$exam->assessment_group_id, $application);
 
-                if ($candidates->isNotEmpty()) {
-                    $index = abs(crc32($exam->assessment_group_id.':'.$application->id)) % $candidates->count();
-                    if ((int)$candidates[$index]->id !== (int)$exam->id) {
-                        abort(403,'This application is assigned to another equivalent Written Assessment set.');
-                    }
+                if (!$currentSet || (int)$currentSet->id !== (int)$exam->id) {
+                    return back()->with(
+                        'status_assessment',
+                        $currentSet
+                            ? 'The current Written Assessment schedule is using Set '.$currentSet->set_code.'. Refresh the page and start the available set.'
+                            : 'No equivalent Written Assessment set is currently open.'
+                    );
                 }
 
                 try {
