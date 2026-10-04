@@ -53,7 +53,7 @@
                                                             <h4>Salary Grade: <small><small>{{$vacancy->salary_grade}}</small></small></h4>
                                                             <h4>Base Pay: <small><small>{{number_format($vacancy->base_pay,2)}}</small></small></h4>
                                                             <h4>Office: <small><small>{{$vacancy->getOffice()}}</small></small></h4>
-                                                            <h4>Vacancy: <small><small>{{$vacancy->vacancy}}</small></small></h4>
+                                                            <h4>Number of Vacancies: <small><small>{{$vacancy->vacancy}}</small></small></h4>
                                                             <h4>Cycle: <small><small>{{$vacancy->cycle}}</small></small></h4>
                                                         </div>
                                                         <div class="col-lg-6">
