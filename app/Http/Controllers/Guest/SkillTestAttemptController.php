@@ -252,6 +252,45 @@ class SkillTestAttemptController extends Controller
         return view('guest.skills.take', compact('attempt','submission','remainingSeconds','largeText'));
     }
 
+    public function timeStatus(Request $request, SkillTestAttempt $attempt)
+    {
+        $attempt = $this->ownedAttempt($request, $attempt);
+
+        if ((int) $attempt->status === 2) {
+            return response()->json([
+                'expired' => true,
+                'submitted' => true,
+                'remaining_seconds' => 0,
+                'server_now' => now()->toIso8601String(),
+                'expires_at' => optional($attempt->expires_at)->toIso8601String(),
+            ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+        }
+
+        if ($this->finalizeIfExpired($attempt)) {
+            return response()->json([
+                'expired' => true,
+                'submitted' => true,
+                'remaining_seconds' => 0,
+                'server_now' => now()->toIso8601String(),
+                'expires_at' => optional($attempt->expires_at)->toIso8601String(),
+            ], 409)->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+        }
+
+        $attempt = $attempt->fresh();
+        $expiresAt = $attempt->expires_at ? Carbon::parse($attempt->expires_at) : null;
+        $remainingSeconds = $expiresAt
+            ? max(0, $expiresAt->getTimestamp() - now()->getTimestamp())
+            : 0;
+
+        return response()->json([
+            'expired' => false,
+            'submitted' => false,
+            'remaining_seconds' => $remainingSeconds,
+            'server_now' => now()->toIso8601String(),
+            'expires_at' => optional($expiresAt)->toIso8601String(),
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+
     public function saveInline(Request $request, SkillTestAttempt $attempt)
     {
         $startedNs = hrtime(true);
