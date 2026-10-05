@@ -63,7 +63,7 @@
                                 <select type="text" class="form-control" placeholder="Enter salary grade" 
                                     name="salary_grade" class="@error('salary_grade') is-invalid @enderror"
                                     value="{{ old('salary_grade') }}">
-                                    <option value="">---select scoring template---</option>
+                                    <option value="">---select---</option>
                                     @for($sg = 1; $sg <= 33; $sg++)
                                         <option value="{{ $sg }}" {{ old('salary_grade') == $sg ? 'selected' : '' }}>Salary Grade {{$sg}}</option>
                                     @endfor
@@ -86,7 +86,7 @@
                                 <select type="text" class="form-control" placeholder="Enter office level" 
                                     name="office_level" class="@error('office_level') is-invalid @enderror"
                                     value="{{ old('office_level') }}">
-                                    <option value="">---select scoring template---</option>
+                                    <option value="">---select---</option>
                                     <option value="0" {{ old('office_level') == 0 ? 'selected' : '' }}>SDO</option>
                                     <option value="-1" {{ old('office_level') == -1 ? 'selected' : '' }}>Field</option>
                                 </select>
