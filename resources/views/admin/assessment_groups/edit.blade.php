@@ -123,57 +123,58 @@
     <div class="card-body">
         @if($assessmentGroup->archived_at)
             <div class="alert alert-secondary mb-0">This assessment is archived and frozen.</div>
-        @elseif($assessmentGroup->is_paused)
-            <div class="alert alert-warning">New starts are paused. Existing in-progress attempts may continue.<br><small>{{ $assessmentGroup->pause_reason }}</small></div>
-            <form method="post" action="{{ route('admin.assessment_groups.resume',$assessmentGroup) }}" class="d-inline">@csrf
-                <button class="btn btn-success btn-sm">Resume New Starts</button>
-            </form>
         @else
-            <form method="post" action="{{ route('admin.assessment_groups.pause',$assessmentGroup) }}" class="form-inline mb-2">@csrf
-                <input name="reason" class="form-control form-control-sm mr-2" style="min-width:320px" placeholder="Reason for pausing new starts" required>
-                <button class="btn btn-warning btn-sm">Pause New Starts</button>
+            @if($assessmentGroup->is_paused)
+                <div class="alert alert-warning">New starts are paused. Existing in-progress attempts may continue.<br><small>{{ $assessmentGroup->pause_reason }}</small></div>
+                <form method="post" action="{{ route('admin.assessment_groups.resume',$assessmentGroup) }}" class="d-inline">@csrf
+                    <button class="btn btn-success btn-sm">Resume New Starts</button>
+                </form>
+            @else
+                <form method="post" action="{{ route('admin.assessment_groups.pause',$assessmentGroup) }}" class="form-inline mb-2">@csrf
+                    <input name="reason" class="form-control form-control-sm mr-2" style="min-width:320px" placeholder="Reason for pausing new starts" required>
+                    <button class="btn btn-warning btn-sm">Pause New Starts</button>
+                </form>
+            @endif
+
+            @if($assessmentGroup->score_release_policy==='manual')
+                @if($assessmentGroup->scores_released_at)
+                    <form method="post" action="{{ route('admin.assessment_groups.hide_scores',$assessmentGroup) }}" class="d-inline mr-2">
+                        @csrf
+                        <button class="btn btn-sm btn-outline-warning">
+                            <i class="fas fa-eye-slash mr-1"></i> Withdraw Manual Release
+                        </button>
+                    </form>
+                @else
+                    <form method="post" action="{{ route('admin.assessment_groups.release_scores',$assessmentGroup) }}"
+                          class="d-inline mr-2"
+                          onsubmit="return confirm('Release official Written Test scores for all equivalent sets in this group?');">
+                        @csrf
+                        <button class="btn btn-sm btn-success">
+                            <i class="fas fa-check-circle mr-1"></i> Release Official Scores for All Sets
+                        </button>
+                    </form>
+                @endif
+            @endif
+
+            <form method="post" action="{{ route('admin.assessment_groups.archive',$assessmentGroup) }}"
+                  class="d-inline mr-2"
+                  onsubmit="return confirm('Archive and freeze this written assessment? This is blocked while attempts are in progress.');">
+                @csrf
+                <button class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-archive mr-1"></i> Archive / Freeze
+                </button>
             </form>
-            <div class="d-flex flex-wrap align-items-center mt-2 assessment-group-actions">
-                @if($assessmentGroup->score_release_policy==='manual')
-                    @if($assessmentGroup->scores_released_at)
-                        <form method="post" action="{{ route('admin.assessment_groups.hide_scores',$assessmentGroup) }}" class="mr-2 mb-2">
-                            @csrf
-                            <button class="btn btn-sm btn-outline-warning">
-                                <i class="fas fa-eye-slash mr-1"></i> Withdraw Manual Release
-                            </button>
-                        </form>
-                    @else
-                        <form method="post" action="{{ route('admin.assessment_groups.release_scores',$assessmentGroup) }}"
-                              class="mr-2 mb-2"
-                              onsubmit="return confirm('Release official Written Test scores for all equivalent sets in this group?');">
-                            @csrf
-                            <button class="btn btn-sm btn-success">
-                                <i class="fas fa-check-circle mr-1"></i> Release Official Scores for All Sets
-                            </button>
-                        </form>
-                    @endif
-                @endif
 
-                <form method="post" action="{{ route('admin.assessment_groups.archive',$assessmentGroup) }}"
-                      class="mr-2 mb-2"
-                      onsubmit="return confirm('Archive and freeze this written assessment? This is blocked while attempts are in progress.');">
-                    @csrf
-                    <button class="btn btn-outline-secondary btn-sm">
-                        <i class="fas fa-archive mr-1"></i> Archive / Freeze
-                    </button>
-                </form>
-
-                @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1)
-                <form method="post" action="{{ route('admin.assessment_groups.destroy',$assessmentGroup) }}"
-                      class="mb-2"
-                      onsubmit="return confirm('Permanently delete this Written Assessment Group and all of its sets? This is allowed only if no applicant has attempted or been locked to any set.');">
-                    @csrf @method('delete')
-                    <button class="btn btn-danger btn-sm">
-                        <i class="fas fa-trash mr-1"></i> Delete Group
-                    </button>
-                </form>
-                @endif
-            </div>
+            @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1)
+            <form method="post" action="{{ route('admin.assessment_groups.destroy',$assessmentGroup) }}"
+                  class="d-inline"
+                  onsubmit="return confirm('Permanently delete this Written Assessment Group and all of its sets? This is allowed only if no applicant has attempted or been locked to any set.');">
+                @csrf @method('delete')
+                <button class="btn btn-danger btn-sm">
+                    <i class="fas fa-trash mr-1"></i> Delete Group
+                </button>
+            </form>
+            @endif
         @endif
     </div>
 </div>
