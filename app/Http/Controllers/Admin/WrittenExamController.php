@@ -791,16 +791,72 @@ class WrittenExamController extends Controller
         return view('admin.assessments.preview', compact('exam','readiness','infrastructure'));
     }
 
-    public function results(Exam $exam)
+    public function results(Request $request, Exam $exam)
     {
-        $exam->load(['writtenExams.options']);
-        $attempts = $exam->attempts()
+        $exam->load(['assessmentGroup', 'writtenExams.options']);
+
+        $sort = (string) $request->input('sort', 'end');
+        $direction = strtolower((string) $request->input('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
+        $search = trim((string) $request->input('q', ''));
+        $integrity = (string) $request->input('integrity', 'all');
+        $scoreMin = $request->filled('score_min') ? (float) $request->input('score_min') : null;
+        $scoreMax = $request->filled('score_max') ? (float) $request->input('score_max') : null;
+
+        $allowedSorts = ['applicant', 'start', 'end', 'score', 'integrity'];
+        if (!in_array($sort, $allowedSorts, true)) {
+            $sort = 'end';
+        }
+
+        $attemptQuery = $exam->attempts()
+            ->select('exam_attempts.*')
+            ->leftJoin('applications', 'applications.id', '=', 'exam_attempts.application_id')
             ->with(['application', 'answers.selectedOption', 'answers.item', 'itemOrders', 'events'])
-            ->where('status', 2)
+            ->withCount([
+                'events as integrity_events_count' => fn ($query) => $query->where('event_type', 'tab_hidden'),
+            ])
+            ->where('exam_attempts.status', 2)
+            ->when($search !== '', function ($query) use ($search) {
+                $like = '%'.$search.'%';
+                $query->where(function ($nested) use ($like) {
+                    $nested->where('applications.application_code', 'like', $like)
+                        ->orWhere('applications.last_name', 'like', $like)
+                        ->orWhere('applications.first_name', 'like', $like)
+                        ->orWhere('applications.middle_name', 'like', $like);
+                });
+            })
+            ->when($scoreMin !== null, fn ($query) => $query->where('exam_attempts.percentage', '>=', $scoreMin))
+            ->when($scoreMax !== null, fn ($query) => $query->where('exam_attempts.percentage', '<=', $scoreMax))
+            ->when($integrity === 'with', fn ($query) =>
+                $query->whereHas('events', fn ($events) => $events->where('event_type', 'tab_hidden'))
+            )
+            ->when($integrity === 'none', fn ($query) =>
+                $query->whereDoesntHave('events', fn ($events) => $events->where('event_type', 'tab_hidden'))
+            );
+
+        match ($sort) {
+            'applicant' => $attemptQuery
+                ->orderBy('applications.last_name', $direction)
+                ->orderBy('applications.first_name', $direction),
+            'start' => $attemptQuery->orderBy('exam_attempts.started_at', $direction),
+            'score' => $attemptQuery->orderBy('exam_attempts.percentage', $direction),
+            'integrity' => $attemptQuery->orderBy('integrity_events_count', $direction),
+            default => $attemptQuery->orderBy('exam_attempts.ended_at', $direction),
+        };
+
+        $attempts = $attemptQuery
             ->paginate(25)
             ->withQueryString();
 
-        return view('admin.assessments.results', compact('exam', 'attempts'));
+        return view('admin.assessments.results', compact(
+            'exam',
+            'attempts',
+            'sort',
+            'direction',
+            'search',
+            'integrity',
+            'scoreMin',
+            'scoreMax'
+        ));
     }
 
     public function destroyAttempt(
