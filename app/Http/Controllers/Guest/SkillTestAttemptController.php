@@ -309,12 +309,24 @@ class SkillTestAttemptController extends Controller
         if ($this->finalizeIfExpired($attempt)) return response()->json(['expired'=>true],409);
 
         $test = $attempt->skillTest;
-        $extensions = $test->allowed_extensions ?: ['docx'];
+        $extensions = collect($test->allowed_extensions ?: ['docx'])
+            ->map(fn ($extension) => strtolower(ltrim(trim((string) $extension), '.')))
+            ->filter()
+            ->unique()
+            ->values();
+
         $data = $request->validate([
-            'file'=>'required|file|max:'.$test->max_file_size_kb.'|mimes:'.implode(',',$extensions),
+            'file'=>'required|file|max:'.$test->max_file_size_kb,
         ]);
 
         $file = $data['file'];
+        $clientExtension = strtolower((string) $file->getClientOriginalExtension());
+
+        if (!$extensions->contains($clientExtension)) {
+            return back()->withErrors([
+                'file' => 'Unsupported file type. Allowed: '.$extensions->implode(', ').'.',
+            ])->with('status_assessment', 'Please choose one of the allowed file types.');
+        }
         $path = $file->store('skill-tests/'.$test->id.'/'.$attempt->id,'local');
 
         try {

@@ -174,7 +174,7 @@
     .exam-question { font-size:1.08rem; line-height:1.55; }
     .exam-question-text { white-space:pre-line; }
     .option-card { cursor:pointer; background:#fff; min-height:56px; font-size:1rem; line-height:1.45; }
-    .option-card:has(input:checked) { border-color:#007bff !important; background:#f0f7ff; }
+    .option-card.option-selected { border-color:#007bff !important; background:#f0f7ff; }
     .answer-radio { transform:scale(1.25); }
     .assessment-large-text .exam-question { font-size:1.35rem; }
     .assessment-large-text .option-card { font-size:1.2rem; }
@@ -200,11 +200,29 @@
     const eventUrl = @json(route('guest.assessments.attempts.event', $attempt));
     const csrf = @json(csrf_token());
 
-    let countdown = {{ (int)$remainingSeconds }};
+    const deadlineMs = Date.now() + ({{ (int)$remainingSeconds }} * 1000);
     let finishing = false;
     const items = Array.from(document.querySelectorAll('.exam-item'));
     const navButtons = Array.from(document.querySelectorAll('.nav-btn'));
-    let currentIndex = Math.min(parseInt(sessionStorage.getItem(storageKey) || '0', 10), Math.max(items.length - 1, 0));
+
+    function storageGet(storage, key, fallback) {
+        try {
+            const value = storage.getItem(key);
+            return value === null ? fallback : value;
+        } catch (e) {
+            return fallback;
+        }
+    }
+
+    function storageSet(storage, key, value) {
+        try { storage.setItem(key, value); } catch (e) {}
+    }
+
+    function storageRemove(storage, key) {
+        try { storage.removeItem(key); } catch (e) {}
+    }
+
+    let currentIndex = Math.min(parseInt(storageGet(sessionStorage, storageKey, '0') || '0', 10), Math.max(items.length - 1, 0));
 
     const countdownEl = document.getElementById('countdown');
     const counterEl = document.getElementById('questionCounter');
@@ -226,26 +244,26 @@
     }
 
     function loadPendingAnswers() {
-        try { return JSON.parse(localStorage.getItem(pendingStorageKey) || '{}') || {}; }
+        try { return JSON.parse(storageGet(localStorage, pendingStorageKey, '{}') || '{}') || {}; }
         catch (_) { return {}; }
     }
 
     function savePendingAnswer(itemId, optionId) {
         const pending = loadPendingAnswers();
         pending[String(itemId)] = String(optionId);
-        localStorage.setItem(pendingStorageKey, JSON.stringify(pending));
+        storageSet(localStorage, pendingStorageKey, JSON.stringify(pending));
     }
 
     function clearPendingAnswer(itemId, optionId) {
         const pending = loadPendingAnswers();
         if (String(pending[String(itemId)] || '') === String(optionId)) {
             delete pending[String(itemId)];
-            localStorage.setItem(pendingStorageKey, JSON.stringify(pending));
+            storageSet(localStorage, pendingStorageKey, JSON.stringify(pending));
         }
     }
 
     function retryPendingAnswers() {
-        if (finishing || !navigator.onLine) return;
+        if (finishing) return;
 
         const pending = loadPendingAnswers();
         let delay = 0;
@@ -261,11 +279,18 @@
             }
 
             radio.checked = true;
+            if (radio.parentElement) {
+                const groupName = radio.name;
+                document.querySelectorAll('input[name="' + groupName + '"]').forEach(input => {
+                    if (input.parentElement) input.parentElement.classList.remove('option-selected');
+                });
+                radio.parentElement.classList.add('option-selected');
+            }
 
             // Stagger retries slightly so a reconnect with many unsaved answers
             // does not create a sudden request burst.
             setTimeout(() => {
-                if (!finishing && navigator.onLine) {
+                if (!finishing) {
                     queueAnswerSave(radio);
                 }
             }, delay);
@@ -277,7 +302,7 @@
     function showItem(index) {
         if (!items.length) return;
         currentIndex = Math.max(0, Math.min(index, items.length - 1));
-        sessionStorage.setItem(storageKey, currentIndex);
+        storageSet(sessionStorage, storageKey, currentIndex);
         items.forEach((el, i) => el.style.display = i === currentIndex ? 'block' : 'none');
         counterEl.textContent = 'Question ' + (currentIndex + 1) + ' of ' + items.length;
         prevBtn.disabled = currentIndex === 0;
@@ -292,8 +317,7 @@
             await fetch(eventUrl, {
                 method:'POST',
                 headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-                body:JSON.stringify({event_type:eventType}),
-                keepalive:true
+                body:JSON.stringify({event_type:eventType})
             });
         } catch (_) {}
     }
@@ -328,25 +352,30 @@
         }
     }
 
-    function tick() {
-        const mins = Math.floor(Math.max(countdown,0) / 60);
-        const secs = Math.max(countdown,0) % 60;
-        countdownEl.textContent = mins.toString().padStart(2,'0') + ':' + secs.toString().padStart(2,'0');
+    function twoDigits(value) {
+        return value < 10 ? '0' + value : String(value);
+    }
 
-        if (countdown <= 0) {
+    function tick() {
+        const remaining = Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000));
+        const mins = Math.floor(remaining / 60);
+        const secs = remaining % 60;
+        countdownEl.textContent = twoDigits(mins) + ':' + twoDigits(secs);
+
+        if (remaining <= 0) {
             finalizeAtTimeout();
             return;
         }
-        countdown--;
         setTimeout(tick, 1000);
     }
 
     function queueAnswerSave(radio) {
         const itemId = String(radio.dataset.item);
         const optionId = String(radio.value);
-        const itemIndex = items.findIndex(item =>
-            item.querySelector('.answer-radio')?.dataset.item === itemId
-        );
+        const itemIndex = items.findIndex(function (item) {
+            const input = item.querySelector('.answer-radio');
+            return input && input.dataset.item === itemId;
+        });
         const navBtn = itemIndex >= 0 ? navButtons[itemIndex] : null;
 
         let state = saveQueues.get(itemId);
@@ -472,7 +501,8 @@
             const unanswered = [];
 
             items.forEach((item, index) => {
-                const itemId = String(item.querySelector('.answer-radio')?.dataset.item || '');
+                const input = item.querySelector('.answer-radio');
+                const itemId = String(input ? input.dataset.item : '');
                 (savedIds.has(itemId) ? answered : unanswered).push(index + 1);
             });
 
@@ -563,7 +593,18 @@
         finalSubmitBtn.addEventListener('click', submitManually);
 
         document.querySelectorAll('.answer-radio').forEach(radio => {
-            radio.addEventListener('change', () => queueAnswerSave(radio));
+            if (radio.checked && radio.parentElement) {
+                radio.parentElement.classList.add('option-selected');
+            }
+
+            radio.addEventListener('change', () => {
+                const groupName = radio.name;
+                document.querySelectorAll('input[name="' + groupName + '"]').forEach(input => {
+                    if (input.parentElement) input.parentElement.classList.remove('option-selected');
+                });
+                if (radio.parentElement) radio.parentElement.classList.add('option-selected');
+                queueAnswerSave(radio);
+            });
         });
 
         retryPendingAnswers();
@@ -583,8 +624,11 @@
             retryPendingAnswers();
         });
 
-        if (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]?.type === 'reload') {
-            logEvent('page_refreshed');
+        if (performance.getEntriesByType) {
+            const navigationEntries = performance.getEntriesByType('navigation');
+            if (navigationEntries && navigationEntries[0] && navigationEntries[0].type === 'reload') {
+                logEvent('page_refreshed');
+            }
         }
     });
 })();

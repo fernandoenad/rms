@@ -24,7 +24,9 @@
 @if(in_array('file',$modes,true))
 <div class="card"><div class="card-header"><strong>Upload File</strong></div><div class="card-body">
 <form method="post" enctype="multipart/form-data" action="{{ route('guest.skills.attempts.upload',$attempt) }}">@csrf
-<input type="file" name="file" class="form-control-file mb-2" required>
+<input type="file" name="file" class="form-control-file mb-2"
+       accept="{{ collect($attempt->skillTest->allowed_extensions ?: ['docx'])->map(fn($ext) => '.'.ltrim($ext,'.'))->implode(',') }}"
+       required>
 @if($submission && $submission->original_filename)
 <div class="small text-success mb-2">✓ Latest saved file (v{{ $submission->version }}): {{ $submission->original_filename }}</div>
 @endif
@@ -48,7 +50,7 @@
 @section('js')
 <script>
 (() => {
-    let seconds={{ (int)$remainingSeconds }};
+    const deadlineMs=Date.now()+({{ (int)$remainingSeconds }}*1000);
     const timer=document.getElementById('skillTimer');
     const box=document.getElementById('inlineResponse');
     const state=document.getElementById('inlineSave');
@@ -60,25 +62,41 @@
     let saving=false;
     let pendingValue=null;
 
+    function storageGet(key){
+        try { return localStorage.getItem(key); } catch(e) { return null; }
+    }
+
+    function storageSet(key,value){
+        try { localStorage.setItem(key,value); } catch(e) {}
+    }
+
+    function storageRemove(key){
+        try { localStorage.removeItem(key); } catch(e) {}
+    }
+
+    function twoDigits(value){
+        return value<10 ? '0'+value : String(value);
+    }
+
     function tick(){
-        const m=Math.floor(Math.max(seconds,0)/60);
-        const s=Math.max(seconds,0)%60;
-        timer.textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+        const seconds=Math.max(0,Math.ceil((deadlineMs-Date.now())/1000));
+        const m=Math.floor(seconds/60);
+        const s=seconds%60;
+        timer.textContent=twoDigits(m)+':'+twoDigits(s);
 
         if(seconds<=0){
             location.reload();
             return;
         }
 
-        seconds--;
         setTimeout(tick,1000);
     }
 
     async function persistInline(value){
         pendingValue=value;
-        localStorage.setItem(pendingKey,value);
+        storageSet(pendingKey,value);
 
-        if(saving || !navigator.onLine) {
+        if(saving) {
             if(state){
                 state.textContent='Waiting for connection…';
                 state.className='float-right small text-warning';
@@ -89,7 +107,7 @@
         saving=true;
 
         try {
-            while(pendingValue !== null && navigator.onLine){
+            while(pendingValue !== null){
                 const current=pendingValue;
                 pendingValue=null;
 
@@ -118,7 +136,7 @@
                 }
 
                 if(pendingValue===null){
-                    localStorage.removeItem(pendingKey);
+                    storageRemove(pendingKey);
                     if(state){
                         state.textContent='✓ Saved';
                         state.className='float-right small text-success';
@@ -133,7 +151,7 @@
         } finally {
             saving=false;
 
-            if(pendingValue !== null && navigator.onLine){
+            if(pendingValue !== null){
                 setTimeout(()=>persistInline(pendingValue),800);
             }
         }
@@ -188,7 +206,7 @@
             }
         });
 
-        const recovered=localStorage.getItem(pendingKey);
+        const recovered=storageGet(pendingKey);
         if(recovered !== null && recovered !== box.value){
             box.value=recovered;
             if(state){
@@ -200,7 +218,7 @@
 
         box.addEventListener('input',()=>{
             clearTimeout(debounceTimer);
-            localStorage.setItem(pendingKey,box.value);
+            storageSet(pendingKey,box.value);
             if(state){
                 state.textContent='Waiting to save…';
                 state.className='float-right small text-muted';
@@ -209,7 +227,7 @@
         });
 
         window.addEventListener('online',()=>{
-            const pending=localStorage.getItem(pendingKey);
+            const pending=storageGet(pendingKey);
             if(pending !== null){
                 persistInline(pending);
             }
