@@ -107,6 +107,12 @@ class ScoringTemplateController extends Controller
 
         $inUse = $scoringTemplate->vacancy()->exists() || $scoringTemplate->assessment()->exists();
 
+        if ($inUse && trim((string)$data['type']) !== trim((string)$scoringTemplate->type)) {
+            throw ValidationException::withMessages([
+                'type' => 'This scoring template is already in use. Its name/type is frozen because existing reports depend on it. Duplicate it as a new version instead.',
+            ]);
+        }
+
         if ($inUse && $this->structureChanged($scoringTemplate, $criteria)) {
             throw ValidationException::withMessages([
                 'criteria' => 'This scoring template is already in use. Its scoring structure is frozen. Duplicate it as a new version before changing criteria or points.',
