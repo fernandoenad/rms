@@ -291,6 +291,9 @@ Route::group(['middleware' => ['active']], function () {
     Route::post('/admin/skills/{skillTest}/incidents', [AdminSkillTest::class, 'incident'])->name('admin.skills.incidents.store');
     Route::put('/admin/skills/{skillTest}/incidents/{incident}/resolve', [AdminSkillTest::class, 'resolveIncident'])->name('admin.skills.incidents.resolve');
     Route::post('/admin/skills/{skillTest}/attempts/{attempt}/void-retake', [AdminSkillTest::class, 'voidAndRetake'])->name('admin.skills.attempts.void_retake');
+    Route::delete('/admin/skills/{skillTest}/attempts/{attempt}', [AdminSkillTest::class, 'removeAttempt'])
+        ->middleware('assessment.capability:monitor')
+        ->name('admin.skills.attempts.destroy');
     Route::post('/admin/skills/{skillTest}/attempts/{attempt}/final-score', [AdminSkillTest::class, 'finalizeScore'])->middleware('assessment.capability:evaluator')->name('admin.skills.final_score');
 
     Route::get('/admin/inquiries', [AdminInquiry::class, 'index'])->name('admin.inquiries.index');
