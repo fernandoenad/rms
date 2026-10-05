@@ -79,8 +79,9 @@ class AssessmentCenterController extends Controller
         $now = now();
 
         $writtenAttempts = ExamAttempt::query()
-            ->selectRaw('SUM(CASE WHEN status = 1 AND (expires_at IS NULL OR expires_at > ?) THEN 1 ELSE 0 END) as taking_now', [$now])
-            ->selectRaw('SUM(CASE WHEN status = 1 AND expires_at IS NOT NULL AND expires_at <= ? THEN 1 ELSE 0 END) as awaiting_timeout', [$now])
+            ->selectRaw('SUM(CASE WHEN status = 1 AND started_at IS NOT NULL AND ended_at IS NULL AND expires_at IS NOT NULL AND expires_at > ? THEN 1 ELSE 0 END) as taking_now', [$now])
+            ->selectRaw('SUM(CASE WHEN status = 1 AND started_at IS NOT NULL AND ended_at IS NULL AND expires_at IS NOT NULL AND expires_at <= ? THEN 1 ELSE 0 END) as awaiting_timeout', [$now])
+            ->selectRaw('SUM(CASE WHEN status = 1 AND (started_at IS NULL OR expires_at IS NULL OR ended_at IS NOT NULL) THEN 1 ELSE 0 END) as malformed_in_progress')
             ->selectRaw('SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as submitted')
             ->first();
 
@@ -98,13 +99,15 @@ class AssessmentCenterController extends Controller
             'taking_now' => (int) ($writtenAttempts->taking_now ?? 0),
             'awaiting_timeout' => (int) ($writtenAttempts->awaiting_timeout ?? 0),
             'submitted' => (int) ($writtenAttempts->submitted ?? 0),
+            'malformed_in_progress' => (int) ($writtenAttempts->malformed_in_progress ?? 0),
             'pending_item_review' => WrittenExam::where('status',1)
                 ->where('review_status','!=','approved')->count(),
         ];
 
         $skillAttempts = SkillTestAttempt::query()
-            ->selectRaw('SUM(CASE WHEN status = 1 AND (expires_at IS NULL OR expires_at > ?) THEN 1 ELSE 0 END) as taking_now', [$now])
-            ->selectRaw('SUM(CASE WHEN status = 1 AND expires_at IS NOT NULL AND expires_at <= ? THEN 1 ELSE 0 END) as awaiting_timeout', [$now])
+            ->selectRaw('SUM(CASE WHEN status = 1 AND started_at IS NOT NULL AND ended_at IS NULL AND expires_at IS NOT NULL AND expires_at > ? THEN 1 ELSE 0 END) as taking_now', [$now])
+            ->selectRaw('SUM(CASE WHEN status = 1 AND started_at IS NOT NULL AND ended_at IS NULL AND expires_at IS NOT NULL AND expires_at <= ? THEN 1 ELSE 0 END) as awaiting_timeout', [$now])
+            ->selectRaw('SUM(CASE WHEN status = 1 AND (started_at IS NULL OR expires_at IS NULL OR ended_at IS NOT NULL) THEN 1 ELSE 0 END) as malformed_in_progress')
             ->selectRaw('SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as submitted')
             ->selectRaw('SUM(CASE WHEN status = 2 AND final_score IS NULL THEN 1 ELSE 0 END) as pending_human')
             ->first();
@@ -122,6 +125,7 @@ class AssessmentCenterController extends Controller
             'taking_now' => (int) ($skillAttempts->taking_now ?? 0),
             'awaiting_timeout' => (int) ($skillAttempts->awaiting_timeout ?? 0),
             'submitted' => (int) ($skillAttempts->submitted ?? 0),
+            'malformed_in_progress' => (int) ($skillAttempts->malformed_in_progress ?? 0),
             'pending_human' => (int) ($skillAttempts->pending_human ?? 0),
             'pending_ai' => SkillTestAiEvaluation::whereIn('status',['pending','processing'])->count(),
         ];
@@ -170,6 +174,13 @@ class AssessmentCenterController extends Controller
         if (($written['awaiting_timeout'] + $skills['awaiting_timeout']) > 0) {
             $alerts[] = ['level'=>'warning','message'=>'Expired attempts are waiting for finalization. Confirm the scheduler is healthy.'];
         }
+        $malformedInProgress = (int)$written['malformed_in_progress'] + (int)$skills['malformed_in_progress'];
+        if ($malformedInProgress > 0) {
+            $alerts[] = [
+                'level'=>'warning',
+                'message'=>$malformedInProgress.' in-progress attempt record(s) are incomplete/stale and are excluded from Taking Now.'
+            ];
+        }
         foreach ($performance as $label=>$metrics) {
             if (($metrics['p95_ms'] ?? 0) >= 2000 && ($metrics['samples'] ?? 0) >= 5) {
                 $alerts[] = ['level'=>'warning','message'=>str_replace('_',' ',$label).' P95 save latency is at least 2 seconds.'];
@@ -204,7 +215,12 @@ class AssessmentCenterController extends Controller
                     ->whereNull('archived_at')
                     ->withCount([
                         'attempts',
-                        'attempts as active_attempts_count' => fn ($attempts) => $attempts->where('status',1),
+                        'attempts as active_attempts_count' => fn ($attempts) => $attempts
+                            ->where('status',1)
+                            ->whereNotNull('started_at')
+                            ->whereNull('ended_at')
+                            ->whereNotNull('expires_at')
+                            ->where('expires_at','>',$now),
                     ]),
             ])
             ->whereNull('archived_at')
@@ -219,7 +235,12 @@ class AssessmentCenterController extends Controller
                     ->whereNull('archived_at')
                     ->withCount([
                         'attempts',
-                        'attempts as active_attempts_count' => fn ($attempts) => $attempts->where('status',1),
+                        'attempts as active_attempts_count' => fn ($attempts) => $attempts
+                            ->where('status',1)
+                            ->whereNotNull('started_at')
+                            ->whereNull('ended_at')
+                            ->whereNotNull('expires_at')
+                            ->where('expires_at','>',$now),
                     ]),
             ])
             ->whereNull('archived_at')
@@ -414,9 +435,10 @@ class AssessmentCenterController extends Controller
                 'exam.assessmentGroup:id,title',
             ])
             ->where('status',1)
-            ->where(function ($q) use ($now) {
-                $q->whereNull('expires_at')->orWhere('expires_at','>',$now);
-            })
+            ->whereNotNull('started_at')
+            ->whereNull('ended_at')
+            ->whereNotNull('expires_at')
+            ->where('expires_at','>',$now)
             ->orderByDesc('started_at')
             ->limit(10)
             ->get()
@@ -436,9 +458,10 @@ class AssessmentCenterController extends Controller
                 'skillTest.skillTestGroup:id,title',
             ])
             ->where('status',1)
-            ->where(function ($q) use ($now) {
-                $q->whereNull('expires_at')->orWhere('expires_at','>',$now);
-            })
+            ->whereNotNull('started_at')
+            ->whereNull('ended_at')
+            ->whereNotNull('expires_at')
+            ->where('expires_at','>',$now)
             ->orderByDesc('started_at')
             ->limit(10)
             ->get()
