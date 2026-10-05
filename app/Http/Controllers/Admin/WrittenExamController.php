@@ -803,14 +803,66 @@ class WrittenExamController extends Controller
         return view('admin.assessments.results', compact('exam', 'attempts'));
     }
 
-    public function destroyAttempt(Exam $exam, ExamAttempt $attempt)
-    {
+    public function destroyAttempt(
+        Request $request,
+        Exam $exam,
+        ExamAttempt $attempt,
+        AssessmentGovernanceService $governance
+    ) {
         if ((int) $attempt->exam_id !== (int) $exam->id) abort(404);
 
-        if ($attempt->started_at) {
+        $data = $request->validate([
+            'reason' => 'nullable|string|max:2000',
+        ]);
+
+        // Grouped assessments must clear the group-level set lock as part of
+        // recovery. Keep that workflow authoritative and visible from the
+        // per-set Results page instead of silently deleting the attempt here.
+        if ($exam->assessment_group_id) {
             return back()->with(
                 'status',
-                'Started attempts are retained for audit integrity. Use the assessment-group void/retake workflow instead.'
+                'This attempt belongs to a Written Assessment Group. Use the Remove Attempt & Allow Retake action shown below; it clears the group set lock safely.'
+            );
+        }
+
+        if ($attempt->started_at) {
+            if (blank($data['reason'] ?? null)) {
+                return back()->withErrors([
+                    'reason' => 'A reason is required when removing a started Written Test attempt.',
+                ]);
+            }
+
+            if ((int) $attempt->status === 3) {
+                return back()->with('status', 'This attempt is already voided.');
+            }
+
+            $attemptId = (int) $attempt->id;
+            $applicationId = (int) $attempt->application_id;
+            $attemptStatus = (int) $attempt->status;
+            $startedAt = optional($attempt->started_at)->toIso8601String();
+            $endedAt = optional($attempt->ended_at)->toIso8601String();
+            $percentage = $attempt->percentage;
+
+            DB::transaction(function () use ($attempt) {
+                $attempt->delete();
+            });
+
+            $governance->log('written_attempt_removed_for_retake', [
+                'exam_id' => $exam->id,
+            ], [
+                'attempt_id' => $attemptId,
+                'application_id' => $applicationId,
+                'previous_status' => $attemptStatus,
+                'started_at' => $startedAt,
+                'ended_at' => $endedAt,
+                'percentage' => $percentage,
+                'reason' => $data['reason'],
+                'removed_by' => auth()->id(),
+            ]);
+
+            return back()->with(
+                'status',
+                'Written-test attempt removed. The applicant may start the standalone test again while its schedule remains open.'
             );
         }
 
