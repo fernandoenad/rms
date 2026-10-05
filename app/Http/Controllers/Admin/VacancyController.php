@@ -62,7 +62,12 @@ class VacancyController extends Controller
 
     public function create()
     {
-        $templates = Template::where('status', '=', 1)->get();
+        $templates = Template::where('status', 1)
+            ->whereNull('archived_at')
+            ->with(['criteria' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
+            ->orderBy('type')
+            ->orderByDesc('version')
+            ->get();
 
         return view('admin.vacancies.create', ['templates' => $templates]);
     }
@@ -80,7 +85,7 @@ class VacancyController extends Controller
             'status' => 'required|integer|in:0,1',
             'posting_start_at' => 'nullable|date',
             'posting_end_at' => 'nullable|date',
-            'template_id' => 'required|integer',
+            'template_id' => 'required|integer|exists:templates,id',
         ]);
 
         if (!empty($data['posting_start_at']) && !empty($data['posting_end_at']) && strtotime($data['posting_end_at']) <= strtotime($data['posting_start_at'])) {
