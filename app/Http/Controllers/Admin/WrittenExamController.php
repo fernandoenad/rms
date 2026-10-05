@@ -859,6 +859,94 @@ class WrittenExamController extends Controller
         ));
     }
 
+    public function exportResultsCsv(Request $request, Exam $exam)
+    {
+        $search = trim((string) $request->input('q', ''));
+        $integrity = (string) $request->input('integrity', 'all');
+        $scoreMin = $request->filled('score_min') ? (float) $request->input('score_min') : null;
+        $scoreMax = $request->filled('score_max') ? (float) $request->input('score_max') : null;
+        $sort = (string) $request->input('sort', 'end');
+        $direction = strtolower((string) $request->input('direction', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+        $allowedSorts = ['applicant', 'start', 'end', 'score', 'integrity'];
+        if (!in_array($sort, $allowedSorts, true)) {
+            $sort = 'end';
+        }
+
+        $query = $exam->attempts()
+            ->select('exam_attempts.*')
+            ->leftJoin('applications', 'applications.id', '=', 'exam_attempts.application_id')
+            ->with(['application:id,application_code,first_name,middle_name,last_name'])
+            ->withCount([
+                'events as integrity_events_count' => fn ($events) => $events->where('event_type', 'tab_hidden'),
+            ])
+            ->where('exam_attempts.status', 2)
+            ->when($search !== '', function ($query) use ($search) {
+                $like = '%'.$search.'%';
+                $query->where(function ($nested) use ($like) {
+                    $nested->where('applications.application_code', 'like', $like)
+                        ->orWhere('applications.last_name', 'like', $like)
+                        ->orWhere('applications.first_name', 'like', $like)
+                        ->orWhere('applications.middle_name', 'like', $like);
+                });
+            })
+            ->when($scoreMin !== null, fn ($query) => $query->where('exam_attempts.percentage', '>=', $scoreMin))
+            ->when($scoreMax !== null, fn ($query) => $query->where('exam_attempts.percentage', '<=', $scoreMax))
+            ->when($integrity === 'with', fn ($query) =>
+                $query->whereHas('events', fn ($events) => $events->where('event_type', 'tab_hidden'))
+            )
+            ->when($integrity === 'none', fn ($query) =>
+                $query->whereDoesntHave('events', fn ($events) => $events->where('event_type', 'tab_hidden'))
+            );
+
+        match ($sort) {
+            'applicant' => $query
+                ->orderBy('applications.last_name', $direction)
+                ->orderBy('applications.first_name', $direction),
+            'start' => $query->orderBy('exam_attempts.started_at', $direction),
+            'score' => $query->orderBy('exam_attempts.percentage', $direction),
+            'integrity' => $query->orderBy('integrity_events_count', $direction),
+            default => $query->orderBy('exam_attempts.ended_at', $direction),
+        };
+
+        $filename = Str::slug($exam->title).'-results.csv';
+
+        return response()->streamDownload(function () use ($query) {
+            $handle = fopen('php://output', 'w');
+
+            // UTF-8 BOM keeps applicant names readable when opened in Excel.
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                'Application Code',
+                'Applicant',
+                'Started',
+                'Submitted',
+                'Correct Answers',
+                'Total Items',
+                'Percentage',
+                'Integrity Events',
+            ]);
+
+            $query->chunkById(500, function ($attempts) use ($handle) {
+                foreach ($attempts as $attempt) {
+                    fputcsv($handle, [
+                        optional($attempt->application)->application_code,
+                        optional($attempt->application)->getFullname(),
+                        $attempt->started_at?->toIso8601String(),
+                        $attempt->ended_at?->toIso8601String(),
+                        $attempt->correct_answers,
+                        $attempt->total_items,
+                        $attempt->percentage,
+                        (int) ($attempt->integrity_events_count ?? 0),
+                    ]);
+                }
+            }, 'exam_attempts.id', 'id');
+
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
     public function destroyAttempt(
         Request $request,
         Exam $exam,
