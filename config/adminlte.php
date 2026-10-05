@@ -364,6 +364,16 @@ return [
             'active' => ['admin/vacancies', 'admin/vacancies/active', 'admin/vacancies/create', 'regex:@^admin/vacancies/[0-9]+$@', 'regex:@^admin/vacancies/\d+/delete+$@', 'regex:@^admin/vacancies/\d+/edit+$@', 'admin/vacancies/reports', 'admin/vacancies/reports/list', 'admin/vacancies/reports/nonassessed', 'regex:@^admin/vacancies/reports/\d+$@', 'regex:@^admin/vacancies/reports/\d+/\d+$@']
         ],
         [
+            'text' => 'Scoring Templates',
+            'url'  => 'admin/scoring-templates',
+            'icon' => 'fas fa-fw fa-calculator',
+            'active' => [
+                'admin/scoring-templates',
+                'admin/scoring-templates/create',
+                'regex:@^admin/scoring-templates/\\d+/edit$@'
+            ]
+        ],
+        [
             'text' => 'Assessments',
             'url'  => 'admin/assessment-center',
             'icon' => 'fas fa-fw fa-pen',
