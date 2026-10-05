@@ -14,6 +14,7 @@ use App\Models\SkillTestGroup;
 use App\Models\SkillTestGroupAttemptLock;
 use App\Models\SkillTestAssignment;
 use App\Models\SkillTestAttempt;
+use App\Models\SkillTestAttemptEvent;
 use App\Models\SkillTestHumanScore;
 use App\Models\SkillTestSubmission;
 use App\Models\Vacancy;
@@ -983,7 +984,6 @@ class SkillTestController extends Controller
                 'submissions',
                 'aiEvaluations',
                 'humanScores',
-                'events' => fn ($q) => $q->orderByDesc('event_at')->limit(20),
                 'timeExtensions' => fn ($q) => $q->with('creator:id,name,email')->orderByDesc('id'),
                 'scoreChanges' => fn ($q) => $q->with('changer:id,name,email')->orderByDesc('id'),
                 'incidents' => fn ($q) => $q->where('status','open')->latest(),
@@ -994,6 +994,22 @@ class SkillTestController extends Controller
             ->orderByDesc('started_at')
             ->paginate(25)
             ->withQueryString();
+
+        $attemptIds = $attempts->getCollection()->pluck('id')->all();
+        if ($attemptIds) {
+            $eventsByAttempt = SkillTestAttemptEvent::whereIn('skill_test_attempt_id', $attemptIds)
+                ->orderByDesc('event_at')
+                ->get()
+                ->groupBy('skill_test_attempt_id')
+                ->map(fn ($events) => $events->take(20)->values());
+
+            $attempts->getCollection()->each(function ($attempt) use ($eventsByAttempt) {
+                $attempt->setRelation(
+                    'events',
+                    $eventsByAttempt->get($attempt->id, collect())
+                );
+            });
+        }
 
         $incidents = AssessmentIncident::where('skill_test_id', $skillTest->id)
             ->where('status','open')
