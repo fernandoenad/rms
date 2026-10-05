@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\AssessmentContentBankController as AdminAssessmen
 use App\Http\Controllers\Admin\AssessmentPermissionController as AdminAssessmentPermission;
 use App\Http\Controllers\Admin\AssessmentSnapshotController as AdminAssessmentSnapshot;
 use App\Http\Controllers\Admin\SystemHealthController as AdminSystemHealth;
+use App\Http\Controllers\Admin\ScoringTemplateController as AdminScoringTemplate;
 use App\Http\Controllers\Guest\SkillTestAttemptController as GuestSkillTestAttempt;
 
 
@@ -315,6 +316,14 @@ Route::group(['middleware' => ['active']], function () {
 Route::group(['middleware' => ['admin']], function () {
     Route::delete('/admin/applications/{application}', [AdminApplication::class, 'destroy'])->name('admin.applications.destroy');
     Route::delete('/admin/vacancies/{vacancy}', [AdminVacancy::class, 'destroy'])->name('admin.vacancies.destroy');
+
+    Route::get('/admin/scoring-templates', [AdminScoringTemplate::class, 'index'])->name('admin.scoring_templates.index');
+    Route::get('/admin/scoring-templates/create', [AdminScoringTemplate::class, 'create'])->name('admin.scoring_templates.create');
+    Route::post('/admin/scoring-templates', [AdminScoringTemplate::class, 'store'])->name('admin.scoring_templates.store');
+    Route::get('/admin/scoring-templates/{scoringTemplate}/edit', [AdminScoringTemplate::class, 'edit'])->name('admin.scoring_templates.edit');
+    Route::put('/admin/scoring-templates/{scoringTemplate}', [AdminScoringTemplate::class, 'update'])->name('admin.scoring_templates.update');
+    Route::post('/admin/scoring-templates/{scoringTemplate}/duplicate', [AdminScoringTemplate::class, 'duplicate'])->name('admin.scoring_templates.duplicate');
+    Route::post('/admin/scoring-templates/{scoringTemplate}/archive', [AdminScoringTemplate::class, 'archive'])->name('admin.scoring_templates.archive');
 
     Route::get('/admin/system-health', [AdminSystemHealth::class, 'index'])->name('admin.system_health.index');
     Route::get('/admin/system-health/status', [AdminSystemHealth::class, 'status'])->name('admin.system_health.status');
