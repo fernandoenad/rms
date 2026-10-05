@@ -1443,6 +1443,13 @@ class SkillTestController extends Controller
             'reason' => 'required|string|max:2000',
         ]);
 
+        if ($attempt->final_score !== null || $attempt->evaluated_at) {
+            return back()->with(
+                'status',
+                'This attempt already has an evaluated/final score and cannot be hard-reset safely. Use the controlled retake workflow so the audit and official-score history remain intact.'
+            );
+        }
+
         $attempt->loadMissing('submissions:id,skill_test_attempt_id,file_path');
 
         $applicationId = (int) $attempt->application_id;
