@@ -1431,6 +1431,70 @@ class SkillTestController extends Controller
         return back()->with('status', 'Incident resolved.');
     }
 
+    public function removeAttempt(
+        Request $request,
+        SkillTest $skillTest,
+        SkillTestAttempt $attempt,
+        AssessmentGovernanceService $governance
+    ) {
+        abort_unless((int) $attempt->skill_test_id === (int) $skillTest->id, 404);
+
+        $data = $request->validate([
+            'reason' => 'required|string|max:2000',
+        ]);
+
+        if ($attempt->final_score !== null || $attempt->evaluated_at) {
+            return back()->with(
+                'status',
+                'This attempt already has an evaluated/final score and cannot be hard-reset safely. Use the controlled retake workflow so the audit and official-score history remain intact.'
+            );
+        }
+
+        $attempt->loadMissing('submissions:id,skill_test_attempt_id,file_path');
+
+        $applicationId = (int) $attempt->application_id;
+        $attemptId = (int) $attempt->id;
+        $attemptStatus = (int) $attempt->status;
+        $submittedAt = $attempt->submitted_at;
+        $filePaths = $attempt->submissions
+            ->pluck('file_path')
+            ->filter()
+            ->values()
+            ->all();
+
+        DB::transaction(function () use ($skillTest, $attempt, $applicationId) {
+            if ($skillTest->skill_test_group_id) {
+                SkillTestGroupAttemptLock::where('skill_test_group_id', $skillTest->skill_test_group_id)
+                    ->where('application_id', $applicationId)
+                    ->delete();
+            }
+
+            $attempt->delete();
+        });
+
+        foreach ($filePaths as $path) {
+            if (Storage::disk('local')->exists($path)) {
+                Storage::disk('local')->delete($path);
+            }
+        }
+
+        $governance->log('skill_attempt_removed_for_retake', [
+            'skill_test_id' => $skillTest->id,
+        ], [
+            'attempt_id' => $attemptId,
+            'application_id' => $applicationId,
+            'previous_status' => $attemptStatus,
+            'submitted_at' => $submittedAt?->toIso8601String(),
+            'reason' => $data['reason'],
+            'removed_by' => auth()->id(),
+        ]);
+
+        return back()->with(
+            'status',
+            'Attempt removed. The applicant may start the Skills Test again, subject to the current schedule and access rules.'
+        );
+    }
+
     public function voidAndRetake(
         Request $request,
         SkillTest $skillTest,

@@ -333,8 +333,35 @@
                                 </form>
                                 @endif
 
+                                <div class="mt-3 pt-2 border-top">
+                                    <strong class="text-danger">Remove Attempt & Allow Retake</strong>
+                                    @if($attempt->final_score === null && !$attempt->evaluated_at)
+                                        <div class="small text-muted mb-2">
+                                            Use this only for failed, corrupted, or invalid attempts. This permanently removes the attempt and clears the equivalent-set lock so the applicant can start again under the current schedule.
+                                        </div>
+                                        <form method="post"
+                                              action="{{ route('admin.skills.attempts.destroy',[$skillTest,$attempt]) }}"
+                                              onsubmit="return confirm('Permanently remove this attempt and allow the applicant to retake? This deletes the attempt data and cannot be undone.');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <textarea name="reason"
+                                                      class="form-control form-control-sm mb-2"
+                                                      rows="2"
+                                                      required
+                                                      placeholder="Required reason, e.g. system error during assessment"></textarea>
+                                            <button class="btn btn-sm btn-danger">
+                                                <i class="fas fa-trash-restore mr-1"></i> Remove Attempt & Allow Retake
+                                            </button>
+                                        </form>
+                                    @else
+                                        <div class="small text-muted">
+                                            This attempt already has an evaluated/final score. Use <strong>Controlled Retake</strong> instead so score and audit history are preserved.
+                                        </div>
+                                    @endif
+                                </div>
+
                                 @if($attempt->void_reason)
-                                    <div class="small text-muted"><strong>Void reason:</strong> {{ $attempt->void_reason }}</div>
+                                    <div class="small text-muted mt-2"><strong>Void reason:</strong> {{ $attempt->void_reason }}</div>
                                 @endif
                             </div>
                         </details>
