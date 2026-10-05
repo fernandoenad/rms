@@ -449,7 +449,7 @@
                                             @endphp
                                             @if(!$attempt && $hasAssessmentRel && $examOpen)
                                                 <div class="modal fade assessment-start-modal" id="writtenStartModal{{ $exam->id }}" tabindex="-1" aria-labelledby="writtenStartLabel{{ $exam->id }}" aria-hidden="true">
-                                                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                                    <div class="modal-dialog modal-lg assessment-start-dialog">
                                                         <div class="modal-content">
                                                             <div class="modal-header bg-light">
                                                                 <div>
@@ -547,7 +547,7 @@
                                             @endphp
                                             @if(!$skillAttempt && $hasAssessmentRel && $skillOpen)
                                                 <div class="modal fade assessment-start-modal" id="skillStartModal{{ $skillTest->id }}" tabindex="-1" aria-labelledby="skillStartLabel{{ $skillTest->id }}" aria-hidden="true">
-                                                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                                                    <div class="modal-dialog modal-lg assessment-start-dialog">
                                                         <div class="modal-content">
                                                             <div class="modal-header bg-light">
                                                                 <div>
@@ -778,60 +778,86 @@
 
 @section('css')
 <style>
+    .assessment-start-modal {
+        --rms-modal-height: 100vh;
+    }
+
+    .assessment-start-modal .assessment-start-dialog {
+        display: flex;
+        width: auto;
+        max-width: 800px;
+        height: calc(var(--rms-modal-height) - 2rem);
+        margin: 1rem auto;
+    }
+
+    .assessment-start-modal .modal-content {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        max-height: 100%;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .assessment-start-modal .modal-header,
+    .assessment-start-modal .modal-footer {
+        flex: 0 0 auto;
+    }
+
     .assessment-start-modal .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto !important;
+        overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
-        overscroll-behavior: contain;
+        touch-action: pan-y;
+        overscroll-behavior-y: contain;
     }
 
     .assessment-start-modal .assessment-start-ack-wrap {
-        position: sticky;
-        bottom: 0;
-        z-index: 2;
         background: #fff;
         border-top: 1px solid #dee2e6;
-        padding: .75rem 0 .25rem;
+        padding: .85rem 0 .25rem;
         margin-top: 1rem;
     }
 
     @media (max-width: 576px) {
         .assessment-start-modal {
             padding-right: 0 !important;
+            overflow: hidden !important;
         }
 
-        .assessment-start-modal .modal-dialog {
-            margin: 0;
-            min-height: 100%;
+        .assessment-start-modal .assessment-start-dialog {
+            width: 100%;
             max-width: none;
+            height: var(--rms-modal-height);
+            margin: 0;
         }
 
         .assessment-start-modal .modal-content {
-            min-height: 100vh;
-            min-height: -webkit-fill-available;
+            height: 100%;
+            max-height: 100%;
             border: 0;
             border-radius: 0;
         }
 
-        .assessment-start-modal .modal-header,
-        .assessment-start-modal .modal-footer {
-            flex-shrink: 0;
-        }
-
         .assessment-start-modal .modal-body {
-            max-height: none !important;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            padding-bottom: 1.25rem;
         }
 
         .assessment-start-modal .modal-footer {
-            position: sticky;
-            bottom: 0;
-            z-index: 3;
             background: #fff;
             border-top: 1px solid #dee2e6;
+            padding-bottom: max(.75rem, env(safe-area-inset-bottom));
         }
 
         .assessment-start-modal .modal-footer .btn {
             min-height: 44px;
+        }
+
+        .assessment-start-modal .assessment-start-ack-wrap {
+            position: relative;
+            bottom: auto;
         }
     }
 </style>
@@ -857,6 +883,35 @@
 
         var button = document.querySelector(target);
         if (button) button.disabled = !checkbox.checked;
+    }
+
+    function updateAssessmentModalHeight(modal) {
+        if (!modal) return;
+
+        // iOS Chrome may report 100vh against the layout viewport rather than
+        // the currently visible viewport (browser bars included). Use the
+        // visual viewport when available and fall back to window.innerHeight.
+        var height = window.visualViewport && window.visualViewport.height
+            ? window.visualViewport.height
+            : window.innerHeight;
+
+        if (height) {
+            modal.style.setProperty('--rms-modal-height', Math.round(height) + 'px');
+        }
+    }
+
+    function prepareAssessmentModal(modal) {
+        if (!modal) return;
+
+        updateAssessmentModalHeight(modal);
+
+        var body = modal.querySelector('.modal-body');
+        if (body) {
+            // Keep exactly one element responsible for scrolling. This avoids
+            // the nested Bootstrap scroll container that can freeze on iOS Chrome.
+            body.style.webkitOverflowScrolling = 'touch';
+            body.scrollTop = 0;
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -895,9 +950,36 @@
         });
     });
 
+    document.querySelectorAll('.assessment-start-modal').forEach(function (modal) {
+        // Bootstrap fires shown.bs.modal through jQuery; the click fallback
+        // prepares the viewport immediately for browsers where that event is late.
+        modal.addEventListener('touchstart', function () {
+            updateAssessmentModalHeight(modal);
+        }, {passive:true});
+    });
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', function () {
+            document.querySelectorAll('.assessment-start-modal.show').forEach(function (modal) {
+                updateAssessmentModalHeight(modal);
+            });
+        });
+    }
+
+    window.addEventListener('orientationchange', function () {
+        setTimeout(function () {
+            document.querySelectorAll('.assessment-start-modal.show').forEach(function (modal) {
+                updateAssessmentModalHeight(modal);
+            });
+        }, 150);
+    });
+
     // Keep Bootstrap modal reset behavior when jQuery/Bootstrap is present,
     // but failure here must not affect the native acknowledgement controls.
     if (window.jQuery) {
+        jQuery(document).on('shown.bs.modal', '.assessment-start-modal', function () {
+            prepareAssessmentModal(this);
+        });
         jQuery(document).on('hidden.bs.modal', '.assessment-start-modal', function () {
             var checkbox = this.querySelector('.assessment-start-ack');
             if (checkbox) {
