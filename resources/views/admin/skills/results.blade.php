@@ -225,6 +225,19 @@
                     <td>
                         {{ $attempt->ai_proposed_score !== null ? number_format((float)$attempt->ai_proposed_score,2) : '-' }}
                         <div class="small text-muted">{{ optional($latestAi)->status ?? 'Not queued' }}</div>
+
+                        @if(!$latestAi && (int)$attempt->status === 2 && $skillTest->ai_scoring)
+                            <form method="post"
+                                  action="{{ route('admin.skills.attempts.queue_ai',[$skillTest,$attempt]) }}"
+                                  class="mt-1"
+                                  onsubmit="return confirm('Queue this submitted attempt for AI evaluation?');">
+                                @csrf
+                                <button class="btn btn-xs btn-outline-primary">
+                                    <i class="fas fa-stream mr-1"></i> Queue AI Evaluation
+                                </button>
+                            </form>
+                        @endif
+
                         @if($latestAi && $latestAi->criterion_scores)
                             <details class="mt-1"><summary class="small">AI rubric evidence</summary><pre class="small text-wrap">{{ json_encode($latestAi->criterion_scores, JSON_PRETTY_PRINT) }}</pre></details>
                         @endif

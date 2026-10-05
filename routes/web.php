@@ -295,6 +295,9 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/skills/{skillTest}/export', [AdminSkillTest::class, 'exportCsv'])->name('admin.skills.export');
     Route::get('/admin/skills/{skillTest}/submissions/{submission}/download', [AdminSkillTest::class, 'downloadSubmission'])->name('admin.skills.submissions.download');
     Route::post('/admin/skills/{skillTest}/approve-ai-scores', [AdminSkillTest::class, 'approveAiScores'])->middleware('assessment.capability:evaluator')->name('admin.skills.approve_ai_scores');
+    Route::post('/admin/skills/{skillTest}/attempts/{attempt}/queue-ai', [AdminSkillTest::class, 'queueAiEvaluation'])
+        ->middleware('assessment.capability:evaluator')
+        ->name('admin.skills.attempts.queue_ai');
     Route::post('/admin/skills/{skillTest}/release-scores', [AdminSkillTest::class, 'releaseScores'])->middleware('assessment.capability:release')->name('admin.skills.release_scores');
     Route::post('/admin/skills/{skillTest}/hide-scores', [AdminSkillTest::class, 'hideScores'])->middleware('assessment.capability:release')->name('admin.skills.hide_scores');
     Route::post('/admin/skills/{skillTest}/incidents', [AdminSkillTest::class, 'incident'])->name('admin.skills.incidents.store');
