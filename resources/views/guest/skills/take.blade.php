@@ -50,11 +50,15 @@
 @section('js')
 <script>
 (() => {
-    const deadlineMs=Date.now()+({{ (int)$remainingSeconds }}*1000);
+    let authoritativeRemainingSeconds={{ (int)$remainingSeconds }};
+    let authoritativeSyncMark=performance.now();
+    let timeSyncInFlight=false;
+    let finishing=false;
     const timer=document.getElementById('skillTimer');
     const box=document.getElementById('inlineResponse');
     const state=document.getElementById('inlineSave');
     const saveUrl=@json(route('guest.skills.attempts.inline',$attempt));
+    const timeStatusUrl=@json(route('guest.skills.attempts.time_status',$attempt));
     const csrf=@json(csrf_token());
     const pendingKey='rms_skill_{{ $attempt->id }}_pending_inline';
     const eventUrl=@json(route('guest.skills.attempts.event',$attempt));
@@ -78,14 +82,78 @@
         return value<10 ? '0'+value : String(value);
     }
 
+    function currentRemainingSeconds(){
+        const elapsed=Math.max(0,(performance.now()-authoritativeSyncMark)/1000);
+        return Math.max(0,Math.ceil(authoritativeRemainingSeconds-elapsed));
+    }
+
+    async function syncAuthoritativeTime(showError=false){
+        if(timeSyncInFlight) return null;
+        timeSyncInFlight=true;
+
+        try{
+            const response=await fetch(timeStatusUrl,{
+                headers:{'Accept':'application/json','Cache-Control':'no-cache'},
+                cache:'no-store'
+            });
+            const data=await response.json().catch(()=>({}));
+
+            if(response.status===409 || data.expired || data.submitted){
+                authoritativeRemainingSeconds=0;
+                authoritativeSyncMark=performance.now();
+                location.reload();
+                return data;
+            }
+
+            if(response.ok && Number.isFinite(Number(data.remaining_seconds))){
+                authoritativeRemainingSeconds=Math.max(0,Number(data.remaining_seconds));
+                authoritativeSyncMark=performance.now();
+                return data;
+            }
+
+            throw new Error('time sync failed');
+        }catch(e){
+            if(showError && state){
+                state.textContent='Unable to verify timer — reconnecting…';
+                state.className='float-right small text-warning';
+            }
+            return null;
+        }finally{
+            timeSyncInFlight=false;
+        }
+    }
+
+    async function finalizeAtTimeout(){
+        if(finishing) return;
+        finishing=true;
+
+        if(state){
+            state.textContent='Checking the official assessment time…';
+            state.className='float-right small text-info';
+        }
+
+        const result=await syncAuthoritativeTime(true);
+
+        if(result && !result.expired && !result.submitted && Number(result.remaining_seconds)>0){
+            finishing=false;
+            setTimeout(tick,250);
+            return;
+        }
+
+        if(!result){
+            finishing=false;
+            setTimeout(finalizeAtTimeout,2500);
+        }
+    }
+
     function tick(){
-        const seconds=Math.max(0,Math.ceil((deadlineMs-Date.now())/1000));
+        const seconds=currentRemainingSeconds();
         const m=Math.floor(seconds/60);
         const s=seconds%60;
         timer.textContent=twoDigits(m)+':'+twoDigits(s);
 
         if(seconds<=0){
-            location.reload();
+            finalizeAtTimeout();
             return;
         }
 
@@ -175,14 +243,22 @@
 
     document.addEventListener('visibilitychange',()=>{
         logEvent(document.hidden ? 'tab_hidden' : 'tab_visible');
+        if(!document.hidden) syncAuthoritativeTime();
     });
     window.addEventListener('offline',()=>logEvent('connection_lost'));
-    window.addEventListener('online',()=>logEvent('connection_restored'));
+    window.addEventListener('online',()=>{
+        logEvent('connection_restored');
+        syncAuthoritativeTime();
+    });
     window.addEventListener('pageshow',(event)=>{
         if(event.persisted) logEvent('page_refreshed');
     });
 
     tick();
+    syncAuthoritativeTime();
+    setInterval(()=>{
+        if(!document.hidden && !finishing) syncAuthoritativeTime();
+    },15000);
 
     if(box){
         function blockImportedText(event){

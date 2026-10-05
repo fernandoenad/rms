@@ -430,6 +430,49 @@ class ExamAttemptController extends Controller
         return view('guest.assessments.take', compact('attempt', 'exam', 'items', 'remainingSeconds', 'largeText'));
     }
 
+    public function timeStatus(Request $request, ExamAttempt $attempt)
+    {
+        $application = $attempt->application;
+        $this->authorizeApplication($request, $application);
+        $this->authorizeExam($application, $attempt->exam);
+
+        $fresh = $attempt->fresh();
+
+        if ((int) $fresh->status === 2) {
+            return response()->json([
+                'expired' => true,
+                'submitted' => true,
+                'remaining_seconds' => 0,
+                'server_now' => now()->toIso8601String(),
+                'expires_at' => optional($fresh->expires_at)->toIso8601String(),
+            ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+        }
+
+        if (!$this->ensureNotExpired($request, $fresh)) {
+            return response()->json([
+                'expired' => true,
+                'submitted' => true,
+                'remaining_seconds' => 0,
+                'server_now' => now()->toIso8601String(),
+                'expires_at' => optional($fresh->expires_at)->toIso8601String(),
+            ], 409)->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+        }
+
+        $fresh = $fresh->fresh();
+        $expiresAt = $fresh->expires_at ? Carbon::parse($fresh->expires_at) : null;
+        $remainingSeconds = $expiresAt
+            ? max(0, $expiresAt->getTimestamp() - now()->getTimestamp())
+            : 0;
+
+        return response()->json([
+            'expired' => false,
+            'submitted' => false,
+            'remaining_seconds' => $remainingSeconds,
+            'server_now' => now()->toIso8601String(),
+            'expires_at' => optional($expiresAt)->toIso8601String(),
+        ])->header('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+
     public function reviewStatus(Request $request, ExamAttempt $attempt)
     {
         $application = $attempt->application;
