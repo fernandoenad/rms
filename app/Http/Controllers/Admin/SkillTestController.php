@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\ScoreSkillTestSubmission;
 use App\Models\Application;
 use App\Models\AssessmentAccommodation;
 use App\Models\AssessmentAuditLog;
@@ -15,6 +16,7 @@ use App\Models\SkillTestGroupAttemptLock;
 use App\Models\SkillTestAssignment;
 use App\Models\SkillTestAttempt;
 use App\Models\SkillTestAttemptEvent;
+use App\Models\SkillTestAiEvaluation;
 use App\Models\SkillTestHumanScore;
 use App\Models\SkillTestSubmission;
 use App\Models\Vacancy;
@@ -1167,6 +1169,73 @@ class SkillTestController extends Controller
             'Human rubric scores saved. Final score: '.number_format($total,2).'/100.'
             .($synced ? ' The official score was also written to the applicant assessment record.' : '')
         );
+    }
+
+    public function queueAiEvaluation(
+        SkillTest $skillTest,
+        SkillTestAttempt $attempt,
+        AssessmentGovernanceService $governance
+    ) {
+        abort_unless((int) $attempt->skill_test_id === (int) $skillTest->id, 404);
+
+        if ((int) $attempt->status !== 2 || $attempt->voided_at) {
+            return back()->with('status', 'Only submitted, non-voided attempts can be queued for AI evaluation.');
+        }
+
+        if (!$skillTest->ai_scoring) {
+            return back()->with('status', 'AI scoring is disabled for this Skills Test.');
+        }
+
+        $finalSubmission = $attempt->submissions()
+            ->where('is_final', true)
+            ->orderByDesc('version')
+            ->first();
+
+        if (!$finalSubmission || (!filled($finalSubmission->inline_response) && !filled($finalSubmission->file_path))) {
+            return back()->with('status', 'This attempt has no final machine-readable submission to queue for AI evaluation.');
+        }
+
+        $latest = $attempt->aiEvaluations()->latest('id')->first();
+
+        if ($latest && in_array($latest->status, ['pending', 'processing'], true)) {
+            return back()->with('status', 'This attempt is already queued or processing.');
+        }
+
+        if ($latest && $latest->status === 'completed') {
+            return back()->with('status', 'This attempt already has a completed AI evaluation.');
+        }
+
+        $evaluation = DB::transaction(function () use ($attempt) {
+            $locked = SkillTestAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
+
+            $existing = SkillTestAiEvaluation::where('skill_test_attempt_id', $locked->id)
+                ->whereIn('status', ['pending', 'processing'])
+                ->latest('id')
+                ->first();
+
+            if ($existing) {
+                return $existing;
+            }
+
+            return SkillTestAiEvaluation::create([
+                'skill_test_attempt_id' => $locked->id,
+                'status' => 'pending',
+                'provider' => 'openai',
+                'prompt_version' => 'v1',
+            ]);
+        });
+
+        ScoreSkillTestSubmission::dispatch($attempt->id);
+
+        $governance->log('skill_ai_evaluation_queued_manually', [
+            'skill_test_id' => $skillTest->id,
+        ], [
+            'attempt_id' => $attempt->id,
+            'evaluation_id' => $evaluation->id,
+            'queued_by' => auth()->id(),
+        ]);
+
+        return back()->with('status', 'Attempt queued for AI evaluation.');
     }
 
     public function approveAiScores(
