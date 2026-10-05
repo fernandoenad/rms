@@ -97,7 +97,7 @@
                                 <select type="text" class="form-control" placeholder="Enter salary grade" 
                                     name="salary_grade" class="@error('salary_grade') is-invalid @enderror"
                                     value="{{ $vacancy->salary_grade }}">
-                                    <option value="">---select scoring template---</option>
+                                    <option value="">---select---</option>
                                     @for($sg = 1; $sg <= 33; $sg++)
                                         <option value="{{$sg}}" {{ $vacancy->salary_grade == $sg ? 'selected' : '' }}>Salary Grade {{$sg}}</option>
                                     @endfor
@@ -120,7 +120,7 @@
                                 <select type="text" class="form-control" placeholder="Enter office level" 
                                     name="office_level" class="@error('office_level') is-invalid @enderror"
                                     value="{{ $vacancy->office_level }}">
-                                    <option value="">---select scoring template---</option>
+                                    <option value="">---select---</option>
                                     <option value="0" {{ $vacancy->office_level == 0 ? 'selected' : '' }}>SDO</option>
                                     <option value="-1" {{ $vacancy->office_level == -1 ? 'selected' : '' }}>Field</option>
                                 </select>
@@ -204,7 +204,7 @@
                                 <select type="text" class="form-control" placeholder="Enter status" 
                                     name="level1_status" class="@error('level1_status') is-invalid @enderror"
                                     value="{{ $vacancy->level1_status }}">
-                                    <option value="">---select scoring template---</option>
+                                    <option value="">---select---</option>
                                     <option value="0" {{ $vacancy->level1_status == 0 ? 'selected' : '' }}>Closed</option>
                                     <option value="1" {{ $vacancy->level1_status == 1 ? 'selected' : '' }}>Open</option>
                                     <option value="2" {{ $vacancy->level1_status == 2 ? 'selected' : '' }}>Completed</option>
@@ -218,7 +218,7 @@
                                 <select type="text" class="form-control" placeholder="Enter status" 
                                     name="level2_status" class="@error('level2_status') is-invalid @enderror"
                                     value="{{ $vacancy->level2_status }}">
-                                    <option value="">---select scoring template---</option>
+                                    <option value="">---select---</option>
                                     <option value="0" {{ $vacancy->level2_status == 0 ? 'selected' : '' }}>Closed</option>
                                     <option value="1" {{ $vacancy->level2_status == 1 ? 'selected' : '' }}>Open</option>
                                     <option value="2" {{ $vacancy->level2_status == 2 ? 'selected' : '' }}>Completed</option>
