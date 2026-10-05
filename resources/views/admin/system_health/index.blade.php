@@ -90,7 +90,7 @@
                             <td>{{ number_format($queue->total) }}</td>
                             <td>
                                 {{ $queue->oldest_created_at
-                                    ? CarbonCarbon::createFromTimestamp((int)$queue->oldest_created_at)->diffForHumans()
+                                    ? \Carbon\Carbon::createFromTimestamp((int)$queue->oldest_created_at)->diffForHumans()
                                     : '-' }}
                             </td>
                         </tr>
@@ -119,7 +119,7 @@
                         <tr>
                             <td><code>{{ $job->queue }}</code></td>
                             <td class="small text-danger text-break">{{ $job->exception_summary }}</td>
-                            <td class="text-nowrap small">{{ CarbonCarbon::parse($job->failed_at)->diffForHumans() }}</td>
+                            <td class="text-nowrap small">{{ \Carbon\Carbon::parse($job->failed_at)->diffForHumans() }}</td>
                             <td class="text-nowrap">
                                 <form method="post" action="{{ route('admin.system_health.failed_jobs.retry',$job->uuid) }}" class="d-inline">
                                     @csrf
