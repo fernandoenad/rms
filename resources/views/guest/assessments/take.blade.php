@@ -197,10 +197,13 @@
     const answerUrl = @json(route('guest.assessments.attempts.answer', $attempt));
     const submitUrl = @json(route('guest.assessments.attempts.submit', $attempt));
     const reviewUrl = @json(route('guest.assessments.attempts.review', $attempt));
+    const timeStatusUrl = @json(route('guest.assessments.attempts.time_status', $attempt));
     const eventUrl = @json(route('guest.assessments.attempts.event', $attempt));
     const csrf = @json(csrf_token());
 
-    const deadlineMs = Date.now() + ({{ (int)$remainingSeconds }} * 1000);
+    let authoritativeRemainingSeconds = {{ (int)$remainingSeconds }};
+    let authoritativeSyncMark = performance.now();
+    let timeSyncInFlight = false;
     let finishing = false;
     const items = Array.from(document.querySelectorAll('.exam-item'));
     const navButtons = Array.from(document.querySelectorAll('.nav-btn'));
@@ -322,32 +325,72 @@
         } catch (_) {}
     }
 
+    function currentRemainingSeconds() {
+        const elapsed = Math.max(0, (performance.now() - authoritativeSyncMark) / 1000);
+        return Math.max(0, Math.ceil(authoritativeRemainingSeconds - elapsed));
+    }
+
+    async function syncAuthoritativeTime(options={}) {
+        if (timeSyncInFlight) return null;
+        timeSyncInFlight = true;
+
+        try {
+            const response = await fetch(timeStatusUrl, {
+                headers:{'Accept':'application/json','Cache-Control':'no-cache'},
+                cache:'no-store'
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (response.status === 409 || data.expired || data.submitted) {
+                authoritativeRemainingSeconds = 0;
+                authoritativeSyncMark = performance.now();
+
+                if (options.reloadOnExpired !== false) {
+                    window.location.reload();
+                }
+                return data;
+            }
+
+            if (response.ok && Number.isFinite(Number(data.remaining_seconds))) {
+                authoritativeRemainingSeconds = Math.max(0, Number(data.remaining_seconds));
+                authoritativeSyncMark = performance.now();
+                return data;
+            }
+
+            throw new Error('time sync failed');
+        } catch (_) {
+            if (options.showError) {
+                setSaveState(
+                    'Unable to verify the timer with the server. Reconnecting…',
+                    'text-warning font-weight-bold'
+                );
+            }
+            return null;
+        } finally {
+            timeSyncInFlight = false;
+        }
+    }
+
     async function finalizeAtTimeout() {
         if (finishing) return;
         finishing = true;
-        setSaveState('Time is up. Finalizing your saved answers…', 'text-info font-weight-bold');
+        setSaveState('Checking the official assessment time…', 'text-info font-weight-bold');
 
-        try {
-            const response = await fetch(submitUrl, {
-                method:'POST',
-                headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json'},
-            });
+        const status = await syncAuthoritativeTime({
+            reloadOnExpired:true,
+            showError:true
+        });
 
-            if (response.status === 409) {
-                finishing = false;
-                setTimeout(finalizeAtTimeout, 1200);
-                return;
-            }
-
-            if (response.redirected) {
-                window.location.href = response.url;
-                return;
-            }
-
-            window.location.reload();
-        } catch (_) {
+        if (status && !status.expired && !status.submitted && Number(status.remaining_seconds) > 0) {
             finishing = false;
-            setSaveState('Time is up. Reconnecting to finalize…', 'text-warning font-weight-bold');
+            setSaveState('Timer synchronized with the server.', 'text-success');
+            setTimeout(tick, 250);
+            return;
+        }
+
+        if (!status) {
+            finishing = false;
             setTimeout(finalizeAtTimeout, 2500);
         }
     }
@@ -357,7 +400,7 @@
     }
 
     function tick() {
-        const remaining = Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000));
+        const remaining = currentRemainingSeconds();
         const mins = Math.floor(remaining / 60);
         const secs = remaining % 60;
         countdownEl.textContent = twoDigits(mins) + ':' + twoDigits(secs);
@@ -567,6 +610,16 @@
         showItem(currentIndex);
         tick();
 
+        // Synchronize immediately, then periodically. This keeps the visible
+        // countdown aligned with the server-side expires_at used by the
+        // scheduled finalizer, including after iOS Chrome background/resume.
+        syncAuthoritativeTime({reloadOnExpired:true});
+        setInterval(() => {
+            if (!document.hidden && !finishing) {
+                syncAuthoritativeTime({reloadOnExpired:true});
+            }
+        }, 15000);
+
         prevBtn.addEventListener('click', () => showItem(currentIndex - 1));
         nextBtn.addEventListener('click', () => showItem(currentIndex + 1));
 
@@ -611,6 +664,9 @@
 
         document.addEventListener('visibilitychange', () => {
             logEvent(document.hidden ? 'tab_hidden' : 'tab_visible');
+            if (!document.hidden) {
+                syncAuthoritativeTime({reloadOnExpired:true});
+            }
         });
 
         window.addEventListener('offline', () => {
@@ -621,6 +677,7 @@
         window.addEventListener('online', () => {
             setSaveState('Connection restored. Retrying unsaved answers…', 'text-success');
             logEvent('connection_restored');
+            syncAuthoritativeTime({reloadOnExpired:true});
             retryPendingAnswers();
         });
 
