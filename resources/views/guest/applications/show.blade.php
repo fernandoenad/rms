@@ -384,6 +384,7 @@
                                                             @if($skillSubmitted)
                                                                 @if($skillScoreReleased && $skillAttempt->final_score !== null)
                                                                     {{ number_format((float)$skillAttempt->final_score, 2) }} / 100
+                                                                    ({{ number_format((float)$skillAttempt->final_score, 2) }}%)
                                                                 @elseif($skillScoreReleased)
                                                                     <span class="text-muted">Pending human evaluation</span>
                                                                 @else
