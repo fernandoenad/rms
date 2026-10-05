@@ -3,13 +3,60 @@
 @section('content_header')<h1>{{ $exam->title }} — Results</h1>@stop
 @section('content')
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
-<div class="card"><div class="card-body table-responsive p-0">
-<table class="table table-hover">
-<thead><tr><th>Applicant</th><th>Start</th><th>End</th><th>Score</th><th>Integrity events</th><th>Review</th></tr></thead>
+@php
+    $sortUrl = function($column) use ($sort, $direction) {
+        $nextDirection = ($sort === $column && $direction === 'asc') ? 'desc' : 'asc';
+        return request()->fullUrlWithQuery(['sort'=>$column,'direction'=>$nextDirection,'page'=>null]);
+    };
+    $sortIcon = function($column) use ($sort, $direction) {
+        if ($sort !== $column) return 'fas fa-sort text-muted';
+        return $direction === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+    };
+@endphp
+<div class="card">
+<form method="get" action="{{ route('admin.assessments.results',$exam) }}">
+<div class="card-body table-responsive p-0">
+<table class="table table-hover mb-0">
+<thead>
+<tr>
+    <th><a href="{{ $sortUrl('applicant') }}" class="text-dark">Applicant <i class="{{ $sortIcon('applicant') }}"></i></a></th>
+    <th><a href="{{ $sortUrl('start') }}" class="text-dark">Start <i class="{{ $sortIcon('start') }}"></i></a></th>
+    <th><a href="{{ $sortUrl('end') }}" class="text-dark">End <i class="{{ $sortIcon('end') }}"></i></a></th>
+    <th><a href="{{ $sortUrl('score') }}" class="text-dark">Score <i class="{{ $sortIcon('score') }}"></i></a></th>
+    <th><a href="{{ $sortUrl('integrity') }}" class="text-dark">Integrity events <i class="{{ $sortIcon('integrity') }}"></i></a></th>
+    <th>Review</th>
+</tr>
+<tr class="bg-light">
+    <th style="min-width:220px;">
+        <input type="text" name="q" value="{{ $search }}" class="form-control form-control-sm" placeholder="Code or applicant name">
+    </th>
+    <th></th>
+    <th></th>
+    <th style="min-width:190px;">
+        <div class="input-group input-group-sm">
+            <input type="number" step="0.01" min="0" max="100" name="score_min" value="{{ $scoreMin }}" class="form-control" placeholder="Min %">
+            <input type="number" step="0.01" min="0" max="100" name="score_max" value="{{ $scoreMax }}" class="form-control" placeholder="Max %">
+        </div>
+    </th>
+    <th style="min-width:170px;">
+        <select name="integrity" class="form-control form-control-sm">
+            <option value="all" {{ $integrity==='all'?'selected':'' }}>All attempts</option>
+            <option value="with" {{ $integrity==='with'?'selected':'' }}>With tab/app switches</option>
+            <option value="none" {{ $integrity==='none'?'selected':'' }}>No tab/app switches</option>
+        </select>
+    </th>
+    <th class="text-nowrap">
+        <input type="hidden" name="sort" value="{{ $sort }}">
+        <input type="hidden" name="direction" value="{{ $direction }}">
+        <button class="btn btn-sm btn-primary"><i class="fas fa-filter mr-1"></i> Apply</button>
+        <a href="{{ route('admin.assessments.results',$exam) }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+    </th>
+</tr>
+</thead>
 <tbody>
 @forelse($attempts as $attempt)
 @php
-    $hiddenCount=$attempt->events->where('event_type','tab_hidden')->count();
+    $hiddenCount=(int)($attempt->integrity_events_count ?? $attempt->events->where('event_type','tab_hidden')->count());
 @endphp
 <tr>
 <td>{{ optional($attempt->application)->application_code }}<br><small>{{ optional($attempt->application)->getFullname() }}</small></td>
@@ -112,6 +159,13 @@
 <div class="modal-footer"><button class="btn btn-secondary" data-dismiss="modal">Close</button></div>
 </div></div></div>
 @empty<tr><td colspan="6">No submitted attempts yet.</td></tr>@endforelse
-</tbody></table></div></div>
-{{ $attempts->links('pagination::bootstrap-4') }}
+</tbody></table></div>
+</form>
+</div>
+<div class="d-flex justify-content-between align-items-center flex-wrap mt-2">
+    <div class="small text-muted mb-2">
+        Showing {{ $attempts->firstItem() ?? 0 }}–{{ $attempts->lastItem() ?? 0 }} of {{ $attempts->total() }} submitted attempt(s)
+    </div>
+    <div>{{ $attempts->links('pagination::bootstrap-4') }}</div>
+</div>
 @stop
