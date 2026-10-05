@@ -63,7 +63,7 @@
                                 <select type="text" class="form-control" placeholder="Enter salary grade" 
                                     name="salary_grade" class="@error('salary_grade') is-invalid @enderror"
                                     value="{{ old('salary_grade') }}">
-                                    <option value="">---select---</option>
+                                    <option value="">---select scoring template---</option>
                                     @for($sg = 1; $sg <= 33; $sg++)
                                         <option value="{{ $sg }}" {{ old('salary_grade') == $sg ? 'selected' : '' }}>Salary Grade {{$sg}}</option>
                                     @endfor
@@ -86,7 +86,7 @@
                                 <select type="text" class="form-control" placeholder="Enter office level" 
                                     name="office_level" class="@error('office_level') is-invalid @enderror"
                                     value="{{ old('office_level') }}">
-                                    <option value="">---select---</option>
+                                    <option value="">---select scoring template---</option>
                                     <option value="0" {{ old('office_level') == 0 ? 'selected' : '' }}>SDO</option>
                                     <option value="-1" {{ old('office_level') == -1 ? 'selected' : '' }}>Field</option>
                                 </select>
@@ -141,11 +141,11 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label for="#">Template</label>
+                                <label for="#">Scoring Template</label>
                                 <select type="text" class="form-control" placeholder="Enter status" 
                                     name="template_id" class="@error('template_id') is-invalid @enderror"
                                     value="{{ old('template_id') }}">
-                                    <option value="">---select---</option>
+                                    <option value="">---select scoring template---</option>
                                     @foreach($templates as $template)
                                         <option value="{{ $template->id }}" {{ $template->id == old('template_id') ? 'selected' : '' }}>{{ $template->type }}</option>
                                     @endforeach
@@ -153,6 +153,9 @@
                                 @error('template_id')
                                     <span class="text-danger"><small>{{ $message }}</small></span>
                                 @enderror
+                                <small class="form-text text-muted">
+                                    Managed centrally under <a href="{{ route('admin.scoring_templates.index') }}" target="_blank">Scoring Templates</a>.
+                                </small>
                             </div>                            
                         </div>
                         <div class="card-footer">
