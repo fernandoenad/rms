@@ -440,6 +440,89 @@
                                                 @endif
                                             </tbody>
                                         </table>
+                                        @if($exams->isNotEmpty() || $skillTests->isNotEmpty())
+                                            <div class="modal fade assessment-start-modal assessment-availability-notice"
+                                                 id="assessmentAvailabilityNotice"
+                                                 tabindex="-1"
+                                                 aria-labelledby="assessmentAvailabilityNoticeLabel"
+                                                 aria-hidden="true"
+                                                 data-backdrop="static"
+                                                 data-keyboard="false">
+                                                <div class="modal-dialog modal-lg assessment-start-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header bg-warning">
+                                                            <div>
+                                                                <h5 class="modal-title mb-0" id="assessmentAvailabilityNoticeLabel">
+                                                                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                                                                    Important Assessment Reminder
+                                                                </h5>
+                                                                <small>Your application currently has assessment activity under the Assessment tab.</small>
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <div class="alert alert-danger">
+                                                                <strong>There is no practice or trial assessment in RMS.</strong>
+                                                                Any Written Test or Skills Test shown under your Assessment tab is an official assessment.
+                                                            </div>
+
+                                                            <p class="mb-2">
+                                                                Please take an assessment <strong>only during the schedule officially assigned or announced to you</strong>
+                                                                and only when you are ready to complete it.
+                                                            </p>
+
+                                                            <ul class="pl-4 mb-3">
+                                                                <li class="mb-2">
+                                                                    Seeing an assessment in this portal does not mean it should be opened early for practice.
+                                                                </li>
+                                                                <li class="mb-2">
+                                                                    Once you press the final <strong>Start</strong> button, a real attempt is created and the official timer begins.
+                                                                </li>
+                                                                <li class="mb-2">
+                                                                    If you start an assessment and leave it unfinished until the allowed time expires, RMS may automatically finalize the attempt using whatever responses or submission are present at that time. Unanswered or blank work receives no credit and can result in a score of zero.
+                                                                </li>
+                                                                <li class="mb-2">
+                                                                    Do not start merely to inspect the questions, task, or interface. Wait for your authorized schedule.
+                                                                </li>
+                                                            </ul>
+
+                                                            <div class="card border-info mb-3">
+                                                                <div class="card-body py-3">
+                                                                    <strong>Assessment(s) currently visible in your application</strong>
+                                                                    <div class="mt-2">
+                                                                        @if($exams->isNotEmpty())
+                                                                            <span class="badge badge-primary mr-1">
+                                                                                <i class="fas fa-file-alt mr-1"></i>
+                                                                                Written Test{{ $exams->count() > 1 ? 's' : '' }}: {{ $exams->count() }}
+                                                                            </span>
+                                                                        @endif
+                                                                        @if($skillTests->isNotEmpty())
+                                                                            <span class="badge badge-info mr-1">
+                                                                                <i class="fas fa-tools mr-1"></i>
+                                                                                Skills Test{{ $skillTests->count() > 1 ? 's' : '' }}: {{ $skillTests->count() }}
+                                                                            </span>
+                                                                        @endif
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="alert alert-light border mb-0">
+                                                                <strong>Before starting:</strong>
+                                                                confirm your schedule, use a stable connection and suitable device, and make sure you have enough uninterrupted time to finish.
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button"
+                                                                    class="btn btn-primary"
+                                                                    data-dismiss="modal"
+                                                                    id="assessmentAvailabilityNoticeAcknowledge">
+                                                                <i class="fas fa-check mr-1"></i> I Understand
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endif
+
                                         {{-- Pre-test instruction modals: the start POST is intentionally inside
                                              the modal so merely opening/reading the instructions never starts a timer. --}}
                                         @foreach($exams as $exam)
@@ -861,6 +944,20 @@
         line-height: 1.35;
     }
 
+    .assessment-availability-notice .modal-header {
+        border-bottom: 0;
+    }
+
+    .assessment-availability-notice .modal-body {
+        font-size: .98rem;
+    }
+
+    .assessment-availability-notice .badge {
+        font-size: .85rem;
+        padding: .5rem .65rem;
+        margin-bottom: .35rem;
+    }
+
     @media (max-width: 576px) {
         .assessment-start-modal {
             padding-right: 0 !important;
@@ -966,6 +1063,38 @@
                 document.body.appendChild(modal);
             }
         });
+
+        var availabilityNotice = document.getElementById('assessmentAvailabilityNotice');
+        if (availabilityNotice) {
+            prepareAssessmentModal(availabilityNotice);
+
+            if (window.jQuery && jQuery.fn && jQuery.fn.modal) {
+                jQuery(availabilityNotice).modal({
+                    backdrop: 'static',
+                    keyboard: false,
+                    show: true
+                });
+            } else {
+                // Defensive fallback: keep the reminder visible even if the
+                // Bootstrap modal plugin fails to initialize.
+                availabilityNotice.classList.add('show');
+                availabilityNotice.style.display = 'block';
+                availabilityNotice.setAttribute('aria-modal', 'true');
+                availabilityNotice.removeAttribute('aria-hidden');
+                document.body.classList.add('modal-open');
+
+                var acknowledge = document.getElementById('assessmentAvailabilityNoticeAcknowledge');
+                if (acknowledge) {
+                    acknowledge.addEventListener('click', function () {
+                        availabilityNotice.classList.remove('show');
+                        availabilityNotice.style.display = 'none';
+                        availabilityNotice.setAttribute('aria-hidden', 'true');
+                        availabilityNotice.removeAttribute('aria-modal');
+                        document.body.classList.remove('modal-open');
+                    });
+                }
+            }
+        }
 
         // Preserve tab preference when storage is available, but never let
         // iOS Chrome/Safari storage restrictions stop the assessment controls.
