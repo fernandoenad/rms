@@ -7,6 +7,7 @@ use App\Models\Application;
 use App\Models\AssessmentAccommodation;
 use App\Models\AssessmentAiGenerationRun;
 use App\Models\AssessmentGroup;
+use App\Models\AssessmentAttemptEvent;
 use App\Models\AssessmentGroupAttemptLock;
 use App\Models\AssessmentIncident;
 use App\Models\AssessmentTimeExtension;
@@ -617,7 +618,6 @@ class AssessmentGroupController extends Controller
             ->with([
                 'application:id,application_code,first_name,middle_name,last_name',
                 'exam:id,assessment_group_id,title,set_code',
-                'events' => fn ($q) => $q->orderByDesc('event_at')->limit(20),
                 'timeExtensions' => fn ($q) => $q->with('creator:id,name,email')->orderByDesc('id'),
                 'incidents' => fn ($q) => $q->where('status','open')->latest(),
             ])
@@ -627,6 +627,22 @@ class AssessmentGroupController extends Controller
             ->orderByDesc('started_at')
             ->paginate(50)
             ->withQueryString();
+
+        $attemptIds = $attempts->getCollection()->pluck('id')->all();
+        if ($attemptIds) {
+            $eventsByAttempt = AssessmentAttemptEvent::whereIn('exam_attempt_id', $attemptIds)
+                ->orderByDesc('event_at')
+                ->get()
+                ->groupBy('exam_attempt_id')
+                ->map(fn ($events) => $events->take(20)->values());
+
+            $attempts->getCollection()->each(function ($attempt) use ($eventsByAttempt) {
+                $attempt->setRelation(
+                    'events',
+                    $eventsByAttempt->get($attempt->id, collect())
+                );
+            });
+        }
 
         $setSummary = $analytics->setSummary($assessmentGroup);
         $comparabilityWarnings = $analytics->comparabilityWarnings($setSummary);
