@@ -189,6 +189,39 @@
                                 </form>
                                 @endif
 
+                                <div class="mt-3 pt-2 border-top">
+                                    <strong class="text-danger">Remove Attempt & Allow Retake</strong>
+                                    @php
+                                        $hardResetBlocked = ((int)$attempt->status === 3)
+                                            || ($assessmentGroup->scoresAreReleased() && (int)$attempt->status === 2)
+                                            || ($attempt->scored_at && $assessmentGroup->scores_synced_at);
+                                    @endphp
+
+                                    @if(!$hardResetBlocked)
+                                        <div class="small text-muted mb-2">
+                                            Use this only for failed, corrupted, or invalid attempts caused by a technical/system issue. This permanently removes the attempt, its answers and attempt history, and clears the equivalent-set lock so the applicant can start again under the current schedule.
+                                        </div>
+                                        <form method="post"
+                                              action="{{ route('admin.assessment_groups.attempts.destroy',[$assessmentGroup,$attempt]) }}"
+                                              onsubmit="return confirm('Permanently remove this Written Test attempt and allow the applicant to retake? This cannot be undone.');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <textarea name="reason"
+                                                      class="form-control form-control-sm mb-2"
+                                                      rows="2"
+                                                      required
+                                                      placeholder="Required reason, e.g. system error during assessment"></textarea>
+                                            <button class="btn btn-sm btn-danger">
+                                                <i class="fas fa-trash-restore mr-1"></i> Remove Attempt & Allow Retake
+                                            </button>
+                                        </form>
+                                    @else
+                                        <div class="small text-muted">
+                                            This attempt cannot be hard-reset because it is voided or its score may already be official/released. Use <strong>Controlled Retake</strong> so the original score and audit history remain preserved.
+                                        </div>
+                                    @endif
+                                </div>
+
                                 @if($attempt->void_reason)
                                     <div class="small text-muted mt-2"><strong>Void reason:</strong> {{ $attempt->void_reason }}</div>
                                 @endif

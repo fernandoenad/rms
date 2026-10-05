@@ -774,6 +774,72 @@ class AssessmentGroupController extends Controller
         return back()->with('status', 'Incident resolved.');
     }
 
+    public function removeAttempt(
+        Request $request,
+        AssessmentGroup $assessmentGroup,
+        ExamAttempt $attempt,
+        AssessmentGovernanceService $governance
+    ) {
+        abort_unless((int) optional($attempt->exam)->assessment_group_id === (int) $assessmentGroup->id, 404);
+
+        $data = $request->validate([
+            'reason' => 'required|string|max:2000',
+        ]);
+
+        if ((int) $attempt->status === 3) {
+            return back()->with('status', 'This attempt is already voided. Use the existing controlled-retake record instead of hard-resetting it.');
+        }
+
+        if ($assessmentGroup->scoresAreReleased() && (int) $attempt->status === 2) {
+            return back()->with(
+                'status',
+                'This submitted attempt belongs to an assessment whose scores are already released. Use Controlled Retake so the official score and audit history remain intact.'
+            );
+        }
+
+        if ($attempt->scored_at && $assessmentGroup->scores_synced_at) {
+            return back()->with(
+                'status',
+                'This attempt has already been synchronized to the official applicant score. Use Controlled Retake instead of removing it.'
+            );
+        }
+
+        $attemptId = (int) $attempt->id;
+        $applicationId = (int) $attempt->application_id;
+        $examId = (int) $attempt->exam_id;
+        $attemptStatus = (int) $attempt->status;
+        $startedAt = optional($attempt->started_at)->toIso8601String();
+        $endedAt = optional($attempt->ended_at)->toIso8601String();
+        $percentage = $attempt->percentage;
+
+        DB::transaction(function () use ($assessmentGroup, $attempt, $applicationId) {
+            AssessmentGroupAttemptLock::where('assessment_group_id', $assessmentGroup->id)
+                ->where('application_id', $applicationId)
+                ->delete();
+
+            $attempt->delete();
+        });
+
+        $governance->log('written_attempt_removed_for_retake', [
+            'assessment_group_id' => $assessmentGroup->id,
+            'exam_id' => $examId,
+        ], [
+            'attempt_id' => $attemptId,
+            'application_id' => $applicationId,
+            'previous_status' => $attemptStatus,
+            'started_at' => $startedAt,
+            'ended_at' => $endedAt,
+            'percentage' => $percentage,
+            'reason' => $data['reason'],
+            'removed_by' => auth()->id(),
+        ]);
+
+        return back()->with(
+            'status',
+            'Written-test attempt removed. The applicant may start again, subject to the current assessment schedule and equivalent-set rules.'
+        );
+    }
+
     public function voidAndRetake(
         Request $request,
         AssessmentGroup $assessmentGroup,
