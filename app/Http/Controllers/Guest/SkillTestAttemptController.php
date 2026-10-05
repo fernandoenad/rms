@@ -254,7 +254,8 @@ class SkillTestAttemptController extends Controller
 
     public function timeStatus(Request $request, SkillTestAttempt $attempt)
     {
-        $attempt = $this->ownedAttempt($request, $attempt);
+        $attempt->load('application', 'skillTest');
+        $this->authorizeAccess($request, $attempt->application, $attempt->skillTest);
 
         if ((int) $attempt->status === 2) {
             return response()->json([
