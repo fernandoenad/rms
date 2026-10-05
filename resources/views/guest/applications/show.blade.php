@@ -448,7 +448,7 @@
                                                     && (!$exam->end_date || now()->lt($exam->end_date));
                                             @endphp
                                             @if(!$attempt && $hasAssessmentRel && $examOpen)
-                                                <div class="modal fade" id="writtenStartModal{{ $exam->id }}" tabindex="-1" aria-labelledby="writtenStartLabel{{ $exam->id }}" aria-hidden="true">
+                                                <div class="modal fade assessment-start-modal" id="writtenStartModal{{ $exam->id }}" tabindex="-1" aria-labelledby="writtenStartLabel{{ $exam->id }}" aria-hidden="true">
                                                     <div class="modal-dialog modal-lg modal-dialog-scrollable">
                                                         <div class="modal-content">
                                                             <div class="modal-header bg-light">
@@ -508,13 +508,15 @@
                                                                     @endif
                                                                 </ol>
 
-                                                                <div class="custom-control custom-checkbox mt-3">
+                                                                <div class="assessment-start-ack-wrap">
+                                                                    <div class="custom-control custom-checkbox">
                                                                     <input type="checkbox" class="custom-control-input assessment-start-ack"
                                                                            id="writtenAck{{ $exam->id }}"
                                                                            data-target="#writtenStartBtn{{ $exam->id }}">
                                                                     <label class="custom-control-label" for="writtenAck{{ $exam->id }}">
                                                                         I have read the instructions and I am ready to begin.
                                                                     </label>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                             <div class="modal-footer">
@@ -544,7 +546,7 @@
                                                 $skillExtensions = $skillTest->allowed_extensions ?: [];
                                             @endphp
                                             @if(!$skillAttempt && $hasAssessmentRel && $skillOpen)
-                                                <div class="modal fade" id="skillStartModal{{ $skillTest->id }}" tabindex="-1" aria-labelledby="skillStartLabel{{ $skillTest->id }}" aria-hidden="true">
+                                                <div class="modal fade assessment-start-modal" id="skillStartModal{{ $skillTest->id }}" tabindex="-1" aria-labelledby="skillStartLabel{{ $skillTest->id }}" aria-hidden="true">
                                                     <div class="modal-dialog modal-lg modal-dialog-scrollable">
                                                         <div class="modal-content">
                                                             <div class="modal-header bg-light">
@@ -631,6 +633,7 @@
                                                                     <label class="custom-control-label" for="skillAck{{ $skillTest->id }}">
                                                                         I have read the instructions and I am ready to begin.
                                                                     </label>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                             <div class="modal-footer">
@@ -772,38 +775,136 @@
     </section>
 @endsection 
 
-@section('js')
-<script>
-    // Store the active tab in local storage
-    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        localStorage.setItem('activeTab', $(e.target).attr('href'));
-    });
-
-    // Get the active tab from local storage on page load
-    var activeTab = localStorage.getItem('activeTab');
-    if (activeTab) {
-    } else {
-        activeTab = "#my-profile";
+@section('css')
+<style>
+    .assessment-start-modal .modal-body {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
     }
 
-    $(`a[href="${activeTab}"]`).addClass(' active');
-    $(activeTab).addClass(' active');
+    .assessment-start-modal .assessment-start-ack-wrap {
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        background: #fff;
+        border-top: 1px solid #dee2e6;
+        padding: .75rem 0 .25rem;
+        margin-top: 1rem;
+    }
 
-    console.log(activeTab);
-
-    // Acknowledge test instructions before enabling the final start action.
-    $(document).on('change', '.assessment-start-ack', function () {
-        var target = $(this).data('target');
-        $(target).prop('disabled', !this.checked);
-    });
-
-    // Reset acknowledgement if the applicant closes a start modal and reopens it later.
-    $('.modal').on('hidden.bs.modal', function () {
-        var ack = $(this).find('.assessment-start-ack');
-        if (ack.length) {
-            ack.prop('checked', false);
-            $(ack.data('target')).prop('disabled', true);
+    @media (max-width: 576px) {
+        .assessment-start-modal {
+            padding-right: 0 !important;
         }
+
+        .assessment-start-modal .modal-dialog {
+            margin: 0;
+            min-height: 100%;
+            max-width: none;
+        }
+
+        .assessment-start-modal .modal-content {
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            border: 0;
+            border-radius: 0;
+        }
+
+        .assessment-start-modal .modal-header,
+        .assessment-start-modal .modal-footer {
+            flex-shrink: 0;
+        }
+
+        .assessment-start-modal .modal-body {
+            max-height: none !important;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .assessment-start-modal .modal-footer {
+            position: sticky;
+            bottom: 0;
+            z-index: 3;
+            background: #fff;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .assessment-start-modal .modal-footer .btn {
+            min-height: 44px;
+        }
+    }
+</style>
+@overwrite
+
+@section('js')
+<script>
+(function () {
+    function safeStorageGet(key) {
+        try { return window.localStorage ? localStorage.getItem(key) : null; }
+        catch (e) { return null; }
+    }
+
+    function safeStorageSet(key, value) {
+        try {
+            if (window.localStorage) localStorage.setItem(key, value);
+        } catch (e) {}
+    }
+
+    function setStartButtonState(checkbox) {
+        var target = checkbox.getAttribute('data-target');
+        if (!target) return;
+
+        var button = document.querySelector(target);
+        if (button) button.disabled = !checkbox.checked;
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Preserve tab preference when storage is available, but never let
+        // iOS Chrome/Safari storage restrictions stop the assessment controls.
+        var activeTab = safeStorageGet('activeTab') || '#my-profile';
+        var tabLink = document.querySelector('a[href="' + activeTab + '"]');
+        var tabPane = document.querySelector(activeTab);
+
+        if (tabLink) tabLink.classList.add('active');
+        if (tabPane) tabPane.classList.add('active');
+
+        document.querySelectorAll('.assessment-start-ack').forEach(function (checkbox) {
+            setStartButtonState(checkbox);
+
+            // Native listener is intentionally used here so the Start button
+            // does not depend on jQuery event delegation on iOS Chrome.
+            checkbox.addEventListener('change', function () {
+                setStartButtonState(checkbox);
+            });
+
+            // iOS occasionally delivers touch/click state before change;
+            // re-check on click as a defensive fallback.
+            checkbox.addEventListener('click', function () {
+                setTimeout(function () {
+                    setStartButtonState(checkbox);
+                }, 0);
+            });
+        });
+
+        document.querySelectorAll('a[data-toggle="tab"]').forEach(function (link) {
+            link.addEventListener('click', function () {
+                var href = link.getAttribute('href');
+                if (href) safeStorageSet('activeTab', href);
+            });
+        });
     });
+
+    // Keep Bootstrap modal reset behavior when jQuery/Bootstrap is present,
+    // but failure here must not affect the native acknowledgement controls.
+    if (window.jQuery) {
+        jQuery(document).on('hidden.bs.modal', '.assessment-start-modal', function () {
+            var checkbox = this.querySelector('.assessment-start-ack');
+            if (checkbox) {
+                checkbox.checked = false;
+                setStartButtonState(checkbox);
+            }
+        });
+    }
+})();
 </script>
 @endsection
