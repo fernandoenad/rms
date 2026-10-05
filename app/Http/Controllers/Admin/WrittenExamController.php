@@ -781,8 +781,11 @@ class WrittenExamController extends Controller
 
     public function preview(Exam $exam, AssessmentGovernanceService $governance)
     {
-        $exam->load(['vacancy','assessmentGroup','writtenExams.options']);
-        $readiness = $governance->readiness($exam);
+        // Preview should be fast and applicant-facing. The full similarity scan
+        // can compare every active item against up to 250 bank items and is
+        // intentionally reserved for publish/review validation.
+        $exam->load(['assessmentGroup', 'writtenExams.options']);
+        $readiness = $governance->readiness($exam, false);
         $infrastructure = $governance->infrastructureReadiness();
 
         return view('admin.assessments.preview', compact('exam','readiness','infrastructure'));
