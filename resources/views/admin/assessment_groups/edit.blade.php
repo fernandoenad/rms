@@ -134,6 +134,26 @@
                 <button class="btn btn-warning btn-sm">Pause New Starts</button>
             </form>
             <div class="d-flex flex-wrap align-items-center mt-2 assessment-group-actions">
+                @if($assessmentGroup->score_release_policy==='manual')
+                    @if($assessmentGroup->scores_released_at)
+                        <form method="post" action="{{ route('admin.assessment_groups.hide_scores',$assessmentGroup) }}" class="mr-2 mb-2">
+                            @csrf
+                            <button class="btn btn-sm btn-outline-warning">
+                                <i class="fas fa-eye-slash mr-1"></i> Withdraw Manual Release
+                            </button>
+                        </form>
+                    @else
+                        <form method="post" action="{{ route('admin.assessment_groups.release_scores',$assessmentGroup) }}"
+                              class="mr-2 mb-2"
+                              onsubmit="return confirm('Release official Written Test scores for all equivalent sets in this group?');">
+                            @csrf
+                            <button class="btn btn-sm btn-success">
+                                <i class="fas fa-check-circle mr-1"></i> Release Official Scores for All Sets
+                            </button>
+                        </form>
+                    @endif
+                @endif
+
                 <form method="post" action="{{ route('admin.assessment_groups.archive',$assessmentGroup) }}"
                       class="mr-2 mb-2"
                       onsubmit="return confirm('Archive and freeze this written assessment? This is blocked while attempts are in progress.');">
@@ -401,13 +421,21 @@
             <div class="card-header"><strong>Score Visibility</strong></div>
             <div class="card-body">
                 <p class="mb-2">Policy: <strong>{{ ucfirst(str_replace('_',' ',$assessmentGroup->score_release_policy)) }}</strong></p>
-                <p class="small text-muted">Released at: {{ optional($assessmentGroup->scores_released_at)->format('M d, Y h:i A') ?: 'Not manually released' }}</p>
-                <form method="post" action="{{ route('admin.assessment_groups.release_scores',$assessmentGroup) }}" class="d-inline">@csrf
-                    <button class="btn btn-success btn-sm" {{ $assessmentGroup->score_release_policy!=='manual'?'disabled':'' }}>Release Scores</button>
-                </form>
-                <form method="post" action="{{ route('admin.assessment_groups.hide_scores',$assessmentGroup) }}" class="d-inline">@csrf
-                    <button class="btn btn-outline-secondary btn-sm" {{ in_array($assessmentGroup->score_release_policy,['immediate','after_close'],true)?'disabled':'' }}>Hide Scores</button>
-                </form>
+                @if($assessmentGroup->score_release_policy==='manual')
+                    @if($assessmentGroup->scores_released_at)
+                        <p class="mb-1"><span class="badge badge-success">Released to applicants</span></p>
+                        <p class="small text-muted mb-0">Released at: {{ $assessmentGroup->scores_released_at->format('M d, Y h:i A') }}</p>
+                    @else
+                        <p class="mb-1"><span class="badge badge-secondary">Not yet released</span></p>
+                        <p class="small text-muted mb-0">Use <strong>Release Official Scores for All Sets</strong> under Operational Control above.</p>
+                    @endif
+                @elseif($assessmentGroup->score_release_policy==='immediate')
+                    <p class="mb-0"><span class="badge badge-info">Automatic</span> <span class="small text-muted">Scores become visible immediately after submission.</span></p>
+                @elseif($assessmentGroup->score_release_policy==='after_close')
+                    <p class="mb-0"><span class="badge badge-info">Automatic</span> <span class="small text-muted">Scores become visible after all set schedules close.</span></p>
+                @else
+                    <p class="mb-0"><span class="badge badge-secondary">Hidden</span> <span class="small text-muted">Scores remain hidden from applicants.</span></p>
+                @endif
             </div>
         </div>
     </div>
