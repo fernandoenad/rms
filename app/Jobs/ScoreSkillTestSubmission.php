@@ -58,13 +58,25 @@ class ScoreSkillTestSubmission implements ShouldQueue
             return;
         }
 
-        $evaluation = SkillTestAiEvaluation::create([
-            'skill_test_attempt_id' => $attempt->id,
-            'status' => 'processing',
-            'provider' => 'openai',
-            'prompt_version' => 'v1',
-            'started_at' => now(),
-        ]);
+        $evaluation = SkillTestAiEvaluation::where('skill_test_attempt_id', $attempt->id)
+            ->where('status', 'pending')
+            ->latest('id')
+            ->first();
+
+        if ($evaluation) {
+            $evaluation->update([
+                'status' => 'processing',
+                'started_at' => now(),
+            ]);
+        } else {
+            $evaluation = SkillTestAiEvaluation::create([
+                'skill_test_attempt_id' => $attempt->id,
+                'status' => 'processing',
+                'provider' => 'openai',
+                'prompt_version' => 'v1',
+                'started_at' => now(),
+            ]);
+        }
 
         try {
             $text = trim((string) $submission->inline_response);
