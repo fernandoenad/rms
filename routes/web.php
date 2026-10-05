@@ -234,6 +234,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::post('/admin/assessment/{exam}/assign', [AdminWrittenExam::class, 'assignApplicants'])->name('admin.assessments.assign');
     Route::delete('/admin/assessment/{exam}', [AdminWrittenExam::class, 'destroy'])->name('admin.assessments.destroy');
     Route::get('/admin/assessment/{exam}/results', [AdminWrittenExam::class, 'results'])->name('admin.assessments.results');
+    Route::get('/admin/assessment/{exam}/results/export', [AdminWrittenExam::class, 'exportResultsCsv'])->name('admin.assessments.results.export');
     Route::delete('/admin/assessment/{exam}/attempts/{attempt}', [AdminWrittenExam::class, 'destroyAttempt'])
         ->middleware('assessment.capability:monitor')
         ->name('admin.assessments.attempts.destroy');
