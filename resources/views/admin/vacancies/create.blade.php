@@ -147,7 +147,7 @@
                                     value="{{ old('template_id') }}">
                                     <option value="">---select scoring template---</option>
                                     @foreach($templates as $template)
-                                        <option value="{{ $template->id }}" {{ $template->id == old('template_id') ? 'selected' : '' }}>{{ $template->type }}</option>
+                                        <option value="{{ $template->id }}" {{ $template->id == old('template_id') ? 'selected' : '' }}>{{ $template->type }} — v{{ $template->version ?? 1 }} ({{ number_format($template->criteria->sum('max_points'),3) }} pts)</option>
                                     @endforeach
                                 </select>
                                 @error('template_id')
