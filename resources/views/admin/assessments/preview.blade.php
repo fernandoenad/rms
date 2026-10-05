@@ -14,6 +14,9 @@
             <div class="card-body">
                 @if($readiness['ready'])<span class="badge badge-success">Assessment content ready</span>
                 @else<ul class="mb-0">@foreach($readiness['issues'] as $issue)<li>{{ $issue }}</li>@endforeach</ul>@endif
+                <div class="small text-muted mt-2">
+                    Preview uses structural readiness only for faster loading. Full content-bank similarity validation still runs during publish/review.
+                </div>
             </div>
         </div>
     </div>
