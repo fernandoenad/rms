@@ -208,6 +208,9 @@ Route::group(['middleware' => ['active']], function () {
     Route::post('/admin/assessment-groups/{assessmentGroup}/incidents', [AdminAssessmentGroup::class, 'incident'])->name('admin.assessment_groups.incidents.store');
     Route::put('/admin/assessment-groups/{assessmentGroup}/incidents/{incident}/resolve', [AdminAssessmentGroup::class, 'resolveIncident'])->name('admin.assessment_groups.incidents.resolve');
     Route::post('/admin/assessment-groups/{assessmentGroup}/attempts/{attempt}/void-retake', [AdminAssessmentGroup::class, 'voidAndRetake'])->name('admin.assessment_groups.attempts.void_retake');
+    Route::delete('/admin/assessment-groups/{assessmentGroup}/attempts/{attempt}', [AdminAssessmentGroup::class, 'removeAttempt'])
+        ->middleware('assessment.capability:monitor')
+        ->name('admin.assessment_groups.attempts.destroy');
     Route::put('/admin/assessment-groups/{assessmentGroup}', [AdminAssessmentGroup::class, 'update'])->middleware('assessment.capability:author')->name('admin.assessment_groups.update');
     Route::delete('/admin/assessment-groups/{assessmentGroup}', [AdminAssessmentGroup::class, 'destroy'])->name('admin.assessment_groups.destroy');
 
