@@ -509,14 +509,13 @@
                                                                 </ol>
 
                                                                 <div class="assessment-start-ack-wrap">
-                                                                    <div class="custom-control custom-checkbox">
-                                                                        <input type="checkbox" class="custom-control-input assessment-start-ack"
+                                                                    <label class="assessment-start-ack-label" for="writtenAck{{ $exam->id }}">
+                                                                        <input type="checkbox"
+                                                                               class="assessment-start-ack"
                                                                                id="writtenAck{{ $exam->id }}"
                                                                                data-target="#writtenStartBtn{{ $exam->id }}">
-                                                                        <label class="custom-control-label" for="writtenAck{{ $exam->id }}">
-                                                                            I have read the instructions and I am ready to begin.
-                                                                        </label>
-                                                                    </div>
+                                                                        <span>I have read the instructions and I am ready to begin.</span>
+                                                                    </label>
                                                                 </div>
                                                             </div>
                                                             <div class="modal-footer">
@@ -627,14 +626,13 @@
                                                                 </ol>
 
                                                                 <div class="assessment-start-ack-wrap">
-                                                                    <div class="custom-control custom-checkbox">
-                                                                        <input type="checkbox" class="custom-control-input assessment-start-ack"
+                                                                    <label class="assessment-start-ack-label" for="skillAck{{ $skillTest->id }}">
+                                                                        <input type="checkbox"
+                                                                               class="assessment-start-ack"
                                                                                id="skillAck{{ $skillTest->id }}"
                                                                                data-target="#skillStartBtn{{ $skillTest->id }}">
-                                                                        <label class="custom-control-label" for="skillAck{{ $skillTest->id }}">
-                                                                            I have read the instructions and I am ready to begin.
-                                                                        </label>
-                                                                    </div>
+                                                                        <span>I have read the instructions and I am ready to begin.</span>
+                                                                    </label>
                                                                 </div>
                                                             </div>
                                                             <div class="modal-footer">
@@ -821,6 +819,42 @@
         margin-top: 1rem;
     }
 
+    .assessment-start-modal .assessment-start-ack-label {
+        display: flex;
+        align-items: flex-start;
+        gap: .75rem;
+        width: 100%;
+        min-height: 48px;
+        margin: 0;
+        padding: .75rem;
+        border: 1px solid #ced4da;
+        border-radius: .375rem;
+        background: #fff;
+        cursor: pointer;
+        -webkit-tap-highlight-color: rgba(0,0,0,.08);
+        touch-action: manipulation;
+        user-select: none;
+        -webkit-user-select: none;
+    }
+
+    .assessment-start-modal .assessment-start-ack {
+        position: static !important;
+        flex: 0 0 auto;
+        width: 24px;
+        height: 24px;
+        margin: 0;
+        margin-top: 1px;
+        opacity: 1 !important;
+        appearance: auto;
+        -webkit-appearance: checkbox;
+        pointer-events: auto !important;
+    }
+
+    .assessment-start-modal .assessment-start-ack-label span {
+        display: block;
+        line-height: 1.35;
+    }
+
     @media (max-width: 576px) {
         .assessment-start-modal {
             padding-right: 0 !important;
@@ -927,19 +961,28 @@
         document.querySelectorAll('.assessment-start-ack').forEach(function (checkbox) {
             setStartButtonState(checkbox);
 
-            // Native listener is intentionally used here so the Start button
-            // does not depend on jQuery event delegation on iOS Chrome.
+            checkbox.addEventListener('input', function () {
+                setStartButtonState(checkbox);
+            });
+
             checkbox.addEventListener('change', function () {
                 setStartButtonState(checkbox);
             });
 
-            // iOS occasionally delivers touch/click state before change;
-            // re-check on click as a defensive fallback.
             checkbox.addEventListener('click', function () {
                 setTimeout(function () {
                     setStartButtonState(checkbox);
                 }, 0);
             });
+
+            var label = checkbox.closest('.assessment-start-ack-label');
+            if (label) {
+                label.addEventListener('touchend', function () {
+                    setTimeout(function () {
+                        setStartButtonState(checkbox);
+                    }, 0);
+                }, {passive:true});
+            }
         });
 
         document.querySelectorAll('a[data-toggle="tab"]').forEach(function (link) {
