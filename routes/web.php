@@ -234,7 +234,9 @@ Route::group(['middleware' => ['active']], function () {
     Route::post('/admin/assessment/{exam}/assign', [AdminWrittenExam::class, 'assignApplicants'])->name('admin.assessments.assign');
     Route::delete('/admin/assessment/{exam}', [AdminWrittenExam::class, 'destroy'])->name('admin.assessments.destroy');
     Route::get('/admin/assessment/{exam}/results', [AdminWrittenExam::class, 'results'])->name('admin.assessments.results');
-    Route::delete('/admin/assessment/{exam}/attempts/{attempt}', [AdminWrittenExam::class, 'destroyAttempt'])->name('admin.assessments.attempts.destroy');
+    Route::delete('/admin/assessment/{exam}/attempts/{attempt}', [AdminWrittenExam::class, 'destroyAttempt'])
+        ->middleware('assessment.capability:monitor')
+        ->name('admin.assessments.attempts.destroy');
     Route::get('/admin/assessment/{exam}/items', [AdminWrittenExamItem::class, 'index'])->name('admin.assessments.items.index');
     Route::get('/admin/assessment/{exam}/items/generation-status', [AdminWrittenExamItem::class, 'generationStatus'])->name('admin.assessments.items.generation_status');
     Route::get('/admin/assessment/{exam}/items/create', [AdminWrittenExamItem::class, 'create'])->name('admin.assessments.items.create');
