@@ -105,9 +105,9 @@ class AssessmentCenterController extends Controller
         ];
 
         $skillAttempts = SkillTestAttempt::query()
-            ->selectRaw('SUM(CASE WHEN status = 1 AND started_at IS NOT NULL AND ended_at IS NULL AND expires_at IS NOT NULL AND expires_at > ? THEN 1 ELSE 0 END) as taking_now', [$now])
-            ->selectRaw('SUM(CASE WHEN status = 1 AND started_at IS NOT NULL AND ended_at IS NULL AND expires_at IS NOT NULL AND expires_at <= ? THEN 1 ELSE 0 END) as awaiting_timeout', [$now])
-            ->selectRaw('SUM(CASE WHEN status = 1 AND (started_at IS NULL OR expires_at IS NULL OR ended_at IS NOT NULL) THEN 1 ELSE 0 END) as malformed_in_progress')
+            ->selectRaw('SUM(CASE WHEN status = 1 AND started_at IS NOT NULL AND submitted_at IS NULL AND expires_at IS NOT NULL AND expires_at > ? THEN 1 ELSE 0 END) as taking_now', [$now])
+            ->selectRaw('SUM(CASE WHEN status = 1 AND started_at IS NOT NULL AND submitted_at IS NULL AND expires_at IS NOT NULL AND expires_at <= ? THEN 1 ELSE 0 END) as awaiting_timeout', [$now])
+            ->selectRaw('SUM(CASE WHEN status = 1 AND (started_at IS NULL OR expires_at IS NULL OR submitted_at IS NOT NULL) THEN 1 ELSE 0 END) as malformed_in_progress')
             ->selectRaw('SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as submitted')
             ->selectRaw('SUM(CASE WHEN status = 2 AND final_score IS NULL THEN 1 ELSE 0 END) as pending_human')
             ->first();
@@ -238,7 +238,7 @@ class AssessmentCenterController extends Controller
                         'attempts as active_attempts_count' => fn ($attempts) => $attempts
                             ->where('status',1)
                             ->whereNotNull('started_at')
-                            ->whereNull('ended_at')
+                            ->whereNull('submitted_at')
                             ->whereNotNull('expires_at')
                             ->where('expires_at','>',$now),
                     ]),
@@ -459,7 +459,7 @@ class AssessmentCenterController extends Controller
             ])
             ->where('status',1)
             ->whereNotNull('started_at')
-            ->whereNull('ended_at')
+            ->whereNull('submitted_at')
             ->whereNotNull('expires_at')
             ->where('expires_at','>',$now)
             ->orderByDesc('started_at')
