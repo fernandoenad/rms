@@ -778,6 +778,11 @@
 <style>
     .assessment-start-modal {
         --rms-modal-height: 100vh;
+        position: fixed !important;
+        inset: 0;
+        width: 100%;
+        height: var(--rms-modal-height);
+        z-index: 1050;
     }
 
     .assessment-start-modal .assessment-start-dialog {
@@ -949,6 +954,18 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        // Important for iOS Chrome/WebKit:
+        // these modals are rendered inside the assessment card/tab markup.
+        // If any ancestor establishes a transformed/scrolling containing block,
+        // WebKit can keep a fixed-position Bootstrap modal visually trapped
+        // inside that card instead of the viewport. Move assessment-start
+        // modals directly under <body> so they always behave as true overlays.
+        document.querySelectorAll('.assessment-start-modal').forEach(function (modal) {
+            if (modal.parentElement !== document.body) {
+                document.body.appendChild(modal);
+            }
+        });
+
         // Preserve tab preference when storage is available, but never let
         // iOS Chrome/Safari storage restrictions stop the assessment controls.
         var activeTab = safeStorageGet('activeTab') || '#my-profile';
