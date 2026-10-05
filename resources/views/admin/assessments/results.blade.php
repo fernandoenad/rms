@@ -1,6 +1,14 @@
 @extends('adminlte::page')
 @section('title','Written Exam Results')
-@section('content_header')<h1>{{ $exam->title }} — Results</h1>@stop
+@section('content_header')
+<div class="d-flex justify-content-between align-items-center flex-wrap">
+    <h1 class="mb-0">{{ $exam->title }} — Results</h1>
+    <a href="{{ route('admin.assessments.results.export', array_merge(['exam'=>$exam], request()->except('page'))) }}"
+       class="btn btn-outline-success mt-2 mt-md-0">
+        <i class="fas fa-file-csv mr-1"></i> Download CSV
+    </a>
+</div>
+@stop
 @section('content')
 @if(session('status'))<div class="alert alert-info">{{ session('status') }}</div>@endif
 @php
