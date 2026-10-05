@@ -510,12 +510,12 @@
 
                                                                 <div class="assessment-start-ack-wrap">
                                                                     <div class="custom-control custom-checkbox">
-                                                                    <input type="checkbox" class="custom-control-input assessment-start-ack"
-                                                                           id="writtenAck{{ $exam->id }}"
-                                                                           data-target="#writtenStartBtn{{ $exam->id }}">
-                                                                    <label class="custom-control-label" for="writtenAck{{ $exam->id }}">
-                                                                        I have read the instructions and I am ready to begin.
-                                                                    </label>
+                                                                        <input type="checkbox" class="custom-control-input assessment-start-ack"
+                                                                               id="writtenAck{{ $exam->id }}"
+                                                                               data-target="#writtenStartBtn{{ $exam->id }}">
+                                                                        <label class="custom-control-label" for="writtenAck{{ $exam->id }}">
+                                                                            I have read the instructions and I am ready to begin.
+                                                                        </label>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -626,13 +626,14 @@
                                                                     @endif
                                                                 </ol>
 
-                                                                <div class="custom-control custom-checkbox mt-3">
-                                                                    <input type="checkbox" class="custom-control-input assessment-start-ack"
-                                                                           id="skillAck{{ $skillTest->id }}"
-                                                                           data-target="#skillStartBtn{{ $skillTest->id }}">
-                                                                    <label class="custom-control-label" for="skillAck{{ $skillTest->id }}">
-                                                                        I have read the instructions and I am ready to begin.
-                                                                    </label>
+                                                                <div class="assessment-start-ack-wrap">
+                                                                    <div class="custom-control custom-checkbox">
+                                                                        <input type="checkbox" class="custom-control-input assessment-start-ack"
+                                                                               id="skillAck{{ $skillTest->id }}"
+                                                                               data-target="#skillStartBtn{{ $skillTest->id }}">
+                                                                        <label class="custom-control-label" for="skillAck{{ $skillTest->id }}">
+                                                                            I have read the instructions and I am ready to begin.
+                                                                        </label>
                                                                     </div>
                                                                 </div>
                                                             </div>
