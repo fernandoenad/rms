@@ -62,7 +62,12 @@ class VacancyController extends Controller
 
     public function create()
     {
-        $templates = Template::where('status', '=', 1)->get();
+        $templates = Template::where('status', 1)
+            ->whereNull('archived_at')
+            ->with(['criteria' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
+            ->orderBy('type')
+            ->orderByDesc('version')
+            ->get();
 
         return view('admin.vacancies.create', ['templates' => $templates]);
     }
@@ -80,11 +85,16 @@ class VacancyController extends Controller
             'status' => 'required|integer|in:0,1',
             'posting_start_at' => 'nullable|date',
             'posting_end_at' => 'nullable|date',
-            'template_id' => 'required|integer',
+            'template_id' => 'required|integer|exists:templates,id',
         ]);
 
         if (!empty($data['posting_start_at']) && !empty($data['posting_end_at']) && strtotime($data['posting_end_at']) <= strtotime($data['posting_start_at'])) {
             return back()->withErrors(['posting_end_at' => 'Applications Close must be later than Applications Open.'])->withInput();
+        }
+
+        $selectedTemplate = Template::find($data['template_id']);
+        if (!$selectedTemplate || (int)$selectedTemplate->status !== 1 || $selectedTemplate->archived_at) {
+            return back()->withErrors(['template_id' => 'Select an active scoring template.'])->withInput();
         }
 
         $data['level1_status'] = 1;
@@ -97,7 +107,15 @@ class VacancyController extends Controller
 
     public function edit(Vacancy $vacancy)
     {
-        $templates = Template::where('status', '=', 1)->get();
+        $templates = Template::where(function ($query) use ($vacancy) {
+                $query->where(function ($active) {
+                    $active->where('status', 1)->whereNull('archived_at');
+                })->orWhere('id', $vacancy->template_id);
+            })
+            ->with(['criteria' => fn ($q) => $q->where('is_active', true)->orderBy('sort_order')])
+            ->orderBy('type')
+            ->orderByDesc('version')
+            ->get();
 
         return view('admin.vacancies.edit', ['vacancy' => $vacancy, 'templates' => $templates]);
     }
@@ -115,7 +133,7 @@ class VacancyController extends Controller
             'status' => 'required|integer|in:0,1',
             'posting_start_at' => 'nullable|date',
             'posting_end_at' => 'nullable|date|after:posting_start_at',
-            'template_id' => 'required|integer',
+            'template_id' => 'required|integer|exists:templates,id',
             'level1_status' => 'required|integer|in:0,1,2',
             'level2_status' => 'required|integer|in:0,1,2,3',
         ]);

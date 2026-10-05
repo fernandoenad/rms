@@ -141,18 +141,21 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label for="#">Template</label>
+                                <label for="#">Scoring Template</label>
                                 <select type="text" class="form-control" placeholder="Enter status" 
                                     name="template_id" class="@error('template_id') is-invalid @enderror"
                                     value="{{ old('template_id') }}">
-                                    <option value="">---select---</option>
+                                    <option value="">---select scoring template---</option>
                                     @foreach($templates as $template)
-                                        <option value="{{ $template->id }}" {{ $template->id == old('template_id') ? 'selected' : '' }}>{{ $template->type }}</option>
+                                        <option value="{{ $template->id }}" {{ $template->id == old('template_id') ? 'selected' : '' }}>{{ $template->type }} — v{{ $template->version ?? 1 }} ({{ number_format($template->criteria->sum('max_points'),3) }} pts)</option>
                                     @endforeach
                                 </select>
                                 @error('template_id')
                                     <span class="text-danger"><small>{{ $message }}</small></span>
                                 @enderror
+                                <small class="form-text text-muted">
+                                    Managed centrally under <a href="{{ route('admin.scoring_templates.index') }}" target="_blank">Scoring Templates</a>.
+                                </small>
                             </div>                            
                         </div>
                         <div class="card-footer">
