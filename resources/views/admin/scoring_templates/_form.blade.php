@@ -26,7 +26,7 @@
             <div class="card-body">
                 <div class="form-group">
                     <label>Template Name</label>
-                    <input name="type" value="{{ old('type',$template->type) }}" class="form-control" required maxlength="255"
+                    <input name="type" value="{{ old('type',$template->type) }}" class="form-control" required maxlength="255" {{ $inUse?'readonly':'' }}
                            placeholder="e.g. Administrative Officer II">
                 </div>
                 <div class="form-group">
