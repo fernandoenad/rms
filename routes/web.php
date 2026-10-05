@@ -96,6 +96,8 @@ Route::post('/applications/{application}/assessment/{exam}/start', [\App\Http\Co
     ->middleware('throttle:assessment-start')->name('guest.assessments.attempts.start');
 Route::get('/assessments/attempts/{attempt}', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'take'])
     ->middleware('throttle:assessment-take')->name('guest.assessments.attempts.take');
+Route::get('/assessments/attempts/{attempt}/time-status', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'timeStatus'])
+    ->middleware('throttle:assessment-review')->name('guest.assessments.attempts.time_status');
 Route::get('/assessments/attempts/{attempt}/review', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'reviewStatus'])
     ->middleware('throttle:assessment-review')->name('guest.assessments.attempts.review');
 Route::post('/assessments/attempts/{attempt}/answer', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'saveAnswer'])
@@ -108,6 +110,8 @@ Route::post('/applications/{application}/skills/{skillTest}/start', [GuestSkillT
     ->middleware('throttle:skill-start')->name('guest.skills.start');
 Route::get('/skills/attempts/{attempt}', [GuestSkillTestAttempt::class, 'take'])
     ->middleware('throttle:skill-take')->name('guest.skills.attempts.take');
+Route::get('/skills/attempts/{attempt}/time-status', [GuestSkillTestAttempt::class, 'timeStatus'])
+    ->middleware('throttle:assessment-review')->name('guest.skills.attempts.time_status');
 Route::post('/skills/attempts/{attempt}/inline', [GuestSkillTestAttempt::class, 'saveInline'])
     ->middleware('throttle:skill-save')->name('guest.skills.attempts.inline');
 Route::post('/skills/attempts/{attempt}/upload', [GuestSkillTestAttempt::class, 'upload'])
