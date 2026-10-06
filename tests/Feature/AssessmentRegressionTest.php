@@ -267,6 +267,76 @@ class AssessmentRegressionTest extends TestCase
         $this->assertSame(24.0, (float) $fresh->score);
     }
 
+    public function test_written_start_is_blocked_until_application_is_taken_in(): void
+    {
+        Carbon::setTestNow('2026-10-07 09:00:00');
+
+        [$vacancy, $application, $assessment] = $this->makeTakenInApplication();
+        $assessment->delete();
+
+        $exam = Exam::create([
+            'vacancy_id' => $vacancy->id,
+            'title' => 'Standalone Written',
+            'code' => 'WT-ELIGIBILITY',
+            'enrollment_key' => 'ELIGIBILITY-WRITTEN',
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addHour(),
+            'duration' => 30,
+            'access_mode' => 'all_taken_in',
+            'shuffle_items' => true,
+            'shuffle_options' => true,
+            'status' => 1,
+            'approval_status' => 'approved',
+        ]);
+
+        $response = $this
+            ->withSession(['guest_email' => $application->email])
+            ->post(route('guest.assessments.attempts.start', [$application, $exam]));
+
+        $response->assertForbidden();
+        $this->assertDatabaseMissing('exam_attempts', [
+            'exam_id' => $exam->id,
+            'application_id' => $application->id,
+        ]);
+    }
+
+    public function test_skill_start_is_blocked_until_application_is_taken_in(): void
+    {
+        Carbon::setTestNow('2026-10-07 09:00:00');
+
+        [$vacancy, $application, $assessment] = $this->makeTakenInApplication();
+        $assessment->delete();
+
+        $test = SkillTest::create([
+            'vacancy_id' => $vacancy->id,
+            'title' => 'Standalone Skills',
+            'code' => 'ST-ELIGIBILITY',
+            'instructions' => 'Complete the task.',
+            'expected_output' => 'Response',
+            'start_date' => now()->subHour(),
+            'end_date' => now()->addHour(),
+            'duration' => 30,
+            'access_mode' => 'all_taken_in',
+            'submission_modes' => ['inline'],
+            'allowed_extensions' => ['docx'],
+            'max_file_size_kb' => 10240,
+            'ai_scoring' => false,
+            'score_release_policy' => 'manual',
+            'status' => 1,
+            'approval_status' => 'approved',
+        ]);
+
+        $response = $this
+            ->withSession(['guest_email' => $application->email])
+            ->post(route('guest.skills.start', [$application, $test]));
+
+        $response->assertForbidden();
+        $this->assertDatabaseMissing('skill_test_attempts', [
+            'skill_test_id' => $test->id,
+            'application_id' => $application->id,
+        ]);
+    }
+
     public function test_group_release_policies_are_consistent_for_written_and_skills(): void
     {
         Carbon::setTestNow('2026-10-07 09:00:00');
