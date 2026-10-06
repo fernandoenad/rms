@@ -966,6 +966,7 @@ class SkillTestController extends Controller
     }
 
     public function results(
+        Request $request,
         SkillTest $skillTest,
         AssessmentGovernanceService $governance
     ) {
@@ -980,7 +981,21 @@ class SkillTestController extends Controller
             ->selectRaw('AVG(CASE WHEN status = 2 AND final_score IS NOT NULL THEN final_score END) as mean_final_score')
             ->first();
 
-        $attempts = $skillTest->attempts()
+        $search = trim((string) $request->input('q', ''));
+        $statusFilter = (string) $request->input('status', 'all');
+        $aiFilter = (string) $request->input('ai', 'all');
+        $humanFilter = (string) $request->input('human', 'all');
+        $sort = (string) $request->input('sort', 'status');
+        $direction = strtolower((string) $request->input('direction', 'asc')) === 'desc' ? 'desc' : 'asc';
+
+        $allowedSorts = ['applicant', 'status', 'started', 'submitted', 'ai', 'human'];
+        if (!in_array($sort, $allowedSorts, true)) {
+            $sort = 'status';
+        }
+
+        $attemptQuery = $skillTest->attempts()
+            ->select('skill_test_attempts.*')
+            ->leftJoin('applications', 'applications.id', '=', 'skill_test_attempts.application_id')
             ->with([
                 'application',
                 'submissions',
@@ -990,10 +1005,47 @@ class SkillTestController extends Controller
                 'scoreChanges' => fn ($q) => $q->with('changer:id,name,email')->orderByDesc('id'),
                 'incidents' => fn ($q) => $q->where('status','open')->latest(),
             ])
-            ->whereNotNull('started_at')
-            ->whereIn('status', [1,2,3])
-            ->orderByRaw('CASE WHEN status = 1 THEN 0 WHEN status = 2 THEN 1 ELSE 2 END')
-            ->orderByDesc('started_at')
+            ->whereNotNull('skill_test_attempts.started_at')
+            ->whereIn('skill_test_attempts.status', [1,2,3])
+            ->when($search !== '', function ($query) use ($search) {
+                $like = '%'.$search.'%';
+                $query->where(function ($nested) use ($like) {
+                    $nested->where('applications.application_code', 'like', $like)
+                        ->orWhere('applications.last_name', 'like', $like)
+                        ->orWhere('applications.first_name', 'like', $like)
+                        ->orWhere('applications.middle_name', 'like', $like);
+                });
+            })
+            ->when($statusFilter === 'in_progress', fn ($query) => $query->where('skill_test_attempts.status', 1))
+            ->when($statusFilter === 'submitted', fn ($query) => $query->where('skill_test_attempts.status', 2))
+            ->when($statusFilter === 'voided', fn ($query) => $query->where('skill_test_attempts.status', 3))
+            ->when($aiFilter === 'not_queued', fn ($query) => $query->whereDoesntHave('aiEvaluations'))
+            ->when($aiFilter === 'queued', fn ($query) =>
+                $query->whereHas('aiEvaluations', fn ($ai) => $ai->whereIn('status', ['pending','processing']))
+            )
+            ->when($aiFilter === 'completed', fn ($query) =>
+                $query->whereHas('aiEvaluations', fn ($ai) => $ai->where('status', 'completed'))
+            )
+            ->when($aiFilter === 'failed', fn ($query) =>
+                $query->whereHas('aiEvaluations', fn ($ai) => $ai->where('status', 'failed'))
+            )
+            ->when($humanFilter === 'evaluated', fn ($query) => $query->whereNotNull('skill_test_attempts.final_score'))
+            ->when($humanFilter === 'pending', fn ($query) => $query->whereNull('skill_test_attempts.final_score'));
+
+        match ($sort) {
+            'applicant' => $attemptQuery
+                ->orderBy('applications.last_name', $direction)
+                ->orderBy('applications.first_name', $direction),
+            'started' => $attemptQuery->orderBy('skill_test_attempts.started_at', $direction),
+            'submitted' => $attemptQuery->orderBy('skill_test_attempts.submitted_at', $direction),
+            'ai' => $attemptQuery->orderBy('skill_test_attempts.ai_proposed_score', $direction),
+            'human' => $attemptQuery->orderBy('skill_test_attempts.final_score', $direction),
+            default => $attemptQuery
+                ->orderByRaw('CASE WHEN skill_test_attempts.status = 1 THEN 0 WHEN skill_test_attempts.status = 2 THEN 1 ELSE 2 END '.strtoupper($direction))
+                ->orderByDesc('skill_test_attempts.started_at'),
+        };
+
+        $attempts = $attemptQuery
             ->paginate(25)
             ->withQueryString();
 
@@ -1077,7 +1129,13 @@ class SkillTestController extends Controller
             'retakeTests',
             'health',
             'rubricAnalytics',
-            'aiHumanGap'
+            'aiHumanGap',
+            'search',
+            'statusFilter',
+            'aiFilter',
+            'humanFilter',
+            'sort',
+            'direction'
         ));
     }
 
