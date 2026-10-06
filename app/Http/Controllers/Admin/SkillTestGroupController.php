@@ -456,6 +456,8 @@ class SkillTestGroupController extends Controller
                 'Status',
                 'AI Proposed Score',
                 'Human Final Score',
+                'Human Final Percentage',
+                'Tab/App Switch Count',
                 'Evaluated At',
                 'Void Reason',
             ]);
@@ -465,6 +467,9 @@ class SkillTestGroupController extends Controller
                 ->with([
                     'application:id,application_code,first_name,middle_name,last_name',
                     'skillTest:id,set_code,title',
+                ])
+                ->withCount([
+                    'events as tab_app_switch_count' => fn ($events) => $events->where('event_type', 'tab_hidden'),
                 ])
                 ->whereNotNull('started_at')
                 ->orderBy('id')
@@ -484,6 +489,10 @@ class SkillTestGroupController extends Controller
                             },
                             $attempt->ai_proposed_score,
                             $attempt->final_score,
+                            $attempt->final_score !== null
+                                ? number_format((float) $attempt->final_score, 2, '.', '').'%'
+                                : null,
+                            (int) ($attempt->tab_app_switch_count ?? 0),
                             $attempt->evaluated_at?->toIso8601String(),
                             $attempt->void_reason,
                         ]);
