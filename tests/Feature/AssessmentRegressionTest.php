@@ -89,8 +89,8 @@ class AssessmentRegressionTest extends TestCase
             'expected_sets' => 2,
             'status' => 1,
             'score_release_policy' => 'manual',
-            'is_paused' => true,
         ]);
+        $group->forceFill(['is_paused' => true])->save();
 
         $this->makeExam($vacancy, $group, 'A', '2026-10-07 08:00:00', '2026-10-07 10:00:00');
         $this->makeExam($vacancy, $group, 'B', '2026-10-07 10:00:00', '2026-10-07 12:00:00');
@@ -166,7 +166,7 @@ class AssessmentRegressionTest extends TestCase
         $this->assertSame([], json_decode((string) $assessment->fresh()->assessment, true));
 
         $group->update(['scores_released_at' => now()]);
-        $this->assertTrue($sync->syncWrittenAttempt($attempt));
+        $this->assertTrue($sync->syncWrittenAttempt($attempt->fresh()));
 
         $fresh = $assessment->fresh();
         $scores = json_decode((string) $fresh->assessment, true);
