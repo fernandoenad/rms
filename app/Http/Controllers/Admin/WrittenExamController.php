@@ -925,7 +925,7 @@ class WrittenExamController extends Controller
                 'Correct Answers',
                 'Total Items',
                 'Percentage',
-                'Integrity Events',
+                'Tab/App Switch Count',
             ]);
 
             $query->chunkById(500, function ($attempts) use ($handle) {
