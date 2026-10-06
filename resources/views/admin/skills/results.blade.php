@@ -161,6 +161,7 @@
                     <th>Submission</th>
                     <th><a href="{{ $sortUrl('ai') }}" class="text-dark">AI Proposed <i class="{{ $sortIcon('ai') }}"></i></a></th>
                     <th><a href="{{ $sortUrl('human') }}" class="text-dark">Human Final <i class="{{ $sortIcon('human') }}"></i></a></th>
+                    <th><a href="{{ $sortUrl('integrity') }}" class="text-dark">Integrity <i class="{{ $sortIcon('integrity') }}"></i></a></th>
                     <th style="min-width:340px">Evaluation / Actions</th>
                 </tr>
                 <tr class="bg-light">
@@ -194,6 +195,7 @@
                             <option value="evaluated" {{ $humanFilter==='evaluated'?'selected':'' }}>Evaluated</option>
                         </select>
                     </th>
+                    <th></th>
                     <th class="text-nowrap">
                         <input type="hidden" name="sort" value="{{ $sort }}" form="skillsResultsFilter">
                         <input type="hidden" name="direction" value="{{ $direction }}" form="skillsResultsFilter">
@@ -298,6 +300,17 @@
                         @else
                             -
                         @endif
+                    </td>
+                    <td class="text-nowrap">
+                        @php $switchCount = (int) ($attempt->tab_app_switch_count ?? 0); @endphp
+                        @if($switchCount > 0)
+                            <span class="badge badge-warning" title="Detected tab/app switches while this attempt was active">
+                                <i class="fas fa-exchange-alt mr-1"></i>{{ $switchCount }}
+                            </span>
+                        @else
+                            <span class="badge badge-light">0</span>
+                        @endif
+                        <div class="small text-muted">tab/app switch{{ $switchCount === 1 ? '' : 'es' }}</div>
                     </td>
                     <td>
                         <details>
@@ -430,7 +443,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="8">No skills-test attempts yet.</td></tr>
+                <tr><td colspan="9">No skills-test attempts yet.</td></tr>
             @endforelse
             </tbody>
         </table>

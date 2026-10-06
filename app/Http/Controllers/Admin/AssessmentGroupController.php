@@ -1115,6 +1115,7 @@ class AssessmentGroupController extends Controller
                 'Raw Score',
                 'Total Items',
                 'Percentage',
+                'Tab/App Switch Count',
                 'Void Reason',
             ]);
 
@@ -1122,6 +1123,9 @@ class AssessmentGroupController extends Controller
                     $q->where('assessment_group_id', $assessmentGroup->id)
                 )
                 ->with(['application:id,application_code,first_name,middle_name,last_name', 'exam:id,set_code'])
+                ->withCount([
+                    'events as tab_app_switch_count' => fn ($events) => $events->where('event_type', 'tab_hidden'),
+                ])
                 ->whereNotNull('started_at')
                 ->orderBy('id')
                 ->chunkById(500, function ($attempts) use ($handle) {
@@ -1141,6 +1145,7 @@ class AssessmentGroupController extends Controller
                             $attempt->correct_answers,
                             $attempt->total_items,
                             $attempt->percentage,
+                            (int) ($attempt->tab_app_switch_count ?? 0),
                             $attempt->void_reason,
                         ]);
                     }

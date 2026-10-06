@@ -988,7 +988,7 @@ class SkillTestController extends Controller
         $sort = (string) $request->input('sort', 'status');
         $direction = strtolower((string) $request->input('direction', 'asc')) === 'desc' ? 'desc' : 'asc';
 
-        $allowedSorts = ['applicant', 'status', 'started', 'submitted', 'ai', 'human'];
+        $allowedSorts = ['applicant', 'status', 'started', 'submitted', 'ai', 'human', 'integrity'];
         if (!in_array($sort, $allowedSorts, true)) {
             $sort = 'status';
         }
@@ -1004,6 +1004,9 @@ class SkillTestController extends Controller
                 'timeExtensions' => fn ($q) => $q->with('creator:id,name,email')->orderByDesc('id'),
                 'scoreChanges' => fn ($q) => $q->with('changer:id,name,email')->orderByDesc('id'),
                 'incidents' => fn ($q) => $q->where('status','open')->latest(),
+            ])
+            ->withCount([
+                'events as tab_app_switch_count' => fn ($events) => $events->where('event_type', 'tab_hidden'),
             ])
             ->whereNotNull('skill_test_attempts.started_at')
             ->whereIn('skill_test_attempts.status', [1,2,3])
@@ -1040,6 +1043,7 @@ class SkillTestController extends Controller
             'submitted' => $attemptQuery->orderBy('skill_test_attempts.submitted_at', $direction),
             'ai' => $attemptQuery->orderBy('skill_test_attempts.ai_proposed_score', $direction),
             'human' => $attemptQuery->orderBy('skill_test_attempts.final_score', $direction),
+            'integrity' => $attemptQuery->orderBy('tab_app_switch_count', $direction),
             default => $attemptQuery
                 ->orderByRaw('CASE WHEN skill_test_attempts.status = 1 THEN 0 WHEN skill_test_attempts.status = 2 THEN 1 ELSE 2 END '.strtoupper($direction))
                 ->orderByDesc('skill_test_attempts.started_at'),
@@ -1920,6 +1924,7 @@ class SkillTestController extends Controller
 
         return response()->streamDownload(function () use ($skillTest, $criteria) {
             $handle = fopen('php://output','w');
+            fwrite($handle, "\xEF\xBB\xBF");
 
             $headers = [
                 'Application Code','Applicant','Status','Started','Submitted','AI Proposed'
@@ -1930,11 +1935,20 @@ class SkillTestController extends Controller
                 $headers[] = $criterion->criterion.' Note';
             }
 
-            $headers = array_merge($headers, ['Human Final','Evaluated','Void Reason']);
+            $headers = array_merge($headers, [
+                'Human Final',
+                'Human Final Percentage',
+                'Tab/App Switch Count',
+                'Evaluated',
+                'Void Reason',
+            ]);
             fputcsv($handle, $headers);
 
             $skillTest->attempts()
                 ->with(['application','humanScores'])
+                ->withCount([
+                    'events as tab_app_switch_count' => fn ($events) => $events->where('event_type', 'tab_hidden'),
+                ])
                 ->whereNotNull('started_at')
                 ->orderBy('id')
                 ->chunkById(500, function ($attempts) use ($handle, $criteria) {
@@ -1961,6 +1975,10 @@ class SkillTestController extends Controller
                         }
 
                         $row[] = $attempt->final_score;
+                        $row[] = $attempt->final_score !== null
+                            ? number_format((float) $attempt->final_score, 2, '.', '').'%'
+                            : null;
+                        $row[] = (int) ($attempt->tab_app_switch_count ?? 0);
                         $row[] = $attempt->evaluated_at?->toIso8601String();
                         $row[] = $attempt->void_reason;
 
@@ -1969,6 +1987,6 @@ class SkillTestController extends Controller
                 });
 
             fclose($handle);
-        }, $filename, ['Content-Type'=>'text/csv']);
+        }, $filename, ['Content-Type'=>'text/csv; charset=UTF-8']);
     }
 }
