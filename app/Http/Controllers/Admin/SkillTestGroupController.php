@@ -477,6 +477,8 @@ class SkillTestGroupController extends Controller
                 ->orderBy('id')
                 ->chunkById(500, function ($attempts) use ($handle) {
                     foreach ($attempts as $attempt) {
+                        $totalPoints = (float) ($attempt->skillTest?->rubricCriteria?->sum('max_points') ?? 0);
+
                         fputcsv($handle, [
                             optional($attempt->application)->application_code,
                             optional($attempt->application)->getFullname(),
@@ -491,10 +493,10 @@ class SkillTestGroupController extends Controller
                             },
                             $attempt->ai_proposed_score,
                             $attempt->final_score,
-                            (float) optional($attempt->skillTest)->rubricCriteria->sum('max_points'),
-                            $attempt->final_score !== null && optional($attempt->skillTest)->rubricCriteria->sum('max_points') > 0
+                            $totalPoints,
+                            $attempt->final_score !== null && $totalPoints > 0
                                 ? number_format(
-                                    ((float) $attempt->final_score / (float) optional($attempt->skillTest)->rubricCriteria->sum('max_points')) * 100,
+                                    ((float) $attempt->final_score / $totalPoints) * 100,
                                     2,
                                     '.',
                                     ''
