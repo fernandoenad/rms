@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SkillTest;
 use App\Jobs\GenerateSkillTestSetTask;
 use App\Models\SkillTestGroup;
+use App\Models\SkillTestAttempt;
 use App\Models\Vacancy;
 use App\Services\AssessmentGovernanceService;
 use App\Services\AssessmentScoreSyncService;
@@ -366,6 +367,131 @@ class SkillTestGroupController extends Controller
 
         return redirect()->route('admin.skill_groups.index')
             ->with('status','Skills Test Group and all of its unattempted sets were deleted.');
+    }
+
+    public function results(SkillTestGroup $skillTestGroup)
+    {
+        $skillTestGroup->load([
+            'vacancy:id,position_title',
+            'skillTests' => fn ($q) => $q->orderBy('set_code'),
+        ]);
+
+        $setIds = $skillTestGroup->skillTests->pluck('id');
+
+        $dashboard = SkillTestAttempt::query()
+            ->whereIn('skill_test_id', $setIds)
+            ->whereNotNull('started_at')
+            ->selectRaw('COUNT(*) as attempted')
+            ->selectRaw('SUM(CASE WHEN status = 1 AND submitted_at IS NULL AND expires_at IS NOT NULL AND expires_at > ? THEN 1 ELSE 0 END) as taking_now', [now()])
+            ->selectRaw('SUM(CASE WHEN status = 1 AND submitted_at IS NULL AND expires_at IS NOT NULL AND expires_at <= ? THEN 1 ELSE 0 END) as awaiting_timeout', [now()])
+            ->selectRaw('SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as submitted')
+            ->selectRaw('SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) as voided')
+            ->selectRaw('SUM(CASE WHEN status = 2 AND final_score IS NOT NULL THEN 1 ELSE 0 END) as evaluated')
+            ->selectRaw('AVG(CASE WHEN status = 2 AND final_score IS NOT NULL THEN final_score END) as mean_final_score')
+            ->first();
+
+        $dashboard->completion_rate = (int) $dashboard->attempted > 0
+            ? round(((int) $dashboard->submitted / (int) $dashboard->attempted) * 100, 1)
+            : 0;
+
+        $setSummary = $skillTestGroup->skillTests->map(function ($set) {
+            $row = $set->attempts()
+                ->whereNotNull('started_at')
+                ->selectRaw('COUNT(*) as attempted')
+                ->selectRaw('SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as in_progress')
+                ->selectRaw('SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as submitted')
+                ->selectRaw('SUM(CASE WHEN status = 2 AND final_score IS NOT NULL THEN 1 ELSE 0 END) as evaluated')
+                ->selectRaw('AVG(CASE WHEN status = 2 AND final_score IS NOT NULL THEN final_score END) as mean_score')
+                ->first();
+
+            return [
+                'id' => $set->id,
+                'set_code' => $set->set_code,
+                'title' => $set->title,
+                'attempted' => (int) ($row->attempted ?? 0),
+                'in_progress' => (int) ($row->in_progress ?? 0),
+                'submitted' => (int) ($row->submitted ?? 0),
+                'evaluated' => (int) ($row->evaluated ?? 0),
+                'mean_score' => $row->mean_score !== null ? (float) $row->mean_score : null,
+            ];
+        });
+
+        $attempts = SkillTestAttempt::query()
+            ->whereIn('skill_test_id', $setIds)
+            ->with([
+                'application:id,application_code,first_name,middle_name,last_name',
+                'skillTest:id,skill_test_group_id,title,set_code',
+                'aiEvaluations' => fn ($q) => $q->latest('id'),
+            ])
+            ->whereNotNull('started_at')
+            ->whereIn('status', [1,2,3])
+            ->orderByRaw('CASE WHEN status = 1 THEN 0 WHEN status = 2 THEN 1 ELSE 2 END')
+            ->orderByDesc('started_at')
+            ->paginate(50)
+            ->withQueryString();
+
+        return view('admin.skill_groups.results', compact(
+            'skillTestGroup',
+            'dashboard',
+            'setSummary',
+            'attempts'
+        ));
+    }
+
+    public function exportCsv(SkillTestGroup $skillTestGroup)
+    {
+        $setIds = $skillTestGroup->skillTests()->pluck('id');
+        $filename = Str::slug($skillTestGroup->title).'-official-results.csv';
+
+        return response()->streamDownload(function () use ($setIds) {
+            $handle = fopen('php://output', 'w');
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                'Application Code',
+                'Applicant',
+                'Set',
+                'Started',
+                'Submitted',
+                'Status',
+                'AI Proposed Score',
+                'Human Final Score',
+                'Evaluated At',
+                'Void Reason',
+            ]);
+
+            SkillTestAttempt::query()
+                ->whereIn('skill_test_id', $setIds)
+                ->with([
+                    'application:id,application_code,first_name,middle_name,last_name',
+                    'skillTest:id,set_code,title',
+                ])
+                ->whereNotNull('started_at')
+                ->orderBy('id')
+                ->chunkById(500, function ($attempts) use ($handle) {
+                    foreach ($attempts as $attempt) {
+                        fputcsv($handle, [
+                            optional($attempt->application)->application_code,
+                            optional($attempt->application)->getFullname(),
+                            optional($attempt->skillTest)->set_code ?: optional($attempt->skillTest)->title,
+                            $attempt->started_at?->toIso8601String(),
+                            $attempt->submitted_at?->toIso8601String(),
+                            match ((int) $attempt->status) {
+                                1 => 'In progress',
+                                2 => 'Submitted',
+                                3 => 'Voided',
+                                default => 'Unknown',
+                            },
+                            $attempt->ai_proposed_score,
+                            $attempt->final_score,
+                            $attempt->evaluated_at?->toIso8601String(),
+                            $attempt->void_reason,
+                        ]);
+                    }
+                });
+
+            fclose($handle);
+        }, $filename, ['Content-Type' => 'text/csv; charset=UTF-8']);
     }
 
     public function releaseScores(
