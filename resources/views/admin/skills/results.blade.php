@@ -7,7 +7,7 @@
         <small class="text-muted">{{ optional($skillTest->vacancy)->position_title }}</small>
     </div>
     <div class="mt-2 mt-md-0">
-        <a href="{{ route('admin.skills.export',$skillTest) }}" class="btn btn-outline-success mr-2"><i class="fas fa-file-csv"></i> Export CSV</a>
+        <a href="{{ route('admin.skills.export', array_merge(['skillTest'=>$skillTest], request()->except('page'))) }}" class="btn btn-outline-success mr-2"><i class="fas fa-file-csv"></i> Export CSV</a>
         <a href="{{ route('admin.skills.edit',$skillTest) }}" class="btn btn-outline-secondary">Back to Skills Test</a>
     </div>
 </div>
@@ -138,19 +138,68 @@
     </div>
 </div>
 
+@php
+    $sortUrl = function($column) use ($sort, $direction) {
+        $nextDirection = ($sort === $column && $direction === 'asc') ? 'desc' : 'asc';
+        return request()->fullUrlWithQuery(['sort'=>$column,'direction'=>$nextDirection,'page'=>null]);
+    };
+    $sortIcon = function($column) use ($sort, $direction) {
+        if ($sort !== $column) return 'fas fa-sort text-muted';
+        return $direction === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down';
+    };
+@endphp
 <div class="card">
+    <form method="get" action="{{ route('admin.skills.results',$skillTest) }}">
     <div class="card-body table-responsive p-0">
         <table class="table table-hover mb-0">
             <thead>
                 <tr>
                     <th style="width:36px"><input type="checkbox" id="selectAllEligible" aria-label="Select all eligible scores"></th>
-                    <th>Applicant</th>
-                    <th>Status</th>
-                    <th>Started / Submitted</th>
+                    <th><a href="{{ $sortUrl('applicant') }}" class="text-dark">Applicant <i class="{{ $sortIcon('applicant') }}"></i></a></th>
+                    <th><a href="{{ $sortUrl('status') }}" class="text-dark">Status <i class="{{ $sortIcon('status') }}"></i></a></th>
+                    <th><a href="{{ $sortUrl('started') }}" class="text-dark">Started / Submitted <i class="{{ $sortIcon('started') }}"></i></a></th>
                     <th>Submission</th>
-                    <th>AI Proposed</th>
-                    <th>Human Final</th>
+                    <th><a href="{{ $sortUrl('ai') }}" class="text-dark">AI Proposed <i class="{{ $sortIcon('ai') }}"></i></a></th>
+                    <th><a href="{{ $sortUrl('human') }}" class="text-dark">Human Final <i class="{{ $sortIcon('human') }}"></i></a></th>
                     <th style="min-width:340px">Evaluation / Actions</th>
+                </tr>
+                <tr class="bg-light">
+                    <th></th>
+                    <th style="min-width:210px">
+                        <input type="text" name="q" value="{{ $search }}" class="form-control form-control-sm" placeholder="Code or applicant name">
+                    </th>
+                    <th style="min-width:150px">
+                        <select name="status" class="form-control form-control-sm">
+                            <option value="all" {{ $statusFilter==='all'?'selected':'' }}>All statuses</option>
+                            <option value="in_progress" {{ $statusFilter==='in_progress'?'selected':'' }}>In progress</option>
+                            <option value="submitted" {{ $statusFilter==='submitted'?'selected':'' }}>Submitted</option>
+                            <option value="voided" {{ $statusFilter==='voided'?'selected':'' }}>Voided</option>
+                        </select>
+                    </th>
+                    <th></th>
+                    <th></th>
+                    <th style="min-width:145px">
+                        <select name="ai" class="form-control form-control-sm">
+                            <option value="all" {{ $aiFilter==='all'?'selected':'' }}>All AI states</option>
+                            <option value="not_queued" {{ $aiFilter==='not_queued'?'selected':'' }}>Not queued</option>
+                            <option value="queued" {{ $aiFilter==='queued'?'selected':'' }}>Queued / Processing</option>
+                            <option value="completed" {{ $aiFilter==='completed'?'selected':'' }}>AI completed</option>
+                            <option value="failed" {{ $aiFilter==='failed'?'selected':'' }}>AI failed</option>
+                        </select>
+                    </th>
+                    <th style="min-width:145px">
+                        <select name="human" class="form-control form-control-sm">
+                            <option value="all" {{ $humanFilter==='all'?'selected':'' }}>All human states</option>
+                            <option value="pending" {{ $humanFilter==='pending'?'selected':'' }}>Pending evaluation</option>
+                            <option value="evaluated" {{ $humanFilter==='evaluated'?'selected':'' }}>Evaluated</option>
+                        </select>
+                    </th>
+                    <th class="text-nowrap">
+                        <input type="hidden" name="sort" value="{{ $sort }}">
+                        <input type="hidden" name="direction" value="{{ $direction }}">
+                        <button class="btn btn-sm btn-primary"><i class="fas fa-filter mr-1"></i> Apply</button>
+                        <a href="{{ route('admin.skills.results',$skillTest) }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -386,10 +435,16 @@
             </tbody>
         </table>
     </div>
+    </form>
 
-    @if($attempts->hasPages())
-        <div class="card-footer">{{ $attempts->links('pagination::bootstrap-4') }}</div>
-    @endif
+    <div class="card-footer d-flex justify-content-between align-items-center flex-wrap">
+        <div class="small text-muted mb-2 mb-md-0">
+            Showing {{ $attempts->firstItem() ?? 0 }}–{{ $attempts->lastItem() ?? 0 }} of {{ $attempts->total() }} attempt(s)
+        </div>
+        @if($attempts->hasPages())
+            <div>{{ $attempts->links('pagination::bootstrap-4') }}</div>
+        @endif
+    </div>
 </div>
 
 @if($incidents->isNotEmpty())
