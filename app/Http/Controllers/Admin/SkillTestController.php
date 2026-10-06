@@ -1937,11 +1937,13 @@ class SkillTestController extends Controller
 
             $headers = array_merge($headers, [
                 'Human Final',
+                'Total Points',
                 'Human Final Percentage',
                 'Tab/App Switch Count',
                 'Evaluated',
                 'Void Reason',
             ]);
+            $totalPoints = (float) $criteria->sum('max_points');
             fputcsv($handle, $headers);
 
             $skillTest->attempts()
@@ -1951,7 +1953,7 @@ class SkillTestController extends Controller
                 ])
                 ->whereNotNull('started_at')
                 ->orderBy('id')
-                ->chunkById(500, function ($attempts) use ($handle, $criteria) {
+                ->chunkById(500, function ($attempts) use ($handle, $criteria, $totalPoints) {
                     foreach ($attempts as $attempt) {
                         $row = [
                             optional($attempt->application)->application_code,
@@ -1975,8 +1977,9 @@ class SkillTestController extends Controller
                         }
 
                         $row[] = $attempt->final_score;
-                        $row[] = $attempt->final_score !== null
-                            ? number_format((float) $attempt->final_score, 2, '.', '').'%'
+                        $row[] = $totalPoints;
+                        $row[] = $attempt->final_score !== null && $totalPoints > 0
+                            ? number_format(((float) $attempt->final_score / $totalPoints) * 100, 2, '.', '').'%'
                             : null;
                         $row[] = (int) ($attempt->tab_app_switch_count ?? 0);
                         $row[] = $attempt->evaluated_at?->toIso8601String();
