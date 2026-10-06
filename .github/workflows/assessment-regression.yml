@@ -1,0 +1,46 @@
+name: Assessment Regression Suite
+
+on:
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'routes/**'
+      - 'database/**'
+      - 'resources/views/**'
+      - 'tests/**'
+      - 'phpunit.xml'
+      - 'composer.json'
+      - 'composer.lock'
+  push:
+    branches:
+      - main
+
+jobs:
+  assessment-regression:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, dom, fileinfo, pdo_sqlite, sqlite3
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run assessment regression tests
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          CACHE_DRIVER: array
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+          MAIL_MAILER: array
+          QUEUE_CONNECTION: sync
+          SESSION_DRIVER: array
+        run: php artisan test --testsuite=Feature --filter=AssessmentRegressionTest

@@ -12,8 +12,25 @@ return new class extends Migration
      */
     private function indexExists(string $table, string $indexName): bool
     {
-        $indexes = DB::select("SHOW INDEX FROM {$table} WHERE Key_name = ?", [$indexName]);
-        return count($indexes) > 0;
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'sqlite') {
+            $safeTable = str_replace("'", "''", $table);
+            $indexes = DB::select("PRAGMA index_list('{$safeTable}')");
+
+            return collect($indexes)->contains(
+                fn ($index) => (string) ($index->name ?? '') === $indexName
+            );
+        }
+
+        if (in_array($driver, ['mysql', 'mariadb'], true)) {
+            $indexes = DB::select("SHOW INDEX FROM {$table} WHERE Key_name = ?", [$indexName]);
+            return count($indexes) > 0;
+        }
+
+        // Fallback for other supported databases through Laravel schema metadata.
+        return collect(Schema::getIndexes($table))
+            ->contains(fn ($index) => (string) ($index['name'] ?? '') === $indexName);
     }
 
     /**

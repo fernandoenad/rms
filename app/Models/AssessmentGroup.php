@@ -10,7 +10,8 @@ class AssessmentGroup extends Model
 {
     protected $fillable = [
         'vacancy_id', 'title', 'code', 'expected_sets', 'blueprint', 'blueprint_version',
-        'status', 'score_release_policy', 'assessment_score_key', 'scores_synced_at', 'scores_released_at'
+        'status', 'score_release_policy', 'assessment_score_key', 'scores_synced_at', 'scores_released_at',
+        'is_paused', 'pause_reason', 'paused_at', 'paused_by', 'archived_at', 'archived_by'
     ];
 
     protected $casts = [
@@ -18,6 +19,9 @@ class AssessmentGroup extends Model
         'blueprint' => 'array',
         'scores_released_at' => 'datetime',
         'scores_synced_at' => 'datetime',
+        'is_paused' => 'boolean',
+        'paused_at' => 'datetime',
+        'archived_at' => 'datetime',
     ];
 
     public function vacancy(): BelongsTo
