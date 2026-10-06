@@ -149,7 +149,7 @@
     };
 @endphp
 <div class="card">
-    <form method="get" action="{{ route('admin.skills.results',$skillTest) }}">
+    <form id="skillsResultsFilter" method="get" action="{{ route('admin.skills.results',$skillTest) }}"></form>
     <div class="card-body table-responsive p-0">
         <table class="table table-hover mb-0">
             <thead>
@@ -166,10 +166,10 @@
                 <tr class="bg-light">
                     <th></th>
                     <th style="min-width:210px">
-                        <input type="text" name="q" value="{{ $search }}" class="form-control form-control-sm" placeholder="Code or applicant name">
+                        <input type="text" name="q" value="{{ $search }}" class="form-control form-control-sm" placeholder="Code or applicant name" form="skillsResultsFilter">
                     </th>
                     <th style="min-width:150px">
-                        <select name="status" class="form-control form-control-sm">
+                        <select name="status" class="form-control form-control-sm" form="skillsResultsFilter">
                             <option value="all" {{ $statusFilter==='all'?'selected':'' }}>All statuses</option>
                             <option value="in_progress" {{ $statusFilter==='in_progress'?'selected':'' }}>In progress</option>
                             <option value="submitted" {{ $statusFilter==='submitted'?'selected':'' }}>Submitted</option>
@@ -179,7 +179,7 @@
                     <th></th>
                     <th></th>
                     <th style="min-width:145px">
-                        <select name="ai" class="form-control form-control-sm">
+                        <select name="ai" class="form-control form-control-sm" form="skillsResultsFilter">
                             <option value="all" {{ $aiFilter==='all'?'selected':'' }}>All AI states</option>
                             <option value="not_queued" {{ $aiFilter==='not_queued'?'selected':'' }}>Not queued</option>
                             <option value="queued" {{ $aiFilter==='queued'?'selected':'' }}>Queued / Processing</option>
@@ -188,16 +188,16 @@
                         </select>
                     </th>
                     <th style="min-width:145px">
-                        <select name="human" class="form-control form-control-sm">
+                        <select name="human" class="form-control form-control-sm" form="skillsResultsFilter">
                             <option value="all" {{ $humanFilter==='all'?'selected':'' }}>All human states</option>
                             <option value="pending" {{ $humanFilter==='pending'?'selected':'' }}>Pending evaluation</option>
                             <option value="evaluated" {{ $humanFilter==='evaluated'?'selected':'' }}>Evaluated</option>
                         </select>
                     </th>
                     <th class="text-nowrap">
-                        <input type="hidden" name="sort" value="{{ $sort }}">
-                        <input type="hidden" name="direction" value="{{ $direction }}">
-                        <button class="btn btn-sm btn-primary"><i class="fas fa-filter mr-1"></i> Apply</button>
+                        <input type="hidden" name="sort" value="{{ $sort }}" form="skillsResultsFilter">
+                        <input type="hidden" name="direction" value="{{ $direction }}" form="skillsResultsFilter">
+                        <button type="submit" form="skillsResultsFilter" class="btn btn-sm btn-primary"><i class="fas fa-filter mr-1"></i> Apply</button>
                         <a href="{{ route('admin.skills.results',$skillTest) }}" class="btn btn-sm btn-outline-secondary">Clear</a>
                     </th>
                 </tr>
@@ -435,7 +435,6 @@
             </tbody>
         </table>
     </div>
-    </form>
 
     <div class="card-footer d-flex justify-content-between align-items-center flex-wrap">
         <div class="small text-muted mb-2 mb-md-0">
