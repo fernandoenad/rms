@@ -1005,6 +1005,9 @@ class SkillTestController extends Controller
                 'scoreChanges' => fn ($q) => $q->with('changer:id,name,email')->orderByDesc('id'),
                 'incidents' => fn ($q) => $q->where('status','open')->latest(),
             ])
+            ->withCount([
+                'events as tab_app_switch_count' => fn ($events) => $events->where('event_type', 'tab_hidden'),
+            ])
             ->whereNotNull('skill_test_attempts.started_at')
             ->whereIn('skill_test_attempts.status', [1,2,3])
             ->when($search !== '', function ($query) use ($search) {
@@ -1920,6 +1923,7 @@ class SkillTestController extends Controller
 
         return response()->streamDownload(function () use ($skillTest, $criteria) {
             $handle = fopen('php://output','w');
+            fwrite($handle, "\xEF\xBB\xBF");
 
             $headers = [
                 'Application Code','Applicant','Status','Started','Submitted','AI Proposed'
@@ -1930,11 +1934,20 @@ class SkillTestController extends Controller
                 $headers[] = $criterion->criterion.' Note';
             }
 
-            $headers = array_merge($headers, ['Human Final','Evaluated','Void Reason']);
+            $headers = array_merge($headers, [
+                'Human Final',
+                'Human Final Percentage',
+                'Tab/App Switch Count',
+                'Evaluated',
+                'Void Reason',
+            ]);
             fputcsv($handle, $headers);
 
             $skillTest->attempts()
                 ->with(['application','humanScores'])
+                ->withCount([
+                    'events as tab_app_switch_count' => fn ($events) => $events->where('event_type', 'tab_hidden'),
+                ])
                 ->whereNotNull('started_at')
                 ->orderBy('id')
                 ->chunkById(500, function ($attempts) use ($handle, $criteria) {
@@ -1961,6 +1974,10 @@ class SkillTestController extends Controller
                         }
 
                         $row[] = $attempt->final_score;
+                        $row[] = $attempt->final_score !== null
+                            ? number_format((float) $attempt->final_score, 2, '.', '').'%'
+                            : null;
+                        $row[] = (int) ($attempt->tab_app_switch_count ?? 0);
                         $row[] = $attempt->evaluated_at?->toIso8601String();
                         $row[] = $attempt->void_reason;
 
@@ -1969,6 +1986,6 @@ class SkillTestController extends Controller
                 });
 
             fclose($handle);
-        }, $filename, ['Content-Type'=>'text/csv']);
+        }, $filename, ['Content-Type'=>'text/csv; charset=UTF-8']);
     }
 }
