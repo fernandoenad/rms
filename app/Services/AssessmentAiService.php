@@ -2,19 +2,58 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Http;
 use App\Models\Vacancy;
-use OpenAI;
 use RuntimeException;
 
 class AssessmentAiService
 {
-    protected function client()
+    protected function openAiKey(): string
     {
-        $key = config('services.openai.key') ?: env('OPENAI_API_KEY');
-        if (!$key) {
+        $key = (string) (config('services.openai.key') ?: env('OPENAI_API_KEY'));
+        if ($key === '') {
             throw new RuntimeException('OPENAI_API_KEY is not configured.');
         }
-        return OpenAI::client($key);
+
+        return $key;
+    }
+
+    /**
+     * Send assessment chat requests through Laravel's HTTP client.
+     *
+     * The project still carries openai-php/client for legacy code, but the
+     * assessment service deliberately avoids SDK response hydration here.
+     * Some production responses were being handed to CreateResponse::from()
+     * as a string instead of an array, causing a TypeError before RMS could
+     * inspect the API response. Using the documented HTTP endpoint keeps the
+     * transport boundary explicit and lets us validate malformed/error
+     * responses ourselves.
+     */
+    protected function chat(array $payload): array
+    {
+        $response = Http::withToken($this->openAiKey())
+            ->acceptJson()
+            ->asJson()
+            ->timeout(120)
+            ->post('https://api.openai.com/v1/chat/completions', $payload);
+
+        if (!$response->successful()) {
+            $message = (string) data_get($response->json(), 'error.message', 'OpenAI request failed.');
+            throw new RuntimeException(
+                'OpenAI API error (HTTP '.$response->status().'): '.$message
+            );
+        }
+
+        $decoded = $response->json();
+        if (!is_array($decoded)) {
+            throw new RuntimeException('OpenAI returned a malformed non-JSON response.');
+        }
+
+        if (!is_string(data_get($decoded, 'choices.0.message.content'))) {
+            throw new RuntimeException('OpenAI response did not contain assistant message content.');
+        }
+
+        return $decoded;
     }
 
     protected function model(): string
@@ -142,7 +181,7 @@ JSON:
 {"items":[{"question":"...","options":["...","...","...","..."],"correct_index":0,"solo_level":"...","difficulty":"...","competency_basis":"...","rationale":"..."}]}
 PROMPT;
 
-        $response = $this->client()->chat()->create([
+        $response = $this->chat([
             'model'=>$this->model(),
             'messages'=>[
                 ['role'=>'system','content'=>$system],
@@ -234,7 +273,7 @@ PROMPT;
             . "\nTarget SOLO distribution: " . json_encode($soloDistribution)
             . "\nEnsure the full set broadly follows the requested distribution.";
 
-        $response = $this->client()->chat()->create([
+        $response = $this->chat([
             'model' => $this->model(),
             'messages' => [
                 ['role' => 'system', 'content' => $system],
@@ -312,7 +351,7 @@ PROMPT;
                 ."\nCreate a different but equivalent task that can be scored fairly using EXACTLY these rubric dimensions and point weights. Return the same rubric unchanged."
             : '';
 
-        $response = $this->client()->chat()->create([
+        $response = $this->chat([
             'model' => $this->model(),
             'messages' => [
                 ['role' => 'system', 'content' => $system],
@@ -353,7 +392,7 @@ Shape:
 {"criterion_scores":[{"criterion_id":1,"score":20,"evidence":"...","reason":"...","confidence":"high"}],"proposed_total":80,"flags":[]}
 PROMPT;
 
-        $response = $this->client()->chat()->create([
+        $response = $this->chat([
             'model' => $this->model(),
             'messages' => [
                 ['role' => 'system', 'content' => $system],
