@@ -22,7 +22,7 @@
     };
 @endphp
 <div class="card">
-<form method="get" action="{{ route('admin.assessments.results',$exam) }}">
+<form id="writtenResultsFilter" method="get" action="{{ route('admin.assessments.results',$exam) }}"></form>
 <div class="card-body table-responsive p-0">
 <table class="table table-hover mb-0">
 <thead>
@@ -36,27 +36,27 @@
 </tr>
 <tr class="bg-light">
     <th style="min-width:220px;">
-        <input type="text" name="q" value="{{ $search }}" class="form-control form-control-sm" placeholder="Code or applicant name">
+        <input type="text" name="q" value="{{ $search }}" class="form-control form-control-sm" placeholder="Code or applicant name" form="writtenResultsFilter">
     </th>
     <th></th>
     <th></th>
     <th style="min-width:190px;">
         <div class="input-group input-group-sm">
-            <input type="number" step="0.01" min="0" max="100" name="score_min" value="{{ $scoreMin }}" class="form-control" placeholder="Min %">
-            <input type="number" step="0.01" min="0" max="100" name="score_max" value="{{ $scoreMax }}" class="form-control" placeholder="Max %">
+            <input type="number" step="0.01" min="0" max="100" name="score_min" value="{{ $scoreMin }}" class="form-control" placeholder="Min %" form="writtenResultsFilter">
+            <input type="number" step="0.01" min="0" max="100" name="score_max" value="{{ $scoreMax }}" class="form-control" placeholder="Max %" form="writtenResultsFilter">
         </div>
     </th>
     <th style="min-width:170px;">
-        <select name="integrity" class="form-control form-control-sm">
+        <select name="integrity" class="form-control form-control-sm" form="writtenResultsFilter">
             <option value="all" {{ $integrity==='all'?'selected':'' }}>All attempts</option>
             <option value="with" {{ $integrity==='with'?'selected':'' }}>With tab/app switches</option>
             <option value="none" {{ $integrity==='none'?'selected':'' }}>No tab/app switches</option>
         </select>
     </th>
     <th class="text-nowrap">
-        <input type="hidden" name="sort" value="{{ $sort }}">
-        <input type="hidden" name="direction" value="{{ $direction }}">
-        <button class="btn btn-sm btn-primary"><i class="fas fa-filter mr-1"></i> Apply</button>
+        <input type="hidden" name="sort" value="{{ $sort }}" form="writtenResultsFilter">
+        <input type="hidden" name="direction" value="{{ $direction }}" form="writtenResultsFilter">
+        <button type="submit" form="writtenResultsFilter" class="btn btn-sm btn-primary"><i class="fas fa-filter mr-1"></i> Apply</button>
         <a href="{{ route('admin.assessments.results',$exam) }}" class="btn btn-sm btn-outline-secondary">Clear</a>
     </th>
 </tr>
@@ -168,7 +168,6 @@
 </div></div></div>
 @empty<tr><td colspan="6">No submitted attempts yet.</td></tr>@endforelse
 </tbody></table></div>
-</form>
 </div>
 <div class="d-flex justify-content-between align-items-center flex-wrap mt-2">
     <div class="small text-muted mb-2">
