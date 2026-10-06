@@ -988,7 +988,7 @@ class SkillTestController extends Controller
         $sort = (string) $request->input('sort', 'status');
         $direction = strtolower((string) $request->input('direction', 'asc')) === 'desc' ? 'desc' : 'asc';
 
-        $allowedSorts = ['applicant', 'status', 'started', 'submitted', 'ai', 'human'];
+        $allowedSorts = ['applicant', 'status', 'started', 'submitted', 'ai', 'human', 'integrity'];
         if (!in_array($sort, $allowedSorts, true)) {
             $sort = 'status';
         }
@@ -1043,6 +1043,7 @@ class SkillTestController extends Controller
             'submitted' => $attemptQuery->orderBy('skill_test_attempts.submitted_at', $direction),
             'ai' => $attemptQuery->orderBy('skill_test_attempts.ai_proposed_score', $direction),
             'human' => $attemptQuery->orderBy('skill_test_attempts.final_score', $direction),
+            'integrity' => $attemptQuery->orderBy('tab_app_switch_count', $direction),
             default => $attemptQuery
                 ->orderByRaw('CASE WHEN skill_test_attempts.status = 1 THEN 0 WHEN skill_test_attempts.status = 2 THEN 1 ELSE 2 END '.strtoupper($direction))
                 ->orderByDesc('skill_test_attempts.started_at'),
