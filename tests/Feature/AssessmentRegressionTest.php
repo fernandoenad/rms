@@ -7,6 +7,9 @@ use App\Models\Assessment;
 use App\Models\AssessmentGroup;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
+use App\Models\ExamAttemptAnswer;
+use App\Models\WrittenExam;
+use App\Models\WrittenExamOption;
 use App\Models\SkillTest;
 use App\Models\SkillTestAttempt;
 use App\Models\SkillTestGroup;
@@ -14,6 +17,7 @@ use App\Models\Template;
 use App\Models\Vacancy;
 use App\Services\AssessmentScoreSyncService;
 use App\Services\EquivalentSetScheduleResolver;
+use App\Services\WrittenAttemptScoringService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;
@@ -334,6 +338,108 @@ class AssessmentRegressionTest extends TestCase
         $this->assertDatabaseMissing('skill_test_attempts', [
             'skill_test_id' => $test->id,
             'application_id' => $application->id,
+        ]);
+    }
+
+    public function test_excluded_written_item_is_ignored_and_completed_attempt_can_be_rescored(): void
+    {
+        [$vacancy, $application] = $this->makeTakenInApplication();
+
+        $group = AssessmentGroup::create([
+            'vacancy_id' => $vacancy->id,
+            'title' => 'Written Group',
+            'code' => 'WG-EXCLUDE',
+            'expected_sets' => 1,
+            'status' => 1,
+            'score_release_policy' => 'manual',
+        ]);
+
+        $exam = $this->makeExam($vacancy, $group, 'A', now()->subHour(), now()->addHour());
+
+        $good = WrittenExam::create([
+            'exam_id' => $exam->id,
+            'enrollment_key' => $exam->enrollment_key,
+            'question' => 'Valid question',
+            'option_a' => 'Correct',
+            'option_b' => 'Wrong',
+            'option_c' => 'Wrong',
+            'option_d' => 'Wrong',
+            'answer_key' => 'A',
+            'status' => 1,
+            'review_status' => 'approved',
+        ]);
+
+        $bad = WrittenExam::create([
+            'exam_id' => $exam->id,
+            'enrollment_key' => $exam->enrollment_key,
+            'question' => 'Defective question',
+            'option_a' => 'Correct',
+            'option_b' => 'Wrong',
+            'option_c' => 'Wrong',
+            'option_d' => 'Wrong',
+            'answer_key' => 'A',
+            'status' => 1,
+            'review_status' => 'approved',
+        ]);
+
+        $goodCorrect = WrittenExamOption::create([
+            'written_exam_id' => $good->id,
+            'option_text' => 'Correct',
+            'is_correct' => true,
+            'source_position' => 1,
+        ]);
+        $badWrong = WrittenExamOption::create([
+            'written_exam_id' => $bad->id,
+            'option_text' => 'Wrong',
+            'is_correct' => false,
+            'source_position' => 2,
+        ]);
+
+        $attempt = ExamAttempt::create([
+            'exam_id' => $exam->id,
+            'application_id' => $application->id,
+            'started_at' => now()->subMinutes(20),
+            'expires_at' => now()->addMinutes(10),
+            'ended_at' => now(),
+            'status' => 2,
+            'correct_answers' => 1,
+            'total_items' => 2,
+            'percentage' => 50,
+            'scored_at' => now(),
+        ]);
+
+        ExamAttemptAnswer::create([
+            'exam_attempt_id' => $attempt->id,
+            'written_exam_id' => $good->id,
+            'selected_option_id' => $goodCorrect->id,
+            'selected_option' => 'A',
+        ]);
+        ExamAttemptAnswer::create([
+            'exam_attempt_id' => $attempt->id,
+            'written_exam_id' => $bad->id,
+            'selected_option_id' => $badWrong->id,
+            'selected_option' => 'B',
+        ]);
+
+        $bad->update([
+            'scoring_excluded' => true,
+            'scoring_exclusion_reason' => 'Incomplete options',
+            'scoring_excluded_at' => now(),
+        ]);
+
+        $result = app(WrittenAttemptScoringService::class)
+            ->rescoreCompletedExam($exam, 'Defective item excluded in regression test');
+
+        $attempt->refresh();
+
+        $this->assertSame(1, $result['rescored']);
+        $this->assertSame(1, $result['changed']);
+        $this->assertSame(1, (int) $attempt->correct_answers);
+        $this->assertSame(1, (int) $attempt->total_items);
+        $this->assertSame(100.0, (float) $attempt->percentage);
+        $this->assertDatabaseHas('assessment_score_changes', [
+            'exam_attempt_id' => $attempt->id,
+            'source' => 'item_scoring_exclusion',
         ]);
     }
 

@@ -247,6 +247,12 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/assessment/{exam}/items/{item}/edit', [AdminWrittenExamItem::class, 'edit'])->name('admin.assessments.items.edit');
     Route::put('/admin/assessment/{exam}/items/{item}', [AdminWrittenExamItem::class, 'update'])->name('admin.assessments.items.update');
     Route::put('/admin/assessment/{exam}/items/{item}/toggle', [AdminWrittenExamItem::class, 'toggleStatus'])->name('admin.assessments.items.toggle');
+    Route::post('/admin/assessment/{exam}/items/exclude-scoring', [AdminWrittenExamItem::class, 'excludeFromScoring'])
+        ->middleware('assessment.capability:reviewer')
+        ->name('admin.assessments.items.exclude_scoring');
+    Route::post('/admin/assessment/{exam}/items/{item}/restore-scoring', [AdminWrittenExamItem::class, 'restoreScoring'])
+        ->middleware('assessment.capability:reviewer')
+        ->name('admin.assessments.items.restore_scoring');
     Route::put('/admin/assessment/{exam}/items/{item}/review', [AdminWrittenExamItem::class, 'review'])->middleware('assessment.capability:reviewer')->name('admin.assessments.items.review');
     Route::post('/admin/assessment/{exam}/items/approve-generated', [AdminWrittenExamItem::class, 'approveGenerated'])->middleware('assessment.capability:reviewer')->name('admin.assessments.items.approve_generated');
     Route::delete('/admin/assessment/{exam}/items/{item}', [AdminWrittenExamItem::class, 'destroy'])->name('admin.assessments.items.destroy');

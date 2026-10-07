@@ -172,6 +172,36 @@
 @endif
 
 <div class="card"><div class="card-body">
+@if(!$exam->archived_at)
+<div class="alert alert-light border mb-3">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start">
+        <div class="mb-2 mb-lg-0 pr-lg-3">
+            <strong><i class="fas fa-ban text-warning mr-1"></i> Scoring Correction</strong>
+            <div class="small text-muted">
+                If a live/published item is defective, you may exclude it from scoring without removing it from the set.
+                The item remains visible to current and future takers, but its response is ignored when RMS computes the score.
+                Completed attempts are recalculated automatically.
+            </div>
+        </div>
+    </div>
+    <form id="excludeScoringForm" method="post" action="{{ route('admin.assessments.items.exclude_scoring',$exam) }}" class="mt-2">
+        @csrf
+        <div class="form-row align-items-end">
+            <div class="form-group col-lg-9 mb-2">
+                <label class="small font-weight-bold">Reason for exclusion</label>
+                <input type="text" name="reason" class="form-control form-control-sm" maxlength="3000"
+                       placeholder="Example: Item has incomplete options / defective question stem" required>
+            </div>
+            <div class="form-group col-lg-3 mb-2">
+                <button type="submit" class="btn btn-warning btn-sm btn-block"
+                        onclick="return confirm('Exclude the selected item(s) from scoring? Existing completed attempts will be recalculated immediately.');">
+                    <i class="fas fa-ban mr-1"></i> Exclude Selected from Scoring
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+@endif
 @if(!$locked && $pendingGeneratedCount > 0)
 <div class="alert alert-warning d-flex flex-column flex-md-row justify-content-between align-items-md-center">
     <div class="mb-2 mb-md-0">
@@ -213,11 +243,18 @@
 </form>
 </div>
 <div class="table-responsive"><table class="table table-hover">
-<thead><tr><th>ID / Version</th><th>Item</th><th>SOLO</th><th>Difficulty</th><th>Correct answer</th><th>Review</th><th>Status</th><th></th></tr></thead>
+<thead><tr><th style="width:36px">Score</th><th>ID / Version</th><th>Item</th><th>SOLO</th><th>Difficulty</th><th>Correct answer</th><th>Review</th><th>Status</th><th></th></tr></thead>
 <tbody>
 @forelse($items as $item)
 @php $correct=$item->options->firstWhere('is_correct',true); @endphp
-<tr>
+<tr class="{{ $item->scoring_excluded ? 'table-warning' : '' }}">
+<td>
+    @if(!$exam->archived_at && !$item->scoring_excluded && $item->status)
+        <input type="checkbox" name="item_ids[]" value="{{ $item->id }}" form="excludeScoringForm" aria-label="Select item {{ $item->id }} for scoring exclusion">
+    @elseif($item->scoring_excluded)
+        <i class="fas fa-ban text-warning" title="Excluded from scoring"></i>
+    @endif
+</td>
 <td>{{ $item->id }}<br><small class="text-muted">v{{ $item->item_version ?? 1 }}</small></td>
 <td>{{ Str::limit($item->question,140) }} @if($item->ai_generated)<span class="badge badge-info">AI</span>@endif</td>
 <td>{{ $item->solo_level ?? '-' }}</td>
@@ -228,19 +265,38 @@
     @elseif($item->review_status==='rejected')<span class="badge badge-danger">Rejected</span>
     @else<span class="badge badge-warning">Pending review</span>@endif
 </td>
-<td>{{ $item->status ? 'Active':'Inactive' }}</td>
+<td>
+    <div>{{ $item->status ? 'Active':'Inactive' }}</div>
+    @if($item->scoring_excluded)
+        <span class="badge badge-warning mt-1">Excluded from score</span>
+    @endif
+</td>
 <td class="text-nowrap">
 <a class="btn btn-sm btn-warning {{ $locked?'disabled':'' }}" href="{{ $locked?'#':route('admin.assessments.items.edit',[$exam,$item]) }}"><i class="fas fa-edit"></i></a>
 <form class="d-inline" method="post" action="{{ route('admin.assessments.items.toggle',[$exam,$item]) }}">@csrf @method('put')<button class="btn btn-sm btn-outline-secondary" {{ $locked?'disabled':'' }}><i class="fas fa-eye"></i></button></form>
+@if($item->scoring_excluded && !$exam->archived_at)
+    <button type="button" class="btn btn-sm btn-outline-success" data-toggle="modal" data-target="#restoreScoring{{ $item->id }}" title="Restore item to scoring">
+        <i class="fas fa-undo"></i>
+    </button>
+@endif
 </td>
 </tr>
-<tr class="bg-light"><td></td><td colspan="7">
+<tr class="bg-light"><td></td><td></td><td colspan="7">
 <details><summary>Review item details</summary>
 <div class="mt-2"><strong class="written-stem">{{ $item->question }}</strong></div>
 <ol type="A" class="mt-2">@foreach($item->options->sortBy('source_position') as $option)<li class="{{ $option->is_correct?'text-success font-weight-bold':'' }}">{{ $option->option_text }}</li>@endforeach</ol>
 @if($item->competency_basis)<div><strong>Basis:</strong> {{ $item->competency_basis }}</div>@endif
 @if($item->rationale)<div><strong>Rationale:</strong> {{ $item->rationale }}</div>@endif
 @if($item->review_notes)<div><strong>Review notes:</strong> {{ $item->review_notes }}</div>@endif
+@if($item->scoring_excluded)
+<div class="alert alert-warning py-2 mt-2 mb-1">
+    <strong>Excluded from scoring.</strong>
+    {{ $item->scoring_exclusion_reason ?: 'No reason recorded.' }}
+    @if($item->scoring_excluded_at)
+        <div class="small text-muted">Excluded {{ $item->scoring_excluded_at->format('M d, Y h:i A') }}</div>
+    @endif
+</div>
+@endif
 @if(!$locked)
 <hr>
 <form method="post" action="{{ route('admin.assessments.items.review',[$exam,$item]) }}" class="form-row align-items-end">@csrf @method('put')
@@ -260,10 +316,46 @@
 </form>
 @endif
 </details></td></tr>
-@empty<tr><td colspan="8">No items yet.</td></tr>@endforelse
+@empty<tr><td colspan="9">No items yet.</td></tr>@endforelse
 </tbody></table></div>
 </div></div>
-@if($locked)<div class="alert alert-warning">Items are locked because the set is published or attempts exist. Return an unused published set to draft, or create a new equivalent/versioned set after attempts begin.</div>@endif
+
+@foreach($items->where('scoring_excluded', true) as $excludedItem)
+@if(!$exam->archived_at)
+<div class="modal fade" id="restoreScoring{{ $excludedItem->id }}" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <form method="post" action="{{ route('admin.assessments.items.restore_scoring',[$exam,$excludedItem]) }}">
+            @csrf
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Restore Item {{ $excludedItem->id }} to Scoring</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted">
+                        Restoring this item will make it count again for future scoring and will recalculate completed attempts.
+                    </p>
+                    <div class="form-group mb-0">
+                        <label>Reason for restoration</label>
+                        <textarea name="reason" class="form-control" rows="3" maxlength="3000" required
+                                  placeholder="Document why this item should count again."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Restore to Scoring</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
+@endforeach
+
+@if($locked)<div class="alert alert-warning">
+    Item content is locked because the set is published or attempts exist. You cannot edit the question/options,
+    but authorized scoring correction remains available above so defective items can be excluded without interrupting the live set.
+</div>@endif
 @stop
 
 

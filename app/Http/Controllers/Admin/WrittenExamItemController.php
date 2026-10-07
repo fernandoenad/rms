@@ -9,6 +9,7 @@ use App\Models\WrittenExam;
 use App\Models\WrittenExamOption;
 use Illuminate\Http\Request;
 use App\Services\AssessmentGovernanceService;
+use App\Services\WrittenAttemptScoringService;
 use Illuminate\Support\Facades\DB;
 
 class WrittenExamItemController extends Controller
@@ -83,7 +84,11 @@ class WrittenExamItemController extends Controller
                 'item_version',
                 'review_status',
                 'review_notes',
-                'reviewed_at'
+                'reviewed_at',
+                'scoring_excluded',
+                'scoring_exclusion_reason',
+                'scoring_excluded_at',
+                'scoring_excluded_by'
             )
             ->orderByDesc('id')
             ->get();
@@ -398,6 +403,114 @@ class WrittenExamItemController extends Controller
         ]);
 
         return back()->with('status', $items->count() . ' AI-generated item(s) approved.');
+    }
+
+    public function excludeFromScoring(
+        Request $request,
+        Exam $exam,
+        AssessmentGovernanceService $governance,
+        WrittenAttemptScoringService $writtenScoring
+    ) {
+        abort_if($exam->archived_at, 403, 'Archived assessments are frozen and cannot be changed.');
+        
+        $data = $request->validate([
+            'item_ids' => 'required|array|min:1',
+            'item_ids.*' => 'integer',
+            'reason' => 'required|string|max:3000',
+        ]);
+
+        $items = $exam->writtenExams()
+            ->whereIn('id', $data['item_ids'])
+            ->where('status', 1)
+            ->get();
+
+        if ($items->isEmpty()) {
+            return back()->with('status', 'No active items were selected for scoring exclusion.');
+        }
+
+        $itemIds = $items->pluck('id')->values();
+
+        DB::transaction(function () use ($items, $data) {
+            foreach ($items as $item) {
+                $item->update([
+                    'scoring_excluded' => true,
+                    'scoring_exclusion_reason' => $data['reason'],
+                    'scoring_excluded_at' => now(),
+                    'scoring_excluded_by' => auth()->id(),
+                ]);
+            }
+        });
+
+        $rescore = $writtenScoring->rescoreCompletedExam(
+            $exam,
+            'Written item(s) excluded from scoring: '.$data['reason'],
+            auth()->id()
+        );
+
+        $governance->log('written_items_excluded_from_scoring', [
+            'assessment_group_id' => $exam->assessment_group_id,
+            'exam_id' => $exam->id,
+        ], [
+            'item_ids' => $itemIds->all(),
+            'reason' => $data['reason'],
+            'rescored_attempts' => $rescore['rescored'],
+            'changed_scores' => $rescore['changed'],
+            'excluded_by' => auth()->id(),
+        ]);
+
+        return back()->with(
+            'status',
+            $items->count().' item(s) excluded from scoring. They remain visible to takers, but their responses no longer affect the score. '
+            .$rescore['rescored'].' completed attempt(s) were recalculated.'
+        );
+    }
+
+    public function restoreScoring(
+        Request $request,
+        Exam $exam,
+        WrittenExam $item,
+        AssessmentGovernanceService $governance,
+        WrittenAttemptScoringService $writtenScoring
+    ) {
+        abort_if($exam->archived_at, 403, 'Archived assessments are frozen and cannot be changed.');
+        abort_unless((int) $item->exam_id === (int) $exam->id, 404);
+
+        $data = $request->validate([
+            'reason' => 'required|string|max:3000',
+        ]);
+
+        if (!$item->scoring_excluded) {
+            return back()->with('status', 'This item is already included in scoring.');
+        }
+
+        $item->update([
+            'scoring_excluded' => false,
+            'scoring_exclusion_reason' => null,
+            'scoring_excluded_at' => null,
+            'scoring_excluded_by' => null,
+        ]);
+
+        $rescore = $writtenScoring->rescoreCompletedExam(
+            $exam,
+            'Written item restored to scoring: '.$data['reason'],
+            auth()->id()
+        );
+
+        $governance->log('written_item_restored_to_scoring', [
+            'assessment_group_id' => $exam->assessment_group_id,
+            'exam_id' => $exam->id,
+            'written_exam_id' => $item->id,
+        ], [
+            'reason' => $data['reason'],
+            'rescored_attempts' => $rescore['rescored'],
+            'changed_scores' => $rescore['changed'],
+            'restored_by' => auth()->id(),
+        ]);
+
+        return back()->with(
+            'status',
+            'Item restored to scoring. '.$rescore['rescored'].' completed attempt(s) were recalculated.'
+        );
     }
 
     public function toggleStatus(Exam $exam, WrittenExam $item)

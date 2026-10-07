@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Services\AssessmentScoreSyncService;
 use App\Services\EquivalentSetScheduleResolver;
+use App\Services\WrittenAttemptScoringService;
 
 class ExamAttemptController extends Controller
 {
@@ -158,43 +159,23 @@ class ExamAttemptController extends Controller
                 return $locked;
             }
 
-            $exam = $locked->exam()->with(['writtenExams.options'])->firstOrFail();
-            $answers = $locked->answers()->with('selectedOption')->get();
-            $items = $exam->writtenExams->where('status', 1);
-
-            $correct = 0;
-            foreach ($items as $item) {
-                $answer = $answers->firstWhere('written_exam_id', $item->id);
-
-                if ($answer && $answer->selectedOption && $answer->selectedOption->is_correct) {
-                    $correct++;
-                    continue;
-                }
-
-                if ($answer && !$answer->selected_option_id && $answer->selected_option
-                    && strtoupper($answer->selected_option) === strtoupper((string) $item->answer_key)) {
-                    $correct++;
-                }
-            }
-
-            $total = $items->count();
-            $percentage = $total > 0 ? round(($correct / $total) * 100, 2) : 0;
+            $score = app(WrittenAttemptScoringService::class)->calculate($locked);
 
             $locked->update([
                 'ended_at' => now(),
                 'status' => 2,
                 'auto_submitted' => $autoSubmitted,
                 'auto_submit_reason' => $reason,
-                'correct_answers' => $correct,
-                'total_items' => $total,
-                'percentage' => $percentage,
+                'correct_answers' => $score['correct_answers'],
+                'total_items' => $score['total_items'],
+                'percentage' => $score['percentage'],
                 'scored_at' => now(),
             ]);
 
             $this->event($request, $locked, $reason, [
-                'correct_answers' => $correct,
-                'total_items' => $total,
-                'answered_items' => $answers->whereNotNull('selected_option_id')->count(),
+                'correct_answers' => $score['correct_answers'],
+                'total_items' => $score['total_items'],
+                'answered_items' => $score['answered_items'],
             ]);
 
             return $locked;

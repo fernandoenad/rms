@@ -7,13 +7,14 @@ use App\Models\ExamAttempt;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use App\Services\AssessmentScoreSyncService;
+use App\Services\WrittenAttemptScoringService;
 
 class FinalizeExpiredWrittenAttempts extends Command
 {
     protected $signature = 'assessments:finalize-expired {--limit=500}';
     protected $description = 'Finalize expired in-progress written assessment attempts.';
 
-    public function handle(AssessmentScoreSyncService $scoreSync): int
+    public function handle(AssessmentScoreSyncService $scoreSync, WrittenAttemptScoringService $writtenScoring): int
     {
         $limit = max(1, min(5000, (int) $this->option('limit')));
         $processed = 0;
@@ -25,55 +26,24 @@ class FinalizeExpiredWrittenAttempts extends Command
             ->orderBy('id')
             ->limit($limit)
             ->pluck('id')
-            ->each(function ($attemptId) use (&$processed, $scoreSync) {
-                $finalized = DB::transaction(function () use ($attemptId, &$processed) {
+            ->each(function ($attemptId) use (&$processed, $scoreSync, $writtenScoring) {
+                $finalized = DB::transaction(function () use ($attemptId, &$processed, $writtenScoring) {
                     $attempt = ExamAttempt::whereKey($attemptId)->lockForUpdate()->first();
 
                     if (!$attempt || (int) $attempt->status !== 1 || !$attempt->expires_at || now()->lt($attempt->expires_at)) {
                         return;
                     }
 
-                    $items = DB::table('written_exams')
-                        ->where('exam_id', $attempt->exam_id)
-                        ->where('status', 1)
-                        ->pluck('id');
-
-                    $total = $items->count();
-
-                    $correct = DB::table('exam_attempt_answers as a')
-                        ->join('written_exams as w', 'w.id', '=', 'a.written_exam_id')
-                        ->leftJoin('written_exam_options as o', 'o.id', '=', 'a.selected_option_id')
-                        ->where('a.exam_attempt_id', $attempt->id)
-                        ->whereIn('a.written_exam_id', $items)
-                        ->where(function ($query) {
-                            $query->where('o.is_correct', 1)
-                                ->orWhere(function ($legacy) {
-                                    $legacy->whereNull('a.selected_option_id')
-                                        ->whereNotNull('a.selected_option')
-                                        ->whereRaw('UPPER(a.selected_option) = UPPER(w.answer_key)');
-                                });
-                        })
-                        ->count();
-
-                    $answered = DB::table('exam_attempt_answers')
-                        ->where('exam_attempt_id', $attempt->id)
-                        ->whereIn('written_exam_id', $items)
-                        ->where(function ($query) {
-                            $query->whereNotNull('selected_option_id')
-                                ->orWhereNotNull('selected_option');
-                        })
-                        ->count();
-
-                    $percentage = $total > 0 ? round(($correct / $total) * 100, 2) : 0;
+                    $score = $writtenScoring->calculate($attempt);
 
                     $attempt->update([
                         'ended_at' => now(),
                         'status' => 2,
                         'auto_submitted' => true,
                         'auto_submit_reason' => 'timeout',
-                        'correct_answers' => $correct,
-                        'total_items' => $total,
-                        'percentage' => $percentage,
+                        'correct_answers' => $score['correct_answers'],
+                        'total_items' => $score['total_items'],
+                        'percentage' => $score['percentage'],
                         'scored_at' => now(),
                     ]);
 
@@ -83,9 +53,9 @@ class FinalizeExpiredWrittenAttempts extends Command
                         'event_at' => now(),
                         'metadata' => [
                             'source' => 'scheduled_finalizer',
-                            'correct_answers' => $correct,
-                            'total_items' => $total,
-                            'answered_items' => $answered,
+                            'correct_answers' => $score['correct_answers'],
+                            'total_items' => $score['total_items'],
+                            'answered_items' => $score['answered_items'],
                         ],
                     ]);
 
