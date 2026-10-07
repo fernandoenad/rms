@@ -481,27 +481,131 @@ class AssessmentCenterController extends Controller
             ->take(15)
             ->values();
 
+        $reviewDetails = collect();
+
+        WrittenExam::query()
+            ->with([
+                'exam:id,title,set_code,assessment_group_id,vacancy_id',
+                'exam.assessmentGroup:id,title',
+                'exam.vacancy:id,position_title',
+            ])
+            ->where('status', 1)
+            ->where('review_status', '!=', 'approved')
+            ->orderByDesc('id')
+            ->limit(50)
+            ->get()
+            ->each(function ($item) use ($reviewDetails) {
+                $exam = $item->exam;
+                if (!$exam) return;
+
+                $reviewDetails->push([
+                    'category' => 'written_review',
+                    'type' => 'Written',
+                    'icon' => 'fas fa-list-check',
+                    'title' => $exam->assessmentGroup?->title ?: $exam->title,
+                    'subtitle' => trim(
+                        ($exam->set_code ? 'Set '.$exam->set_code.' · ' : '').
+                        ($exam->vacancy?->position_title ?: '').
+                        ($item->question ? ' · '.\Illuminate\Support\Str::limit($item->question, 90) : '')
+                    , ' ·'),
+                    'action_label' => 'Review Item',
+                    'url' => route('admin.assessments.items.index', $exam).'#item-'.$item->id,
+                    'sort_at' => $item->updated_at ?: $item->created_at,
+                ]);
+            });
+
+        SkillTest::query()
+            ->with([
+                'skillTestGroup:id,title',
+                'vacancy:id,position_title',
+            ])
+            ->whereNull('archived_at')
+            ->where('review_status', '!=', 'approved')
+            ->orderByDesc('id')
+            ->limit(50)
+            ->get()
+            ->each(function ($test) use ($reviewDetails) {
+                $reviewDetails->push([
+                    'category' => 'skills_review',
+                    'type' => 'Skills',
+                    'icon' => 'fas fa-tools',
+                    'title' => $test->skillTestGroup?->title ?: $test->title,
+                    'subtitle' => trim(
+                        ($test->set_code ? 'Set '.$test->set_code.' · ' : '').
+                        ($test->vacancy?->position_title ?: '').
+                        ' · Task review'
+                    , ' ·'),
+                    'action_label' => 'Review Task',
+                    'url' => route('admin.skills.edit', $test),
+                    'sort_at' => $test->updated_at ?: $test->created_at,
+                ]);
+            });
+
+        SkillTestAttempt::query()
+            ->with([
+                'application:id,application_code,first_name,middle_name,last_name',
+                'skillTest:id,title,set_code,skill_test_group_id,vacancy_id',
+                'skillTest.skillTestGroup:id,title',
+                'skillTest.vacancy:id,position_title',
+            ])
+            ->where('status', 2)
+            ->whereNull('final_score')
+            ->orderByDesc('submitted_at')
+            ->limit(75)
+            ->get()
+            ->each(function ($attempt) use ($reviewDetails) {
+                $test = $attempt->skillTest;
+                if (!$test) return;
+
+                $application = $attempt->application;
+                $applicationCode = $application?->application_code;
+                $name = $application
+                    ? trim(collect([$application->first_name, $application->middle_name, $application->last_name])->filter()->join(' '))
+                    : null;
+
+                $reviewDetails->push([
+                    'category' => 'skills_evaluation',
+                    'type' => 'Evaluation',
+                    'icon' => 'fas fa-user-check',
+                    'title' => $name ?: ($applicationCode ?: 'Applicant'),
+                    'subtitle' => trim(
+                        ($applicationCode ? $applicationCode.' · ' : '').
+                        ($test->skillTestGroup?->title ?: $test->title).
+                        ($test->set_code ? ' · Set '.$test->set_code : '').
+                        ($test->vacancy?->position_title ? ' · '.$test->vacancy->position_title : '')
+                    , ' ·'),
+                    'action_label' => 'Evaluate',
+                    'url' => route('admin.skills.results', $test).
+                        ($applicationCode ? '?q='.urlencode($applicationCode) : ''),
+                    'sort_at' => $attempt->submitted_at ?: $attempt->updated_at,
+                ]);
+            });
+
+        $reviewDetails = $reviewDetails
+            ->sortByDesc(fn ($item) => $item['sort_at']?->timestamp ?? 0)
+            ->values();
+
         $reviewQueue = collect([
             [
+                'category'=>'written_review',
                 'label'=>'Written items pending review',
                 'count'=>(int)$written['pending_item_review'],
                 'icon'=>'fas fa-list-check',
                 'type'=>'Written',
-                'url'=>route('admin.assessment_center.index').'#assessments',
             ],
             [
+                'category'=>'skills_review',
                 'label'=>'Skills tasks pending review',
                 'count'=>(int)$skillPendingReviewByGroup->sum(),
                 'icon'=>'fas fa-tools',
                 'type'=>'Skills',
-                'url'=>route('admin.assessment_center.index').'#assessments',
             ],
             [
+                'category'=>'skills_evaluation',
                 'label'=>'Skills submissions awaiting human evaluation',
                 'count'=>(int)$skills['pending_human'],
                 'icon'=>'fas fa-user-check',
                 'type'=>'Evaluation',
-                'url'=>route('admin.skill_groups.index'),
             ],
         ])->filter(fn ($item) => $item['count'] > 0)->values();
 
@@ -545,6 +649,7 @@ class AssessmentCenterController extends Controller
             'todayTimeline',
             'liveSessions',
             'reviewQueue',
+            'reviewDetails',
             'standaloneSkillTests',
             'standaloneExams'
         ));
