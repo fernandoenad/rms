@@ -127,6 +127,9 @@ class AssessmentCenterController extends Controller
             'submitted' => (int) ($skillAttempts->submitted ?? 0),
             'malformed_in_progress' => (int) ($skillAttempts->malformed_in_progress ?? 0),
             'pending_human' => (int) ($skillAttempts->pending_human ?? 0),
+            'pending_task_review' => SkillTest::whereNull('archived_at')
+                ->where('review_status', '!=', 'approved')
+                ->count(),
             'pending_ai' => SkillTestAiEvaluation::whereIn('status',['pending','processing'])->count(),
         ];
 
@@ -596,7 +599,7 @@ class AssessmentCenterController extends Controller
             [
                 'category'=>'skills_review',
                 'label'=>'Skills tasks pending review',
-                'count'=>(int)$skillPendingReviewByGroup->sum(),
+                'count'=>(int)$skills['pending_task_review'],
                 'icon'=>'fas fa-tools',
                 'type'=>'Skills',
             ],
@@ -615,7 +618,7 @@ class AssessmentCenterController extends Controller
             'closing_today'=>$todayTimeline->where('event','closes')->count(),
             'needs_attention'=>$assessmentRows->where('ready',false)->count(),
             'taking_now'=>(int)$written['taking_now'] + (int)$skills['taking_now'],
-            'pending_review'=>(int)$written['pending_item_review'] + (int)$skillPendingReviewByGroup->sum(),
+            'pending_review'=>(int)$written['pending_item_review'] + (int)$skills['pending_task_review'],
             'pending_evaluation'=>(int)$skills['pending_human'],
         ];
 
