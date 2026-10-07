@@ -130,19 +130,77 @@
     </div>
 
     <div class="col-lg-5 mt-3 mt-lg-0">
-        <div class="card card-outline card-warning h-100">
-            <div class="card-header"><strong><i class="fas fa-tasks mr-1"></i> Unified Review Queue</strong></div>
+        <div class="card card-outline card-warning h-100" id="unifiedReviewQueue">
+            <div class="card-header d-flex justify-content-between align-items-center"
+                 @if($reviewQueue->isNotEmpty()) role="button" data-toggle="collapse" data-target="#unifiedReviewDetails" aria-expanded="false" aria-controls="unifiedReviewDetails" style="cursor:pointer;" @endif>
+                <strong><i class="fas fa-tasks mr-1"></i> Unified Review Queue</strong>
+                @if($reviewQueue->isNotEmpty())
+                    <span class="small text-muted">
+                        <span class="badge badge-warning mr-1">{{ number_format($reviewQueue->sum('count')) }}</span>
+                        Click to show action list <i class="fas fa-chevron-down ml-1"></i>
+                    </span>
+                @endif
+            </div>
             <div class="card-body p-0">
                 @if($reviewQueue->isEmpty())
                     <div class="p-3 text-success"><i class="fas fa-check-circle mr-1"></i> No pending review or evaluation work.</div>
                 @else
                     <div class="list-group list-group-flush">
                     @foreach($reviewQueue as $review)
-                        <a href="{{ $review['url'] }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                        <button type="button"
+                                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center review-category-filter"
+                                data-review-category="{{ $review['category'] }}">
                             <span><i class="{{ $review['icon'] }} mr-2 text-muted"></i>{{ $review['label'] }}</span>
                             <span class="badge badge-warning badge-pill">{{ number_format($review['count']) }}</span>
-                        </a>
+                        </button>
                     @endforeach
+                    </div>
+
+                    <div class="collapse border-top" id="unifiedReviewDetails">
+                        <div class="p-2 border-bottom bg-light d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                Direct action list — no need to open each assessment to look for pending work.
+                            </small>
+                            <button type="button" class="btn btn-xs btn-outline-secondary" id="showAllReviewItems">Show all</button>
+                        </div>
+                        <div class="table-responsive" style="max-height:430px;overflow:auto;">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th>Work Needed</th>
+                                        <th>Assessment / Applicant</th>
+                                        <th>Details</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="unifiedReviewDetailRows">
+                                @forelse($reviewDetails as $reviewItem)
+                                    <tr data-review-detail-category="{{ $reviewItem['category'] }}">
+                                        <td class="text-nowrap">
+                                            <span class="badge {{ $reviewItem['type']==='Written' ? 'badge-primary' : ($reviewItem['type']==='Skills' ? 'badge-info' : 'badge-warning') }}">
+                                                <i class="{{ $reviewItem['icon'] }} mr-1"></i>{{ $reviewItem['type'] }}
+                                            </span>
+                                        </td>
+                                        <td><strong>{{ $reviewItem['title'] }}</strong></td>
+                                        <td class="small text-muted">{{ $reviewItem['subtitle'] ?: 'Pending action' }}</td>
+                                        <td class="text-nowrap">
+                                            <a href="{{ $reviewItem['url'] }}" class="btn btn-xs btn-warning">
+                                                {{ $reviewItem['action_label'] }} <i class="fas fa-arrow-right ml-1"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="4" class="text-muted text-center py-3">No actionable records found.</td></tr>
+                                @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                        @if($reviewQueue->sum('count') > $reviewDetails->count())
+                            <div class="px-3 py-2 small text-muted border-top">
+                                Showing the most recent {{ number_format($reviewDetails->count()) }} actionable record(s).
+                                Category totals above include all pending work.
+                            </div>
+                        @endif
                     </div>
                 @endif
             </div>
@@ -455,6 +513,23 @@ $(function () {
 
             row.toggle(show);
         });
+    });
+
+    $('.review-category-filter').on('click', function (event) {
+        event.stopPropagation();
+        var category = String($(this).data('review-category'));
+        $('#unifiedReviewDetails').collapse('show');
+        $('#unifiedReviewDetailRows tr[data-review-detail-category]').each(function () {
+            $(this).toggle(String($(this).data('review-detail-category')) === category);
+        });
+        $('.review-category-filter').removeClass('active');
+        $(this).addClass('active');
+    });
+
+    $('#showAllReviewItems').on('click', function (event) {
+        event.stopPropagation();
+        $('#unifiedReviewDetailRows tr[data-review-detail-category]').show();
+        $('.review-category-filter').removeClass('active');
     });
 });
 </script>

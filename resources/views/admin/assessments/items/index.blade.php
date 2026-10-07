@@ -247,7 +247,7 @@
 <tbody>
 @forelse($items as $item)
 @php $correct=$item->options->firstWhere('is_correct',true); @endphp
-<tr class="{{ $item->scoring_excluded ? 'table-warning' : '' }}">
+<tr id="item-{{ $item->id }}" class="{{ $item->scoring_excluded ? 'table-warning' : '' }}">
 <td>
     @if(!$exam->archived_at && !$item->scoring_excluded && $item->status)
         <input type="checkbox" name="item_ids[]" value="{{ $item->id }}" form="excludeScoringForm" aria-label="Select item {{ $item->id }} for scoring exclusion">
