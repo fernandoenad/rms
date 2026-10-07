@@ -17,11 +17,14 @@ class WrittenExam extends Model
         'answer_key', 'rationale', 'ai_generated', 'solo_level', 'difficulty', 'competency_basis',
         'item_version', 'supersedes_item_id', 'review_status', 'reviewed_by', 'reviewed_at', 'review_notes',
         'attempts', 'status',
+        'scoring_excluded', 'scoring_exclusion_reason', 'scoring_excluded_at', 'scoring_excluded_by',
     ];
 
     protected $casts = [
         'ai_generated' => 'boolean',
         'reviewed_at' => 'datetime',
+        'scoring_excluded' => 'boolean',
+        'scoring_excluded_at' => 'datetime',
     ];
 
     public function exam(): BelongsTo { return $this->belongsTo(Exam::class); }
