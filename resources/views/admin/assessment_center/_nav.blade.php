@@ -1,5 +1,6 @@
 @php
-    $assessmentCenterActive = request()->routeIs('admin.assessment_center.*');
+    $assessmentCenterActive = request()->routeIs('admin.assessment_center.index');
+    $integrityActive = request()->routeIs('admin.assessment_center.integrity*');
     $assessmentRoutes = request()->routeIs('admin.assessment_groups.*')
         || request()->routeIs('admin.skill_groups.*')
         || request()->routeIs('admin.assessments.*')
@@ -20,6 +21,10 @@
                 <a class="nav-link {{ $assessmentRoutes ? 'active' : '' }}"
                    href="{{ route('admin.assessment_center.index') }}#assessments">
                     <i class="fas fa-clipboard-list mr-1"></i> Assessments
+                </a>
+                <a class="nav-link {{ $integrityActive ? 'active' : '' }}"
+                   href="{{ route('admin.assessment_center.integrity') }}">
+                    <i class="fas fa-balance-scale mr-1"></i> Score Integrity
                 </a>
                 <a class="nav-link {{ $qualityActive ? 'active' : '' }}"
                    href="{{ route('admin.assessment_bank.index') }}">
