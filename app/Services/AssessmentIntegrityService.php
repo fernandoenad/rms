@@ -18,6 +18,9 @@ class AssessmentIntegrityService
     public function anomalies(?string $type = null, ?string $search = null): Collection
     {
         $candidates = collect();
+        $criteriaCache = [];
+        $writtenReleaseCache = [];
+        $skillReleaseCache = [];
 
         if (!$type || $type === 'written') {
             ExamAttempt::query()
@@ -31,7 +34,7 @@ class AssessmentIntegrityService
                 ->where('status', 2)
                 ->whereNotNull('percentage')
                 ->orderBy('id')
-                ->chunkById(250, function ($attempts) use ($candidates) {
+                ->chunkById(250, function ($attempts) use ($candidates, &$criteriaCache, &$writtenReleaseCache) {
                     foreach ($attempts as $attempt) {
                         $exam = $attempt->exam;
                         if (!$exam || !$attempt->application) {
@@ -40,7 +43,10 @@ class AssessmentIntegrityService
 
                         $group = $exam->assessmentGroup;
                         if ($group) {
-                            if (!$group->assessment_score_key || !$group->scoresAreReleased()) {
+                            $released = $writtenReleaseCache[$group->id]
+                                ??= $group->scoresAreReleased();
+
+                            if (!$group->assessment_score_key || !$released) {
                                 continue;
                             }
                             $criterion = (string) $group->assessment_score_key;
@@ -61,7 +67,8 @@ class AssessmentIntegrityService
                             continue;
                         }
 
-                        $criteria = $this->scoreSync->criteriaForVacancy($vacancy);
+                        $criteria = $criteriaCache[$vacancyId]
+                            ??= $this->scoreSync->criteriaForVacancy($vacancy);
                         if (!array_key_exists($criterion, $criteria)) {
                             continue;
                         }
@@ -101,14 +108,21 @@ class AssessmentIntegrityService
                 ->where('status', 2)
                 ->whereNotNull('final_score')
                 ->orderBy('id')
-                ->chunkById(250, function ($attempts) use ($candidates) {
+                ->chunkById(250, function ($attempts) use ($candidates, &$criteriaCache, &$skillReleaseCache) {
                     foreach ($attempts as $attempt) {
                         $test = $attempt->skillTest;
-                        if (!$test || !$attempt->application || !$test->scoresAreReleased()) {
+                        if (!$test || !$attempt->application) {
                             continue;
                         }
 
                         $group = $test->skillTestGroup;
+                        $releaseKey = $group ? 'group:'.$group->id : 'test:'.$test->id;
+                        $released = $skillReleaseCache[$releaseKey]
+                            ??= $test->scoresAreReleased();
+
+                        if (!$released) {
+                            continue;
+                        }
                         $criterion = $group?->assessment_score_key ?: $test->assessment_score_key;
                         $vacancy = $group?->vacancy ?: $test->vacancy;
                         $vacancyId = (int) ($group?->vacancy_id ?: $test->vacancy_id);
@@ -118,7 +132,8 @@ class AssessmentIntegrityService
                             continue;
                         }
 
-                        $criteria = $this->scoreSync->criteriaForVacancy($vacancy);
+                        $criteria = $criteriaCache[$vacancyId]
+                            ??= $this->scoreSync->criteriaForVacancy($vacancy);
                         if (!array_key_exists($criterion, $criteria)) {
                             continue;
                         }
