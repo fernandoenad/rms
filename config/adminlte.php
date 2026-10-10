@@ -379,6 +379,7 @@ return [
             'icon' => 'fas fa-fw fa-pen',
             'active' => [
                 'admin/assessment-center',
+                'admin/assessment-center/*',
                 'admin/assessment-bank',
                 'admin/assessment-snapshots',
                 'admin/assessment-permissions',
