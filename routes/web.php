@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\WrittenExamItemController as AdminWrittenExamItem
 use App\Http\Controllers\Admin\SkillTestController as AdminSkillTest;
 use App\Http\Controllers\Admin\SkillTestGroupController as AdminSkillTestGroup;
 use App\Http\Controllers\Admin\AssessmentCenterController as AdminAssessmentCenter;
+use App\Http\Controllers\Admin\AssessmentIntegrityController as AdminAssessmentIntegrity;
 use App\Http\Controllers\Admin\AssessmentContentBankController as AdminAssessmentContentBank;
 use App\Http\Controllers\Admin\AssessmentPermissionController as AdminAssessmentPermission;
 use App\Http\Controllers\Admin\AssessmentSnapshotController as AdminAssessmentSnapshot;
@@ -182,6 +183,10 @@ Route::group(['middleware' => ['active']], function () {
     Route::post('/admin/vacancies/{vacancy}/draft', [AdminVacancy::class, 'returnToDraft'])->name('admin.vacancies.draft');
 
     Route::get('/admin/assessment-center', [AdminAssessmentCenter::class, 'index'])->name('admin.assessment_center.index');
+    Route::get('/admin/assessment-center/integrity', [AdminAssessmentIntegrity::class, 'index'])->name('admin.assessment_center.integrity');
+    Route::post('/admin/assessment-center/integrity/repair', [AdminAssessmentIntegrity::class, 'repair'])
+        ->middleware('assessment.capability:release')
+        ->name('admin.assessment_center.integrity.repair');
     Route::post('/admin/assessment-center/failed-jobs/retry', [AdminAssessmentCenter::class, 'retryFailedJobs'])->name('admin.assessment_center.failed_jobs.retry');
     Route::post('/admin/assessment-center/failed-jobs/clear', [AdminAssessmentCenter::class, 'clearFailedJobs'])->name('admin.assessment_center.failed_jobs.clear');
     Route::get('/admin/assessment-snapshots', [AdminAssessmentSnapshot::class, 'index'])->name('admin.assessment_snapshots.index');
