@@ -16,6 +16,7 @@ use App\Models\SkillTestGroup;
 use App\Models\Template;
 use App\Models\Vacancy;
 use App\Services\AssessmentScoreSyncService;
+use App\Services\AssessmentIntegrityService;
 use App\Services\EquivalentSetScheduleResolver;
 use App\Services\WrittenAttemptScoringService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -485,6 +486,62 @@ class AssessmentRegressionTest extends TestCase
 
         $this->assertTrue($written->fresh()->scoresAreReleased());
         $this->assertTrue($skills->fresh()->scoresAreReleased());
+    }
+
+    public function test_integrity_check_detects_and_repairs_written_assessment_score_mismatch(): void
+    {
+        [$vacancy, $application, $assessment] = $this->makeTakenInApplication([
+            'Written_Examination' => 20,
+            'Interview' => 80,
+        ]);
+
+        $group = AssessmentGroup::create([
+            'vacancy_id' => $vacancy->id,
+            'title' => 'Written Integrity Group',
+            'code' => 'WG-INTEGRITY',
+            'expected_sets' => 1,
+            'status' => 1,
+            'score_release_policy' => 'manual',
+            'assessment_score_key' => 'Written_Examination',
+            'scores_released_at' => now(),
+        ]);
+
+        $exam = $this->makeExam($vacancy, $group, 'A', now()->subHour(), now()->addHour());
+
+        $attempt = ExamAttempt::create([
+            'exam_id' => $exam->id,
+            'application_id' => $application->id,
+            'started_at' => now()->subMinutes(20),
+            'expires_at' => now()->addMinutes(10),
+            'ended_at' => now(),
+            'status' => 2,
+            'correct_answers' => 10,
+            'total_items' => 20,
+            'percentage' => 50,
+            'scored_at' => now(),
+        ]);
+
+        $assessment->update([
+            'assessment' => json_encode([
+                'Written_Examination' => 8,
+                'Interview' => 0,
+            ]),
+            'score' => 8,
+        ]);
+
+        $integrity = app(AssessmentIntegrityService::class);
+        $rows = $integrity->anomalies('written');
+
+        $this->assertCount(1, $rows);
+        $this->assertSame($attempt->id, $rows->first()['source_id']);
+        $this->assertSame(8.0, (float) $rows->first()['current']);
+        $this->assertSame(10.0, (float) $rows->first()['expected']);
+
+        $this->assertTrue($integrity->repair('written', $attempt->id));
+
+        $scores = json_decode((string) $assessment->fresh()->assessment, true);
+        $this->assertSame(10.0, (float) $scores['Written_Examination']);
+        $this->assertCount(0, $integrity->anomalies('written'));
     }
 
     protected function makeTakenInApplication(array $criteria = ['Written_Examination' => 20, 'Skills_Test' => 20, 'Interview' => 60]): array
