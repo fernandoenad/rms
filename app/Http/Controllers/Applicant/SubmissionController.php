@@ -22,6 +22,14 @@ class SubmissionController extends Controller
             return redirect()->route('applicant.profile.edit')
                 ->with('status', 'Complete your master profile before applying.');
         }
+        $existingLink = ApplicantApplicationLink::with('application')
+            ->where('applicant_profile_id', $profile->id)
+            ->whereHas('application', fn ($query) => $query->where('vacancy_id', $vacancy->id))
+            ->first();
+        if ($existingLink) {
+            return redirect()->route('guest.applications.show', $existingLink->application)
+                ->with('status', 'You already submitted an application for this vacancy.');
+        }
         return view('applicant.review', compact('vacancy', 'profile'));
     }
 
