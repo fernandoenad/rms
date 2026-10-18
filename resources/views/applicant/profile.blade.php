@@ -8,7 +8,7 @@
 <div class="row">
 @foreach(['first_name'=>'First name','middle_name'=>'Middle name','last_name'=>'Last name','sitio'=>'Sitio / Street','barangay'=>'Barangay','municipality'=>'Municipality','zip'=>'Postal code','age'=>'Age','gender'=>'Gender','civil_status'=>'Civil status','religion'=>'Religion','disability'=>'Disability','ethnic_group'=>'Ethnic group','email'=>'Contact email','phone'=>'Mobile number'] as $field=>$label)
 <div class="col-md-6 mb-3"><label for="{{ $field }}">{{ $label }}</label>
-<input class="form-control" id="{{ $field }}" name="{{ $field }}" value="{{ old($field, $profile->$field) }}" {{ $field === 'middle_name' ? '' : 'required' }}></div>
+<input class="form-control" id="{{ $field }}" name="{{ $field }}" value="{{ old($field, $profile->$field) }}" {{ 'required' }}></div>
 @endforeach
 </div>
 <button class="btn btn-primary">Save profile</button>
