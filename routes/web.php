@@ -76,7 +76,11 @@ Route::redirect('/', '/applications')->name('guest.index');
 // not yet applied
 Route::get('/vacancies', [GuestVacancy::class, 'index'])->name('guest.vacancies.index');
 Route::get('/vacancies/{vacancy}', [GuestVacancy::class, 'show'])->name('guest.vacancies.show');
-Route::get('/vacancies/{vacancy}/apply', [GuestVacancy::class, 'apply'])->name('guest.vacancies.apply');
+Route::get('/vacancies/{vacancy}/apply', function (\Illuminate\Http\Request $request, \App\Models\Vacancy $vacancy) {
+    return $request->user()
+        ? redirect()->route('applicant.apply.review', $vacancy)
+        : redirect()->route('applicant.login');
+})->name('guest.vacancies.apply');
 
 Route::get('/applications', [GuestApplication::class, 'index'])->name('guest.applications.index');
 
@@ -86,6 +90,8 @@ Route::get('/reports/{office}', [GuestApplicationReport::class, 'show'])->name('
 Route::get('/rqas', [GuestRQA::class, 'index'])->name('guest.rqas.index');
 Route::get('/rqas/{vacancy}', [GuestRQA::class, 'show'])->name('guest.rqas.show');
 
+// Applicant-specific access requires an authenticated account.
+Route::middleware('auth')->group(function () {
 // already applied
 Route::post('/applications/{vacancy}/apply', [GuestApplication::class, 'store'])->name('guest.applications.store');
 
@@ -123,6 +129,8 @@ Route::post('/skills/attempts/{attempt}/event', [GuestSkillTestAttempt::class, '
 Route::post('/skills/attempts/{attempt}/submit', [GuestSkillTestAttempt::class, 'submit'])
     ->middleware('throttle:skill-submit')->name('guest.skills.attempts.submit');
 
+
+});
 
 // auth routes
 Auth::routes(['register' => false]);
