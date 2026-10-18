@@ -242,3 +242,9 @@ Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./ven
 - After verified Google sign-in, the callback consumes this state and resumes vacancy review only within 30 minutes and only if the vacancy remains open. The subsequent review enforces profile completion and application ownership checks.
 - Guest vacancy state does not authorize ownership or create an application. Old account-specific pending profile state is still cleared when Google sign-in occurs.
 - Added a Google callback integration test for guest selection continuation. Local PHPUnit and actual OAuth browser tests remain required.
+
+## Verified Google linking and outstanding HR claims
+- When a verified Google email newly links an unowned historical application, any outstanding pending or clarification claims for that application are finalized within the same transaction.
+- A matching profile's claim is marked approved; other claims are rejected, without revealing the verified applicant to competing claimants.
+- Separate audit event types record Google-based self-claim resolution and competing claim closure. These are system reconciliation events, not manual HR verification decisions.
+- New lifecycle coverage checks claim statuses, link uniqueness and audit logging. Verify locally and run staging acceptance before merge.
