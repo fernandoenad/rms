@@ -117,6 +117,14 @@ class GoogleAuthController extends Controller
             ApplicantProfile::firstOrCreate(['user_id' => $user->id]);
             return $user;
         });
+        // A Google sign-in may switch accounts. Never carry vacancy onboarding state
+        // from the previous browser session into the newly authenticated identity.
+        $request->session()->forget([
+            'applicant_pending_vacancy_id',
+            'applicant_pending_vacancy_user_id',
+            'applicant_pending_vacancy_started_at',
+            'staff_google_link_user_id',
+        ]);
         Auth::login($user);
         $request->session()->regenerate();
         $profile = ApplicantProfile::where('user_id', $user->id)->firstOrFail();
