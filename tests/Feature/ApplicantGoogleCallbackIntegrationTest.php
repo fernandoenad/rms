@@ -113,6 +113,33 @@ class ApplicantGoogleCallbackIntegrationTest extends TestCase
         $this->assertNull(session('applicant_pending_vacancy_started_at'));
     }
 
+    public function test_guest_vacancy_selection_survives_verified_google_login(): void
+    {
+        $template = Template::create([
+            'type' => 'Guest OAuth Continuation',
+            'template' => json_encode(['Interview' => 100]),
+            'status' => 1,
+        ]);
+        $vacancy = Vacancy::create([
+            'cycle' => 2026, 'position_title' => 'Teacher I',
+            'salary_grade' => 11, 'base_pay' => 27000,
+            'office_level' => 1, 'qualifications' => 'Required',
+            'vacancy' => 1, 'status' => 1, 'template_id' => $template->id,
+            'level1_status' => 1, 'level2_status' => 0,
+        ]);
+
+        $this->get(route('guest.vacancies.apply', $vacancy))
+            ->assertRedirect(route('applicant.login'));
+
+        $this->mockGoogle('guest-continuation-001', 'guest@example.test');
+        $this->get(route('applicant.google.callback'))
+            ->assertRedirect(route('applicant.apply.review', $vacancy));
+
+        $this->assertNull(session('applicant_guest_vacancy_id'));
+        $this->assertNull(session('applicant_guest_vacancy_started_at'));
+        $this->assertDatabaseCount('applications', 0);
+    }
+
     public function test_unverified_google_email_cannot_create_applicant(): void
     {
         $this->mockGoogle('unverified-new-001', 'new@example.test', false);
