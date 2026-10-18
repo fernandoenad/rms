@@ -24,7 +24,7 @@ class ExamAttemptController extends Controller
 {
     protected function authorizeApplication(Request $request, Application $application): void
     {
-        if ($request->session()->get('guest_email') !== $application->email) {
+        if (!app(\App\Services\Applicant\ApplicationOwnershipService::class)->owns($request, $application)) {
             abort(401);
         }
 
@@ -66,11 +66,7 @@ class ExamAttemptController extends Controller
      */
     protected function authorizeAnswerSave(Request $request, ExamAttempt $attempt): void
     {
-        $guestEmail = $request->session()->get('guest_email');
-
-        if (!$guestEmail) {
-            abort(401);
-        }
+        abort_unless($request->user(), 401);
 
         $authorized = ExamAttempt::query()
             ->join('applications', 'applications.id', '=', 'exam_attempts.application_id')
@@ -78,7 +74,12 @@ class ExamAttemptController extends Controller
             ->join('exams', 'exams.id', '=', 'exam_attempts.exam_id')
             ->leftJoin('assessment_groups', 'assessment_groups.id', '=', 'exams.assessment_group_id')
             ->where('exam_attempts.id', $attempt->id)
-            ->where('applications.email', $guestEmail)
+            ->whereExists(function ($ownership) use ($request) {
+                $ownership->selectRaw('1')->from('applicant_application_links as aal')
+                    ->join('applicant_profiles as ap', 'ap.id', '=', 'aal.applicant_profile_id')
+                    ->whereColumn('aal.application_id', 'applications.id')
+                    ->where('ap.user_id', $request->user()->id);
+            })
             ->whereColumn('exams.vacancy_id', 'applications.vacancy_id')
             ->where('exams.status', 1)
             ->where(function ($query) {
