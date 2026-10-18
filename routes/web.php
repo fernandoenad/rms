@@ -100,9 +100,14 @@ Route::redirect('/', '/applications')->name('guest.index');
 Route::get('/vacancies', [GuestVacancy::class, 'index'])->name('guest.vacancies.index');
 Route::get('/vacancies/{vacancy}', [GuestVacancy::class, 'show'])->name('guest.vacancies.show');
 Route::get('/vacancies/{vacancy}/apply', function (\Illuminate\Http\Request $request, \App\Models\Vacancy $vacancy) {
-    return $request->user()
-        ? redirect()->route('applicant.apply.review', $vacancy)
-        : redirect()->route('applicant.login');
+    if ($request->user()) {
+        return redirect()->route('applicant.apply.review', $vacancy);
+    }
+    abort_unless($vacancy->isOpenForApplications(), 404);
+    // Guest selection is only a navigation hint, never proof of ownership.
+    $request->session()->put('applicant_guest_vacancy_id', $vacancy->id);
+    $request->session()->put('applicant_guest_vacancy_started_at', now()->timestamp);
+    return redirect()->route('applicant.login');
 })->name('guest.vacancies.apply');
 
 Route::get('/applications', [GuestApplication::class, 'index'])->name('guest.applications.index');
