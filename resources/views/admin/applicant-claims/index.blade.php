@@ -16,6 +16,7 @@
 <form method="POST" action="{{ route('admin.applicant_claims.approve', $claim) }}">@csrf
 <label>Evidence reviewed and reason for approval</label>
 <textarea class="form-control mb-2" name="review_notes" required minlength="10"></textarea>
+<label class="d-block"><input type="checkbox" name="identity_verified" value="1" required> I reviewed independent identity evidence and confirmed the claimant is the original applicant.</label>
 <button class="btn btn-success">Approve ownership</button>
 </form></div>
 <div class="col-md-6">
