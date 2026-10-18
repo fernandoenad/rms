@@ -8,6 +8,7 @@ use App\Models\ApplicantApplicationLink;
 use App\Models\ApplicationClaimRequest;
 use App\Services\Applicant\ApplicationClaimService;
 use Illuminate\Http\Request;
+use App\Models\ApplicantAuditLog;
 
 class PortalController extends Controller
 {
@@ -58,6 +59,12 @@ class PortalController extends Controller
         ]);
         $profile = ApplicantProfile::firstOrCreate(['user_id' => $request->user()->id]);
         $profile->update($data + ['profile_completed_at' => now()]);
+        ApplicantAuditLog::create([
+            'actor_user_id' => $request->user()->id,
+            'applicant_profile_id' => $profile->id,
+            'event_type' => 'master_profile_updated',
+            'metadata' => ['fields' => array_keys($data)],
+        ]);
         // Do not update any existing application record.
         return redirect()->route('applicant.dashboard')->with('status', 'Profile saved. Existing applications remain unchanged.');
     }
