@@ -98,6 +98,21 @@ class ApplicantGoogleCallbackIntegrationTest extends TestCase
         $this->assertSame('Historical', $application->fresh()->first_name);
     }
 
+    public function test_google_login_clears_pending_vacancy_from_another_session(): void
+    {
+        $this->mockGoogle('switch-user-001', 'switch@example.test');
+        $this->withSession([
+            'applicant_pending_vacancy_id' => 999,
+            'applicant_pending_vacancy_user_id' => 123,
+            'applicant_pending_vacancy_started_at' => now()->timestamp,
+        ])->get(route('applicant.google.callback'))
+            ->assertRedirect(route('applicant.dashboard'));
+
+        $this->assertNull(session('applicant_pending_vacancy_id'));
+        $this->assertNull(session('applicant_pending_vacancy_user_id'));
+        $this->assertNull(session('applicant_pending_vacancy_started_at'));
+    }
+
     public function test_unverified_google_email_cannot_create_applicant(): void
     {
         $this->mockGoogle('unverified-new-001', 'new@example.test', false);
