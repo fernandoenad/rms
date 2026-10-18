@@ -194,6 +194,94 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         ]);
     }
 
+    public function test_http_clarification_then_verified_hr_approval_preserves_legacy_record(): void
+    {
+        $claimant = $this->profile('current@example.test');
+        $outsider = $this->profile('outsider@example.test');
+        $application = $this->historical($this->vacancy(), 'previous@example.test');
+        $admin = User::factory()->create(['email' => 'hr.reviewer@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $admin->id, 'level' => 1, 'status' => 1]);
+
+        $this->actingAs($claimant->user)->post(route('applicant.claims.store'), [
+            'application_code' => $application->application_code,
+            'email' => 'previous@example.test',
+        ])->assertRedirect(route('applicant.dashboard'));
+
+        $claim = \App\Models\ApplicationClaimRequest::where('applicant_profile_id', $claimant->id)->sole();
+
+        $this->actingAs($admin)->get(route('admin.applicant_claims.index'))
+            ->assertOk()->assertSee($application->application_code)->assertSee('Ana Reyes');
+
+        $this->actingAs($admin)->post(route('admin.applicant_claims.clarification', $claim), [
+            'review_notes' => 'Please present original identification to the HR reviewer.',
+        ])->assertRedirect();
+
+        $this->assertSame('clarification', $claim->fresh()->status);
+        $this->assertDatabaseCount('applicant_application_links', 0);
+        $this->actingAs($claimant->user)->get(route('applicant.dashboard'))
+            ->assertOk()->assertSee('Please present original identification to the HR reviewer.');
+        $this->actingAs($claimant->user)
+            ->get(route('guest.applications.show', $application))->assertForbidden();
+
+        $this->actingAs($admin)->post(route('admin.applicant_claims.approve', $claim), [
+            'identity_verified' => '1',
+            'review_notes' => 'Original ID and archived recruitment records independently verified.',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('application_claim_requests', [
+            'id' => $claim->id, 'status' => 'approved', 'reviewed_by' => $admin->id,
+        ]);
+        $this->assertDatabaseHas('applicant_application_links', [
+            'application_id' => $application->id,
+            'applicant_profile_id' => $claimant->id,
+            'link_method' => 'hr_approved_claim',
+            'verified_by' => $admin->id,
+        ]);
+        $this->assertDatabaseHas('applicant_audit_logs', [
+            'application_id' => $application->id,
+            'event_type' => 'historical_claim_clarification_requested',
+        ]);
+        $this->assertDatabaseHas('applicant_audit_logs', [
+            'application_id' => $application->id,
+            'event_type' => 'historical_claim_approved',
+        ]);
+
+        $this->actingAs($claimant->user)->get(route('applicant.dashboard'))
+            ->assertOk()->assertSee($application->application_code);
+        $this->actingAs($outsider->user)->get(route('guest.applications.show', $application))
+            ->assertForbidden();
+        $this->actingAs($admin)->get(route('admin.applicant_claims.index', ['status' => 'approved']))
+            ->assertOk()
+            ->assertSee('Original ID and archived recruitment records independently verified.')
+            ->assertDontSee('Approve ownership');
+
+        $this->assertSame('Old', $application->fresh()->first_name);
+        $this->assertSame('previous@example.test', $application->fresh()->email);
+        $this->assertDatabaseCount('applicant_application_links', 1);
+    }
+
+    public function test_lower_level_staff_cannot_approve_historical_claim_by_posting_directly(): void
+    {
+        $profile = $this->profile('current@example.test');
+        $application = $this->historical($this->vacancy(), 'previous@example.test');
+        $claim = app(ApplicationClaimService::class)
+            ->request($profile, $application->application_code, 'previous@example.test');
+        $staff = User::factory()->create(['email' => 'staff@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $staff->id, 'level' => 2, 'status' => 1]);
+
+        $this->actingAs($staff)->post(route('admin.applicant_claims.approve', $claim), [
+            'identity_verified' => '1',
+            'review_notes' => 'Attempted approval without HR administration permission.',
+        ])->assertStatus(401);
+
+        $this->assertSame('pending', $claim->fresh()->status);
+        $this->assertDatabaseCount('applicant_application_links', 0);
+        $this->assertDatabaseMissing('applicant_audit_logs', [
+            'application_id' => $application->id,
+            'event_type' => 'historical_claim_approved',
+        ]);
+    }
+
     public function test_claimant_cannot_approve_their_own_application(): void
     {
         $profile = $this->profile();
