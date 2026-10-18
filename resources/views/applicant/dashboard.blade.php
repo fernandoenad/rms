@@ -43,6 +43,16 @@
 <button class="btn btn-primary">Request HR review</button>
 </form>
 <h3 class="h6 mt-3">Claim Requests</h3>
-<ul>@foreach($claims as $claim)<li>{{ $claim->claimed_application_code }} — {{ ucfirst($claim->status) }}</li>@endforeach</ul>
+<ul>@foreach($claims as $claim)
+<li>
+{{ $claim->claimed_application_code }} — {{ ucfirst($claim->status) }}
+@if($claim->status === 'clarification' && $claim->review_notes)
+<p class="mb-2">HR requests additional information: {{ $claim->review_notes }}</p>
+<p class="small text-muted">Contact HR through the established official channel and reference your application code. Your application remains inaccessible until ownership is approved.</p>
+@elseif($claim->status === 'rejected')
+<p class="small text-muted">HR did not approve this ownership request. Contact HR for guidance if you believe this was an error.</p>
+@endif
+</li>
+@endforeach</ul>
 </div></div></div>
 @endsection
