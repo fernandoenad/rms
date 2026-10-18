@@ -123,6 +123,26 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $service->approve($claim, $profile->user_id, 'Official supporting records verified.');
     }
 
+    public function test_claimant_cannot_reject_their_own_claim(): void
+    {
+        $profile = $this->profile();
+        $application = $this->historical($this->vacancy(), 'previous@example.test');
+        $service = app(ApplicationClaimService::class);
+        $claim = $service->request($profile, $application->application_code, 'previous@example.test');
+
+        try {
+            $service->reject($claim, $profile->user_id, 'Attempt to reject own claim.');
+            $this->fail('Claimants must not be permitted to review their own claim.');
+        } catch (ValidationException $exception) {
+            $this->assertSame('pending', $claim->fresh()->status);
+            $this->assertDatabaseCount('applicant_application_links', 0);
+            $this->assertDatabaseMissing('applicant_audit_logs', [
+                'event_type' => 'historical_claim_rejected',
+                'application_id' => $application->id,
+            ]);
+        }
+    }
+
     public function test_hr_clarification_does_not_grant_ownership_and_can_later_be_approved(): void
     {
         $profile = $this->profile();
