@@ -119,6 +119,31 @@ class ApplicationClaimService
                 'event_type' => 'historical_claim_approved',
                 'metadata' => ['claim_request_id' => $claim->id],
             ]);
+            // The first approved owner wins. Resolve other outstanding claims for this
+            // application so HR is not presented with requests that can no longer succeed.
+            $competing = ApplicationClaimRequest::query()
+                ->where('application_id', $claim->application_id)
+                ->where('id', '!=', $claim->id)
+                ->whereIn('status', ['pending', 'clarification'])
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($competing as $other) {
+                $other->update([
+                    'status' => 'rejected',
+                    'reviewed_by' => $reviewerUserId,
+                    'reviewed_at' => now(),
+                    'review_notes' => 'This application was linked to another verified claimant. Contact HR if you dispute the decision.',
+                ]);
+                ApplicantAuditLog::create([
+                    'actor_user_id' => $reviewerUserId,
+                    'applicant_profile_id' => $other->applicant_profile_id,
+                    'application_id' => $claim->application_id,
+                    'event_type' => 'historical_claim_conflict_closed',
+                    'metadata' => ['claim_request_id' => $other->id, 'approved_claim_id' => $claim->id],
+                ]);
+            }
+
             $claim->update([
                 'status' => 'approved',
                 'reviewed_by' => $reviewerUserId,
