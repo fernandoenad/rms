@@ -129,4 +129,4 @@ jobs:
           MAIL_MAILER: array
           QUEUE_CONNECTION: sync
           SESSION_DRIVER: array
-        run: php artisan test --filter=test_legacy_application_reader_contract_with_disposable_primary_mysql --testdox
+        run: php artisan test --filter=test_legacy_application_reader_contract_with_disposable_primary_mysql --testdox --display-warnings
