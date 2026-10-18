@@ -416,6 +416,12 @@ return [
             'active' => ['admin/applications', 'admin/applications/create', 'regex:@^admin/applications/\d+/edit_scores+$@', 'regex:@^admin/applications/[0-9]+$@', 'regex:@^admin/applications/\d+/delete+$@', 'regex:@^admin/applications/\d+/edit+$@', 'regex:@^admin/applications/\d+/show+$@', 'regex:@^admin/applications/\d+/show/tagged+$@']
         ],
         [
+            'text' => 'Historical Claims',
+            'url'  => 'admin/applicant-claims',
+            'icon' => 'fas fa-fw fa-user-check',
+            'active' => ['admin/applicant-claims', 'admin/applicant-claims/*'],
+        ],
+        [
             'text' => 'Inquiries',
             'url'  => 'admin/inquiries',
             'icon' => 'fas fa-fw fa-paper-plane',
