@@ -173,3 +173,9 @@ Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./ven
 - Assertions also verify unauthorized calls create no answer/submission rows and do not advance attempt status.
 - These are additive tests only, without production schema changes. Local PHPUnit execution is still required.
 - Run: `git pull --ff-only origin feature/applicant-portal-foundation` then `./vendor/bin/phpunit --filter AssessmentRegression --testdox` and `./vendor/bin/phpunit --testdox`.
+
+## Historical claim conflict regression tests
+- Four new lifecycle tests cover HR rejection without ownership linkage, idempotent pending requests, competing claimant approval conflict, and prevention of approvals after final rejection.
+- These are additive tests only; the existing application schema and historical records are not changed.
+- Run `git pull --ff-only origin feature/applicant-portal-foundation` and `./vendor/bin/phpunit --filter ApplicantLifecycleIntegration --testdox`, followed by the full PHPUnit suite.
+- Local verification is outstanding and PR #46 remains draft.
