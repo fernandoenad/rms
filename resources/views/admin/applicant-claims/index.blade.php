@@ -6,16 +6,27 @@
 @section('content')
 <div class="container-fluid pb-4">
 <p>Check the applicant's identity and evidence against existing recruitment records before approving any claim.</p>
+<nav aria-label="Claim review status" class="mb-3">
+    <div class="btn-group" role="group" aria-label="Claim status">
+        <a class="btn btn-sm {{ $status === 'open' ? 'btn-primary' : 'btn-outline-primary' }}" href="{{ route('admin.applicant_claims.index', ['status' => 'open']) }}">Pending / Clarification</a>
+        <a class="btn btn-sm {{ $status === 'approved' ? 'btn-primary' : 'btn-outline-primary' }}" href="{{ route('admin.applicant_claims.index', ['status' => 'approved']) }}">Approved history</a>
+        <a class="btn btn-sm {{ $status === 'rejected' ? 'btn-primary' : 'btn-outline-primary' }}" href="{{ route('admin.applicant_claims.index', ['status' => 'rejected']) }}">Rejected history</a>
+    </div>
+</nav>
 @if(session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
 @if($claims->isEmpty())
-<div class="alert alert-info" role="status">No pending or clarification-requested application claims are awaiting HR review.</div>
+<div class="alert alert-info" role="status">No {{ $status === 'open' ? 'pending or clarification-requested' : $status }} application claims found.</div>
 @endif
 @foreach($claims as $claim)
 <div class="card mb-3"><div class="card-body">
 <h2 class="h5">{{ $claim->claimed_application_code }}</h2>
 <p>Claimant profile #{{ $claim->applicant_profile_id }} • Previous email: {{ $claim->claimed_email }} • Status: {{ $claim->status }}</p>
 <p>Application ID: {{ $claim->application_id }}</p>
+@if($status !== 'open')
+<p>Reviewed: {{ $claim->reviewed_at?->format('M j, Y g:i A') ?? 'Not recorded' }} · Reviewer user #{{ $claim->reviewed_by ?? 'Not recorded' }}</p>
+<p><strong>Review notes:</strong> {{ $claim->review_notes ?: 'Not recorded' }}</p>
+@else
 <div class="row">
 <div class="col-md-6">
 <form method="POST" action="{{ route('admin.applicant_claims.approve', $claim) }}">@csrf
@@ -37,6 +48,7 @@
 <button class="btn btn-outline-primary">Request clarification (no access granted)</button>
 </form></div>
 </div></div></div>
+@endif
 @endforeach
 {{ $claims->links() }}
 </div>
