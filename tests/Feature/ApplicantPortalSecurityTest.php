@@ -62,6 +62,17 @@ class ApplicantPortalSecurityTest extends TestCase
         $this->get(route('admin.applicant_claims.index'))->assertRedirect();
     }
 
+    public function test_active_staff_sees_an_empty_historical_claim_review_queue(): void
+    {
+        $user = User::factory()->create(['email' => 'reviewer@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $user->id, 'level' => 2, 'status' => 1]);
+
+        $this->actingAs($user)->get(route('admin.applicant_claims.index'))
+            ->assertOk()
+            ->assertSee('Historical Application Claim Review')
+            ->assertSee('No pending or clarification-requested application claims');
+    }
+
     public function test_active_staff_can_switch_between_staff_and_applicant_portals(): void
     {
         $user = User::factory()->create(['email' => 'staff@deped.gov.ph']);
