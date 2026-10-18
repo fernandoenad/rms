@@ -47,8 +47,9 @@
 <textarea class="form-control mb-2" name="review_notes" required minlength="10" maxlength="2000" placeholder="Specify the additional documents or information HR requires."></textarea>
 <button class="btn btn-outline-primary">Request clarification (no access granted)</button>
 </form></div>
-</div></div></div>
+</div>
 @endif
+</div></div>
 @endforeach
 {{ $claims->links() }}
 </div>
