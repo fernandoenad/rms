@@ -7,6 +7,7 @@ use App\Models\ApplicantApplicationLink;
 use App\Models\Application;
 use App\Models\ApplicationClaimRequest;
 use Illuminate\Support\Facades\DB;
+use App\Models\ApplicantAuditLog;
 use Illuminate\Validation\ValidationException;
 
 class ApplicationClaimService
@@ -83,6 +84,13 @@ class ApplicationClaimService
                 throw ValidationException::withMessages(['claim' => 'This application is already linked.']);
             }
 
+            ApplicantAuditLog::create([
+                'actor_user_id' => $reviewerUserId,
+                'applicant_profile_id' => $profile->id,
+                'application_id' => $claim->application_id,
+                'event_type' => 'historical_claim_approved',
+                'metadata' => ['claim_request_id' => $claim->id],
+            ]);
             $claim->update([
                 'status' => 'approved',
                 'reviewed_by' => $reviewerUserId,
@@ -99,6 +107,13 @@ class ApplicationClaimService
             if (!in_array($claim->status, ['pending', 'clarification'], true)) {
                 throw ValidationException::withMessages(['claim' => 'This claim is already finalized.']);
             }
+            ApplicantAuditLog::create([
+                'actor_user_id' => $reviewerUserId,
+                'applicant_profile_id' => $claim->applicant_profile_id,
+                'application_id' => $claim->application_id,
+                'event_type' => 'historical_claim_rejected',
+                'metadata' => ['claim_request_id' => $claim->id],
+            ]);
             $claim->update([
                 'status' => 'rejected',
                 'reviewed_by' => $reviewerUserId,
