@@ -212,3 +212,10 @@ Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./ven
 - Submission endpoint remains authoritative and rejects duplicate attempts inside its transaction.
 - Added a lifecycle test asserting the redirect and unchanged application count.
 - Tests require local verification; PR #46 remains draft.
+
+## Vacancy closure and access continuity
+- Application review deep links redirect an already-linked applicant to the previously submitted application even after the vacancy posting closes or their current master profile becomes incomplete.
+- New applicants must still complete their profile and can review only currently open vacancies.
+- The submission transaction still denies attempts after the posting deadline using the locked vacancy.
+- Two lifecycle regressions cover access to historical submissions after closure and rejection of new late submissions.
+- Verify locally with `./vendor/bin/phpunit --filter ApplicantLifecycleIntegration --testdox` and the full PHPUnit suite; draft PR remains unmerged.
