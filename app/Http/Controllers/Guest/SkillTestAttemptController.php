@@ -170,8 +170,9 @@ class SkillTestAttemptController extends Controller
 
     protected function ownedAttempt(Request $request, SkillTestAttempt $attempt): SkillTestAttempt
     {
-        $attempt->load('application','skillTest.rubricCriteria','submissions');
-        $this->authorizeAccess($request,$attempt->application,$attempt->skillTest);
+        // Authorize ownership and assessment eligibility before loading responses or rubrics.
+        $attempt = $this->ownedAttempt($request, $attempt);
+        $attempt->load('skillTest.rubricCriteria', 'submissions');
         return $attempt;
     }
 
