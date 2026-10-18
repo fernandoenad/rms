@@ -137,6 +137,22 @@ class ApplicantPortalSecurityTest extends TestCase
         $this->assertNull(session('applicant_pending_vacancy_user_id'));
     }
 
+    public function test_expired_pending_vacancy_does_not_resume_after_profile_save(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->withSession([
+            'applicant_pending_vacancy_id' => 1234,
+            'applicant_pending_vacancy_user_id' => $user->id,
+            'applicant_pending_vacancy_started_at' => now()->subMinutes(31)->timestamp,
+        ])->put(route('applicant.profile.update'), $this->validProfile())
+            ->assertRedirect(route('applicant.dashboard'));
+
+        $this->assertNull(session('applicant_pending_vacancy_id'));
+        $this->assertNull(session('applicant_pending_vacancy_user_id'));
+        $this->assertNull(session('applicant_pending_vacancy_started_at'));
+        $this->assertDatabaseCount('applications', 0);
+    }
+
     private function validProfile(): array
     {
         return [
