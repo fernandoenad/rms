@@ -428,6 +428,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 Route::middleware('auth')->prefix('applicant')->name('applicant.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Applicant\PortalController::class, 'dashboard'])->name('dashboard');
     Route::get('/profile', [\App\Http\Controllers\Applicant\PortalController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile/options', [\App\Http\Controllers\Applicant\PortalController::class, 'options'])->middleware('throttle:30,1')->name('profile.options');
     Route::put('/profile', [\App\Http\Controllers\Applicant\PortalController::class, 'update'])->name('profile.update');
     Route::get('/vacancies/{vacancy}/apply', [\App\Http\Controllers\Applicant\SubmissionController::class, 'review'])->name('apply.review');
     Route::post('/vacancies/{vacancy}/apply', [\App\Http\Controllers\Applicant\SubmissionController::class, 'store'])->name('apply.store');
