@@ -76,6 +76,65 @@ class ApplicantPortalSecurityTest extends TestCase
         $this->assertDatabaseCount('applications', 0);
     }
 
+    public function test_saving_profile_resumes_pending_open_vacancy_review(): void
+    {
+        $template = \App\Models\Template::create([
+            'type' => 'Onboarding Resume',
+            'template' => json_encode(['Interview' => 100, 'Remarks' => 'Remarks']),
+            'status' => 1,
+        ]);
+        $vacancy = \App\Models\Vacancy::create([
+            'cycle' => 2026, 'position_title' => 'Applicant Onboarding',
+            'salary_grade' => 11, 'base_pay' => 27000, 'office_level' => 1,
+            'qualifications' => 'Required', 'vacancy' => 1, 'status' => 1,
+            'template_id' => $template->id, 'level1_status' => 1, 'level2_status' => 0,
+        ]);
+        $user = User::factory()->create();
+        $this->actingAs($user)
+            ->get(route('applicant.apply.review', $vacancy))
+            ->assertRedirect(route('applicant.profile.edit'));
+
+        $this->actingAs($user)->put(route('applicant.profile.update'), $this->validProfile())
+            ->assertRedirect(route('applicant.apply.review', $vacancy));
+        $this->assertDatabaseHas('applicant_profiles', ['user_id' => $user->id, 'first_name' => 'Ana']);
+        $this->assertDatabaseCount('applications', 0);
+    }
+
+    public function test_profile_save_does_not_resume_a_vacancy_that_closed_mid_onboarding(): void
+    {
+        $template = \App\Models\Template::create([
+            'type' => 'Closed Onboarding Resume',
+            'template' => json_encode(['Interview' => 100, 'Remarks' => 'Remarks']),
+            'status' => 1,
+        ]);
+        $vacancy = \App\Models\Vacancy::create([
+            'cycle' => 2026, 'position_title' => 'Closing Vacancy',
+            'salary_grade' => 11, 'base_pay' => 27000, 'office_level' => 1,
+            'qualifications' => 'Required', 'vacancy' => 1, 'status' => 1,
+            'template_id' => $template->id, 'level1_status' => 1, 'level2_status' => 0,
+        ]);
+        $user = User::factory()->create();
+        $this->actingAs($user)->get(route('applicant.apply.review', $vacancy))
+            ->assertRedirect(route('applicant.profile.edit'));
+        $vacancy->update(['posting_end_at' => now()->subMinute()]);
+
+        $this->actingAs($user)->put(route('applicant.profile.update'), $this->validProfile())
+            ->assertRedirect(route('applicant.dashboard'));
+        $this->assertDatabaseCount('applications', 0);
+    }
+
+    private function validProfile(): array
+    {
+        return [
+            'first_name' => 'Ana', 'middle_name' => 'M', 'last_name' => 'Reyes',
+            'sitio' => 'Poblacion', 'barangay' => 'Central', 'municipality' => 'Sagbayan',
+            'zip' => 6331, 'age' => 30, 'gender' => 'Female',
+            'civil_status' => 'Single', 'religion' => 'None',
+            'disability' => 'None', 'ethnic_group' => 'None',
+            'email' => 'applicant@example.test', 'phone' => '09123456789',
+        ];
+    }
+
     public function test_guest_cannot_read_a_legacy_application_record(): void
     {
         $this->get('/applications/999999')->assertRedirect('/login');
