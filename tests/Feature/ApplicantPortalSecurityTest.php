@@ -54,12 +54,22 @@ class ApplicantPortalSecurityTest extends TestCase
 
         $this->assertNotNull($item);
         $this->assertSame('admin/applicant-claims', $item['url']);
+        $this->assertSame('review-applicant-claims', $item['can']);
         $this->assertContains('admin/applicant-claims', $item['active']);
     }
 
     public function test_guest_cannot_open_hr_historical_claim_review(): void
     {
         $this->get(route('admin.applicant_claims.index'))->assertRedirect();
+    }
+
+    public function test_historical_claim_review_menu_permission_rejects_regular_staff(): void
+    {
+        $user = User::factory()->create(['email' => 'regular.staff@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $user->id, 'level' => 2, 'status' => 1]);
+
+        $this->assertFalse(\Illuminate\Support\Facades\Gate::forUser($user)->allows('review-applicant-claims'));
+        $this->assertSame(401, $this->actingAs($user)->get(route('admin.applicant_claims.index'))->status());
     }
 
     public function test_level_one_admin_sees_an_empty_historical_claim_review_queue(): void
