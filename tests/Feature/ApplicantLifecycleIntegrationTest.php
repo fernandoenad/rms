@@ -169,7 +169,7 @@ class ApplicantLifecycleIntegrationTest extends TestCase
             ->assertOk()->assertSee($application->application_code);
         // The legacy application detail view requires an external MySQL connection
         // unavailable in CI; its actual page rendering remains a staging UAT check.
-        $this->assertTrue(app(\\App\\Services\\Applicant\\ApplicationOwnershipService::class)
+        $this->assertTrue(app(\App\Services\Applicant\ApplicationOwnershipService::class)
             ->owns(request()->setUserResolver(fn () => $claimant->user), $application));
         $this->actingAs($unrelated->user)->get(route('guest.applications.show', $application))->assertForbidden();
         $this->assertSame('Old', $application->fresh()->first_name);
