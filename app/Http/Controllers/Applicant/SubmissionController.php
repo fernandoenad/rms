@@ -36,13 +36,16 @@ class SubmissionController extends Controller
         DB::transaction(function () use ($vacancy, $profile, $mapper) {
             // Re-read the profile under lock so submission reflects saved values at commit time.
             $profile = ApplicantProfile::whereKey($profile->id)->lockForUpdate()->firstOrFail();
+            if (!$profile->profile_completed_at) {
+                throw ValidationException::withMessages(['profile' => 'Complete your master profile first.']);
+            }
             // Serialize submissions for the same vacancy and prevent duplicate account submissions.
             $lockedVacancy = Vacancy::whereKey($vacancy->id)->lockForUpdate()->firstOrFail();
             abort_unless($lockedVacancy->isOpenForApplications(), 403);
             $alreadyOwned = ApplicantApplicationLink::where('applicant_profile_id', $profile->id)
                 ->whereHas('application', fn ($q) => $q->where('vacancy_id', $vacancy->id))->exists();
             if ($alreadyOwned || Application::where('vacancy_id', $vacancy->id)
-                ->whereRaw('LOWER(email) = ?', [mb_strtolower($profile->email)])->exists()) {
+                ->whereRaw('LOWER(TRIM(email)) = ?', [mb_strtolower(trim((string) $profile->email))])->exists()) {
                 throw ValidationException::withMessages(['application' => 'An application for this vacancy already exists.']);
             }
 
