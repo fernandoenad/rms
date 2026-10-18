@@ -140,6 +140,47 @@ class ApplicantGoogleCallbackIntegrationTest extends TestCase
         $this->assertDatabaseCount('applications', 0);
     }
 
+    public function test_expired_guest_vacancy_selection_returns_to_dashboard(): void
+    {
+        $this->mockGoogle('guest-expired-001', 'expired@example.test');
+        $this->withSession([
+            'applicant_guest_vacancy_id' => 999,
+            'applicant_guest_vacancy_started_at' => now()->subMinutes(31)->timestamp,
+        ])->get(route('applicant.google.callback'))
+            ->assertRedirect(route('applicant.dashboard'));
+
+        $this->assertNull(session('applicant_guest_vacancy_id'));
+        $this->assertNull(session('applicant_guest_vacancy_started_at'));
+        $this->assertDatabaseCount('applications', 0);
+    }
+
+    public function test_guest_vacancy_closed_during_google_login_returns_to_dashboard(): void
+    {
+        $template = Template::create([
+            'type' => 'Closed Guest OAuth Continuation',
+            'template' => json_encode(['Interview' => 100]),
+            'status' => 1,
+        ]);
+        $vacancy = Vacancy::create([
+            'cycle' => 2026, 'position_title' => 'Teacher I',
+            'salary_grade' => 11, 'base_pay' => 27000,
+            'office_level' => 1, 'qualifications' => 'Required',
+            'vacancy' => 1, 'status' => 1, 'template_id' => $template->id,
+            'level1_status' => 1, 'level2_status' => 0,
+        ]);
+        $this->get(route('guest.vacancies.apply', $vacancy))
+            ->assertRedirect(route('applicant.login'));
+        $vacancy->update(['posting_end_at' => now()->subMinute()]);
+
+        $this->mockGoogle('guest-closed-001', 'closed@example.test');
+        $this->get(route('applicant.google.callback'))
+            ->assertRedirect(route('applicant.dashboard'));
+
+        $this->assertNull(session('applicant_guest_vacancy_id'));
+        $this->assertNull(session('applicant_guest_vacancy_started_at'));
+        $this->assertDatabaseCount('applications', 0);
+    }
+
     public function test_unverified_google_email_cannot_create_applicant(): void
     {
         $this->mockGoogle('unverified-new-001', 'new@example.test', false);
