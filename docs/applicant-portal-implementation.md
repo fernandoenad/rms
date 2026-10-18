@@ -110,3 +110,9 @@ This branch is deliberately a non-routed foundation; it does not change the exis
 - Run `php artisan route:list`, `php artisan migrate --pretend`, and `php artisan test --filter=Applicant` in a configured staging checkout, followed by full `php artisan test`.
 - Verify assessment access for active examinees during the transition, OAuth verified-email claim from Google, staff onboarding, and third-party read-only database contract.
 - Do not merge Draft PR #46 without passing security and staging regression tests.
+
+## Full-suite failing tests reconciliation (October 18)
+Local report: 25 tests, 3 failures; applicant-only tests had passed 11/11.
+- AssessmentRegressionTest: both eligibility tests previously authenticated via guest_email session, which is intentionally no longer trusted. Tests now create a proper applicant profile and ownership link and call actingAs(user); expected 403 for not-taken-in remains.
+- ExampleTest: homepage is intentionally a 302 redirect to /applications, so assert that redirect.
+- These are regression test fixture/expectation updates; rerun full suite locally before making any pass claims.
