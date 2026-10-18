@@ -71,7 +71,7 @@
                             </div>
                             <h3 class="profile-username text-center">{{$application->getFullname()}}</h3>
                             <p class="text-muted text-center">{{$application->vacancy->position_title}}<br>
-                            @php  $station = App\Models\Station::find($application->station_id); @endphp
+                            @php $station = $application->station_id ? App\Models\Station::find($application->station_id) : null; @endphp
                             {{ isset($station) ? $station->name : ($application->station_id == 0 ? 'Division' : 'Untagged') }}
                             </p>
                         </div>
