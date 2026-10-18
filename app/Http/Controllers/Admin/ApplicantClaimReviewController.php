@@ -12,7 +12,7 @@ class ApplicantClaimReviewController extends Controller
     {
         $status = $request->query('status', 'open');
         $status = in_array($status, ['open', 'approved', 'rejected'], true) ? $status : 'open';
-        $query = ApplicationClaimRequest::query();
+        $query = ApplicationClaimRequest::with('profile');
         if ($status === 'open') {
             $query->whereIn('status', ['pending', 'clarification']);
         } else {
