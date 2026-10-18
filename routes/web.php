@@ -386,6 +386,8 @@ Route::middleware('auth')->prefix('applicant')->name('applicant.')->group(functi
     Route::get('/dashboard', [\App\Http\Controllers\Applicant\PortalController::class, 'dashboard'])->name('dashboard');
     Route::get('/profile', [\App\Http\Controllers\Applicant\PortalController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [\App\Http\Controllers\Applicant\PortalController::class, 'update'])->name('profile.update');
+    Route::get('/vacancies/{vacancy}/apply', [\App\Http\Controllers\Applicant\SubmissionController::class, 'review'])->name('apply.review');
+    Route::post('/vacancies/{vacancy}/apply', [\App\Http\Controllers\Applicant\SubmissionController::class, 'store'])->name('apply.store');
     Route::post('/claims', [\App\Http\Controllers\Applicant\PortalController::class, 'claim'])
         ->middleware('throttle:5,1')->name('claims.store');
 });
