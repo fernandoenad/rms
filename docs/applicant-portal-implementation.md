@@ -160,3 +160,10 @@ Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./ven
 - Added test verifying a different authenticated applicant cannot read an already-owned application detail.
 - No changes to legacy applications schema.
 - Validation pending in user's local environment. Run `./vendor/bin/phpunit --testdox` and review results; do not merge if failing.
+
+## Cross-applicant assessment authorization regression tests
+- Added written assessment attempt time-status negative-access test: a separately authenticated applicant without the ownership link receives 403.
+- Added skills assessment attempt time-status negative-access test with the same ownership isolation expectation.
+- Both tests use existing assessment fixtures and temporary SQLite test data. No changes to the historical applications table.
+- Local execution required: `git pull --ff-only origin feature/applicant-portal-foundation` and `./vendor/bin/phpunit --filter AssessmentRegression --testdox` and then `./vendor/bin/phpunit --testdox`.
+- Tests do not yet cover actual Google browser OAuth or complete submission flows. PR remains draft.
