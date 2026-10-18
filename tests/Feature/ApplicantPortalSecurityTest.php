@@ -83,6 +83,22 @@ class ApplicantPortalSecurityTest extends TestCase
             ->assertSee('No pending or clarification-requested application claims');
     }
 
+    public function test_level_one_admin_can_view_read_only_claim_history_tabs(): void
+    {
+        $admin = User::factory()->create(['email' => 'audit@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $admin->id, 'level' => 1, 'status' => 1]);
+
+        foreach (['approved', 'rejected'] as $status) {
+            $this->actingAs($admin)
+                ->get(route('admin.applicant_claims.index', ['status' => $status]))
+                ->assertOk()
+                ->assertSee('Approved history')
+                ->assertSee('Rejected history')
+                ->assertDontSee('Approve ownership')
+                ->assertDontSee('Reject claim');
+        }
+    }
+
     public function test_active_staff_can_switch_between_staff_and_applicant_portals(): void
     {
         $user = User::factory()->create(['email' => 'staff@deped.gov.ph']);
