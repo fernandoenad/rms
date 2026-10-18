@@ -24,9 +24,7 @@ class ExamAttemptController extends Controller
 {
     protected function authorizeApplication(Request $request, Application $application): void
     {
-        if (!app(\App\Services\Applicant\ApplicationOwnershipService::class)->owns($request, $application)) {
-            abort(401);
-        }
+        app(\App\Services\Applicant\ApplicationOwnershipService::class)->authorize($request, $application);
 
         // Existing RMS take-in indicator: a taken-in application has an Assessment record.
         if ($application->assessment === null) {
