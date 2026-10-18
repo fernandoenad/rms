@@ -52,6 +52,34 @@ class ApplicationClaimService
         });
     }
 
+    public function requestClarification(ApplicationClaimRequest $claim, int $reviewerUserId, string $reason): void
+    {
+        DB::transaction(function () use ($claim, $reviewerUserId, $reason) {
+            $claim = ApplicationClaimRequest::query()->lockForUpdate()->findOrFail($claim->id);
+            if (!in_array($claim->status, ['pending', 'clarification'], true)) {
+                throw ValidationException::withMessages(['claim' => 'This claim is already finalized.']);
+            }
+            $profile = ApplicantProfile::findOrFail($claim->applicant_profile_id);
+            if ((int) $profile->user_id === $reviewerUserId) {
+                throw ValidationException::withMessages(['claim' => 'You cannot review your own claim.']);
+            }
+
+            $claim->update([
+                'status' => 'clarification',
+                'reviewed_by' => $reviewerUserId,
+                'reviewed_at' => now(),
+                'review_notes' => $reason,
+            ]);
+            ApplicantAuditLog::create([
+                'actor_user_id' => $reviewerUserId,
+                'applicant_profile_id' => $claim->applicant_profile_id,
+                'application_id' => $claim->application_id,
+                'event_type' => 'historical_claim_clarification_requested',
+                'metadata' => ['claim_request_id' => $claim->id],
+            ]);
+        });
+    }
+
     public function approve(ApplicationClaimRequest $claim, int $reviewerUserId, string $reason): void
     {
         DB::transaction(function () use ($claim, $reviewerUserId, $reason) {
