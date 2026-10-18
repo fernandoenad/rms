@@ -58,10 +58,6 @@
         line-height: 1.55;
         font-weight: 400;
     }
-    .applicant-login-staff {
-        margin-top: 26px;
-        font-size: 1rem;
-    }
     @media (max-width: 576px) {
         .applicant-login-wrap { padding: 20px 12px 35px; }
         .applicant-login-inner { padding: 30px 18px 42px; }
@@ -93,9 +89,6 @@
                 Forgot your DepEd GMail/Microsoft password?<br>
                 Request for reset
                 <a href="https://hrms.depedbohol.org/help/reset" target="_blank" rel="noopener noreferrer">here</a>.
-            </p>
-            <p class="applicant-login-staff">
-                <a href="{{ url('/login') }}">Staff login</a>
             </p>
         </div>
     </div>
