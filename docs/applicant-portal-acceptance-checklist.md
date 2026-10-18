@@ -2,6 +2,17 @@
 
 **Scope:** Draft PR #46 applicant portal; run only in isolated staging with synthetic applicant records. **Do not run destructive tests on production records.**
 
+## Automated verification evidence (2026-10-18)
+
+- [x] GitHub Actions: `Applicant Portal Full Suite` completed successfully on PHP 8.2 and PHP 8.4, run [39103144540](https://github.com/fernandoenad/rms/actions/runs/39103144540). This covers the suite at commit `8c099339` (before later changes).
+- [x] GitHub Actions: `Assessment Regression Suite` and `Assessment Center CI` completed successfully at commit `8c099339`.
+- [ ] Reconfirm the entire suite after any subsequent commit; passing checks on an older commit are not final evidence for a newer branch head.
+- [ ] Complete live-browser Google OAuth, staff/applicant switching, recruitment submission, HR validation, assessment flows, and external-reader tests. Automated tests do **not** replace these checks.
+
+### Evidence capture for manual UAT
+
+For each manual scenario below, record tester, local date/time, environment/URL, test account ID (non-sensitive), result (pass/fail/blocked), screenshot or log reference, and a defect ID if applicable. Do not include OAuth secrets or personally identifiable application records in screenshots.
+
 ## Preconditions
 
 - [ ] Record current branch, commit SHA, migration status and a restorable database backup.
