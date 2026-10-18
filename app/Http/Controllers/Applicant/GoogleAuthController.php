@@ -35,7 +35,11 @@ class GoogleAuthController extends Controller
             if ($identity) {
                 $user = User::findOrFail($identity->user_id);
             } else {
-                $user = User::where('email', $email)->first();
+                $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
+                // Existing staff identities must be linked through a separately authorized staff flow.
+                if ($user && $user->role) {
+                    abort(403, 'Existing staff account requires authorized Google identity linking.');
+                }
                 if ($user && OAuthIdentity::where('user_id', $user->id)->where('provider', 'google')
                     ->where('provider_subject', '!=', $subject)->exists()) {
                     abort(403, 'Account identity conflict requires administrator review.');
@@ -58,7 +62,12 @@ class GoogleAuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
         $profile = ApplicantProfile::where('user_id', $user->id)->firstOrFail();
-        $linker->linkMatchingEmail($profile, $email);
+        // Never let a discovery failure invalidate a successful authenticated login.
+        try {
+            $linker->linkMatchingEmail($profile, $email);
+        } catch (\Throwable $exception) {
+            report($exception);
+        }
         return redirect()->route('applicant.dashboard');
     }
 }
