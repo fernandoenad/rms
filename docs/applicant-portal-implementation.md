@@ -48,3 +48,20 @@ This branch is deliberately a non-routed foundation; it does not change the exis
 - HR approval UI needs more robust identity evidence and conflict review before production use.
 - Automated tests and migrations have not been executed by this GitHub connector session.
 - This draft PR must NOT be merged or deployed as a finished applicant portal.
+
+## Phase: legacy applicant access cutover (October 18)
+- Added ApplicationOwnershipService to check applicant_application_links against authenticated user profile.
+- Protected guest application detail, regular inquiry, AI inquiry, written exam, answer-autosave and skill-test access using ownership checks.
+- Wrapped applicant-specific legacy routes in auth middleware; changed email lookup to dashboard redirects.
+- Redirected the public vacancy Apply entry to the authenticated profile review workflow.
+- Added applicant/staff portal navigation to the public layout and safe nullable staff-role middleware handling.
+- Added focused authorization and historical-value regression test source.
+
+### Deployment blockers and follow-up
+- This is a code commit, NOT an executed Laravel test run; PHP migrations and runtime configuration have not been checked in staging.
+- Legacy application UI and live exam sessions need regression validation; existing guest-email sessions will no longer authorize assessment attempts.
+- Applicant Google OAuth provisioning, staff identity mapping and email matching require security testing for pre-existing unverified legacy email values.
+- Add an HR evidence verification checklist, link conflict handling and audit writes before treating manual approvals as production-ready.
+- Audit every applicant-facing endpoint and linked documents for remaining direct-ID access paths.
+- Confirm and test the external reader's expectations of the protected applications table.
+- Verify the Google OAuth callback URL has been added to the Google Cloud OAuth client.
