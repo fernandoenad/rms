@@ -141,3 +141,15 @@ Do not merge before resolving any failures and testing real OAuth callback and a
 - OAuth redirect URI for /auth/google/callback must be authorized in Google Cloud settings; existing staff sessions are retained after migration.
 - These four tests have NOT yet been run in the user's PHP environment. Prior passing baseline: 31 tests, 96 assertions.
 - Run `git pull --ff-only origin feature/applicant-portal-foundation` followed by `./vendor/bin/phpunit --filter StaffGoogleCallbackIntegration --testdox` and `./vendor/bin/phpunit --testdox`; fix any failures before deployment.
+
+## Applicant Google OAuth integration tests (October 18, 2026)
+New `tests/Feature/ApplicantGoogleCallbackIntegrationTest.php` adds six mocked OAuth callback tests:
+- verified first-time Google login creates applicant user, profile and identity, without a staff role;
+- returning Google subject retains the original user;
+- verified email auto-links an unclaimed historical application without modifying its personal fields;
+- unverified Google email cannot create an applicant;
+- an unlinked pre-existing staff user cannot be adopted through applicant login based on email alone;
+- an already-linked active staff user can enter applicant portal while preserving staff role.
+
+These tests mock the Google response; they do not simulate a real browser OAuth state and external Google handshake. Previously reported passing baseline was 31 tests and 96 assertions. The new six tests have not yet been executed.
+Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./vendor/bin/phpunit --filter ApplicantGoogleCallbackIntegration --testdox` followed by `./vendor/bin/phpunit --testdox`. Keep PR in draft pending local execution and staging acceptance.
