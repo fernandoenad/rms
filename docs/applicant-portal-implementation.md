@@ -194,3 +194,9 @@ Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./ven
 - Competing claims receive a neutral notice; the applicant portal never reveals the approved claimant's identity.
 - Each conflict closure is audited as `historical_claim_conflict_closed`.
 - The competing-claim regression test now checks closed status and audit trail. Local PHPUnit execution remains required.
+
+## First-time applicant deep-link onboarding
+- Vacancy application review now creates an empty master profile for an authenticated first-time applicant instead of returning a 404 when no profile exists.
+- The applicant is redirected to the master-profile editor and cannot submit until the profile is completed.
+- Added ApplicantPortalSecurityTest regression covering this first-time review path and no premature application creation.
+- Local PHPUnit execution and real browser review are required; no production deployment has occurred.
