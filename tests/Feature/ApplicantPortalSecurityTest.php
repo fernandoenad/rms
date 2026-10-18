@@ -27,6 +27,25 @@ class ApplicantPortalSecurityTest extends TestCase
             ->assertDontSee('Staff login');
     }
 
+    public function test_staff_user_menu_contains_applicant_portal_switch(): void
+    {
+        $menu = config('adminlte.menu');
+        $switch = collect($menu)->first(fn ($item) =>
+            is_array($item) && ($item['text'] ?? null) === 'Switch to Applicant Portal'
+        );
+
+        $this->assertNotNull($switch);
+        $this->assertSame('applicant/dashboard', $switch['url']);
+        $this->assertTrue($switch['topnav_user']);
+    }
+
+    public function test_public_footer_does_not_expose_administration_link(): void
+    {
+        $this->get(route('applicant.login'))
+            ->assertOk()
+            ->assertDontSee('>Administration</a>', false);
+    }
+
     public function test_an_authenticated_applicant_can_open_profile_editor(): void
     {
         $user = User::factory()->create();
