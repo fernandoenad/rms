@@ -16,6 +16,17 @@ class ApplicantPortalSecurityTest extends TestCase
         $this->get('/applicant/dashboard')->assertRedirect('/login');
     }
 
+    public function test_applicant_login_uses_google_sign_in_and_shows_deped_reset_guidance(): void
+    {
+        $this->get(route('applicant.login'))
+            ->assertOk()
+            ->assertSee('Sign in to start your session')
+            ->assertSee('Sign in with Google')
+            ->assertSee(route('applicant.google'))
+            ->assertSee('https://hrms.depedbohol.org/help/reset')
+            ->assertSee('Staff login');
+    }
+
     public function test_an_authenticated_applicant_can_open_profile_editor(): void
     {
         $user = User::factory()->create();
