@@ -23,7 +23,7 @@ class ApplicantPortalSecurityTest extends TestCase
             ->assertSee('Sign in to start your session')
             ->assertSee('Sign in with Google')
             ->assertSee(route('applicant.google'))
-            ->assertSee('https://hrms.depedbohol.org/help/reset')
+            ->assertDontSee('https://hrms.depedbohol.org/help/reset')
             ->assertDontSee('Staff login');
     }
 
