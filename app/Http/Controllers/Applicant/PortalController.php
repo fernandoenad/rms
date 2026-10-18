@@ -66,6 +66,15 @@ class PortalController extends Controller
             'metadata' => ['fields' => array_keys($data)],
         ]);
         // Do not update any existing application record.
+        // Resume only an internally recorded vacancy ID, never an arbitrary return URL.
+        $pendingVacancyId = $request->session()->pull('applicant_pending_vacancy_id');
+        if ($pendingVacancyId) {
+            $vacancy = \App\Models\Vacancy::find($pendingVacancyId);
+            if ($vacancy && $vacancy->isOpenForApplications()) {
+                return redirect()->route('applicant.apply.review', $vacancy)
+                    ->with('status', 'Profile saved. Review your application before submitting.');
+            }
+        }
         return redirect()->route('applicant.dashboard')->with('status', 'Profile saved. Existing applications remain unchanged.');
     }
 
