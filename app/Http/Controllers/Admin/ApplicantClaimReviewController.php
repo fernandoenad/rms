@@ -8,11 +8,18 @@ use Illuminate\Http\Request;
 
 class ApplicantClaimReviewController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $claims = ApplicationClaimRequest::whereIn('status', ['pending', 'clarification'])
-            ->orderBy('created_at')->paginate(25);
-        return view('admin.applicant-claims.index', compact('claims'));
+        $status = $request->query('status', 'open');
+        $status = in_array($status, ['open', 'approved', 'rejected'], true) ? $status : 'open';
+        $query = ApplicationClaimRequest::query();
+        if ($status === 'open') {
+            $query->whereIn('status', ['pending', 'clarification']);
+        } else {
+            $query->where('status', $status);
+        }
+        $claims = $query->orderByDesc('created_at')->paginate(25)->appends(['status' => $status]);
+        return view('admin.applicant-claims.index', compact('claims', 'status'));
     }
 
     public function clarification(Request $request, ApplicationClaimRequest $claim, ApplicationClaimService $service)
