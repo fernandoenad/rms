@@ -200,7 +200,12 @@ class ApplicantLifecycleIntegrationTest extends TestCase
                 'application_id' => $application->id, 'applicant_profile_id' => $first->id,
             ]);
             $this->assertDatabaseHas('application_claim_requests', [
-                'id' => $claimB->id, 'status' => 'pending',
+                'id' => $claimB->id, 'status' => 'rejected', 'reviewed_by' => $reviewer->id,
+            ]);
+            $this->assertDatabaseHas('applicant_audit_logs', [
+                'event_type' => 'historical_claim_conflict_closed',
+                'applicant_profile_id' => $second->id,
+                'application_id' => $application->id,
             ]);
             $this->assertDatabaseCount('applicant_application_links', 1);
         }
