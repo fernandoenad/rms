@@ -22,6 +22,21 @@ class ApplicantStaffIdentityLinkTest extends TestCase
             ->assertRedirect(route('login'));
     }
 
+    public function test_applicant_oauth_redirect_uses_distinct_registered_callback(): void
+    {
+        $driver = \Mockery::mock();
+        $driver->shouldReceive('redirectUrl')->once()
+            ->with(route('applicant.google.callback'))->andReturnSelf();
+        $driver->shouldReceive('redirect')->once()
+            ->andReturn(redirect('https://accounts.google.com/'));
+        \Laravel\Socialite\Facades\Socialite::shouldReceive('driver')
+            ->once()->with('google')->andReturn($driver);
+
+        $this->get(route('applicant.google'))->assertRedirect('https://accounts.google.com/');
+        $this->assertNotSame(route('applicant.google.callback'), url('/auth/google/callback'));
+        $this->assertNotSame(route('applicant.google.callback'), route('applicant.staff.google.callback'));
+    }
+
     public function test_applicant_callback_and_staff_callback_are_separate_routes(): void
     {
         $this->assertSame(
