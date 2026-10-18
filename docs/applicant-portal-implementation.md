@@ -225,3 +225,9 @@ Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./ven
 - For unlinked applicants, vacancy availability is checked before prompting for a master profile. Closed postings are not presented as actionable application opportunities.
 - Added a security regression for first-time users opening a closed vacancy application link.
 - Verify with `./vendor/bin/phpunit --filter ApplicantPortalSecurity --testdox` and then the full PHPUnit suite before merge.
+
+## Pending vacancy continuation after profile setup
+- New applicant vacancy review keeps only the selected vacancy ID in the server session when profile completion is required.
+- Successful profile update consumes that session key and resumes review only if the posting is still open; a closed/deleted vacancy returns the applicant to the dashboard.
+- No untrusted redirect URL is accepted, and saving a profile never automatically submits an application.
+- Added two feature tests for open and subsequently closed vacancy continuation. Local PHPUnit run is pending.
