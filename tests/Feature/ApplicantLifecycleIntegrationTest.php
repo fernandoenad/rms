@@ -324,6 +324,38 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $this->assertDatabaseCount('applicant_application_links', 0);
     }
 
+    public function test_completed_profile_can_review_submit_and_reopen_application(): void
+    {
+        $profile = $this->profile();
+        $vacancy = $this->vacancy();
+
+        $this->actingAs($profile->user)
+            ->get(route('applicant.apply.review', $vacancy))
+            ->assertOk()
+            ->assertSee('Review Application')
+            ->assertSee('Ana');
+
+        $this->actingAs($profile->user)
+            ->post(route('applicant.apply.store', $vacancy), ['confirm' => 1])
+            ->assertRedirect(route('applicant.dashboard'));
+
+        $application = Application::where('vacancy_id', $vacancy->id)->sole();
+        $this->actingAs($profile->user)
+            ->get(route('applicant.dashboard'))
+            ->assertOk()
+            ->assertSee($application->application_code);
+
+        $this->actingAs($profile->user)
+            ->get(route('applicant.apply.review', $vacancy))
+            ->assertRedirect(route('guest.applications.show', $application));
+
+        $this->assertDatabaseCount('applications', 1);
+        $this->assertDatabaseHas('applicant_application_links', [
+            'applicant_profile_id' => $profile->id,
+            'application_id' => $application->id,
+        ]);
+    }
+
     public function test_other_applicant_cannot_read_an_owned_application_detail(): void
     {
         $owner = $this->profile('owner@example.test');
