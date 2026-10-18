@@ -53,6 +53,29 @@ class ApplicantPortalSecurityTest extends TestCase
         $this->assertDatabaseCount('applications', 0);
     }
 
+    public function test_closed_vacancy_does_not_prompt_new_applicant_to_complete_profile(): void
+    {
+        $template = \App\Models\Template::create([
+            'type' => 'Closed Vacancy Test',
+            'template' => json_encode(['Written_Examination' => 20, 'Interview' => 80, 'Remarks' => 'Remarks']),
+            'status' => 1,
+        ]);
+        $vacancy = \App\Models\Vacancy::create([
+            'cycle' => 2026, 'position_title' => 'Closed Teacher I',
+            'salary_grade' => 11, 'base_pay' => 27000,
+            'office_level' => 1, 'qualifications' => 'Required',
+            'vacancy' => 1, 'status' => 1,
+            'template_id' => $template->id,
+            'posting_end_at' => now()->subMinute(),
+            'level1_status' => 1, 'level2_status' => 0,
+        ]);
+        $user = User::factory()->create();
+        $this->actingAs($user)
+            ->get(route('applicant.apply.review', $vacancy))
+            ->assertNotFound();
+        $this->assertDatabaseCount('applications', 0);
+    }
+
     public function test_guest_cannot_read_a_legacy_application_record(): void
     {
         $this->get('/applications/999999')->assertRedirect('/login');
