@@ -76,6 +76,30 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $this->assertSame('Old Town', $application->fresh()->municipality);
     }
 
+    public function test_google_auto_link_resolves_competing_pending_hr_claims(): void
+    {
+        $verified = $this->profile('verified@example.test');
+        $other = $this->profile('other@example.test');
+        $application = $this->historical($this->vacancy(), 'verified@example.test');
+        $claims = app(ApplicationClaimService::class);
+        $ownClaim = $claims->request($verified, $application->application_code, 'verified@example.test');
+        $competingClaim = $claims->request($other, $application->application_code, 'verified@example.test');
+
+        $this->assertSame(1, app(HistoricalApplicationLinkingService::class)
+            ->linkMatchingEmail($verified, 'verified@example.test'));
+        $this->assertSame('approved', $ownClaim->fresh()->status);
+        $this->assertSame('rejected', $competingClaim->fresh()->status);
+        $this->assertDatabaseHas('applicant_application_links', [
+            'application_id' => $application->id,
+            'applicant_profile_id' => $verified->id,
+        ]);
+        $this->assertDatabaseHas('applicant_audit_logs', [
+            'event_type' => 'historical_claim_conflict_closed_by_google',
+            'applicant_profile_id' => $other->id,
+        ]);
+        $this->assertDatabaseCount('applicant_application_links', 1);
+    }
+
     public function test_matching_email_cannot_take_over_an_already_linked_application(): void
     {
         $first = $this->profile();
