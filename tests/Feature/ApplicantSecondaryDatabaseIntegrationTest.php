@@ -168,11 +168,12 @@ class ApplicantSecondaryDatabaseIntegrationTest extends TestCase
 
             $this->assertDatabaseHas('applicant_profiles', [
                 'user_id' => $user->id,
-                'date_of_birth' => $dob,
                 'age' => 27,
                 'district_id' => 7,
                 'municipality' => 'Sagbayan',
             ]);
+            $this->assertSame($dob, ApplicantProfile::where('user_id', $user->id)
+                ->sole()->date_of_birth->format('Y-m-d'));
             $this->assertDatabaseCount('applications', 0);
         } finally {
             foreach (['offices', 'dropdowns', 'towns'] as $table) {
