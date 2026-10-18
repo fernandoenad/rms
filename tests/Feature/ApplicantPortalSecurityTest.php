@@ -68,7 +68,8 @@ class ApplicantPortalSecurityTest extends TestCase
             ->assertOk()
             ->assertDontSee('Switch to Staff Portal');
 
-        $this->actingAs($user)->get(route('admin.index'))->assertStatus(403);
+        // Legacy active middleware redirects non-staff users rather than returning 403.
+        $this->actingAs($user)->get(route('admin.index'))->assertRedirect();
     }
 
     public function test_an_authenticated_applicant_can_open_profile_editor(): void
