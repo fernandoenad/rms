@@ -4,67 +4,15 @@
 
 @section('css')
 <style>
-    .applicant-login-wrap {
-        min-height: calc(100vh - 190px);
-        padding: 36px 16px 48px;
-        background: #f4f6f9;
-    }
-    .applicant-login-card {
-        max-width: 730px;
-        margin: 0 auto;
-        background: #fff;
-        border: 1px solid #e1e3e5;
-        border-radius: 0;
-        box-shadow: 0 2px 7px rgba(0,0,0,.12);
-    }
-    .applicant-login-inner {
-        padding: 43px 38px 67px;
-        text-align: center;
-        color: #666;
-    }
-    .applicant-login-title {
-        margin: 0 0 55px;
-        font-size: clamp(1.55rem, 3.5vw, 2rem);
-        font-weight: 400;
-        line-height: 1.35;
-    }
-    .applicant-google-link {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 9px;
-        color: #007bff;
-        font-size: clamp(1.45rem, 3.4vw, 2rem);
-        font-weight: 400;
-        line-height: 1.3;
-        text-decoration: none;
-        margin-bottom: 49px;
-        min-height: 64px;
-    }
-    .applicant-google-link:hover,
-    .applicant-google-link:focus {
-        color: #0056b3;
-        text-decoration: underline;
-    }
-    .applicant-google-mark {
-        width: 64px;
-        height: 64px;
-        flex: 0 0 64px;
-        object-fit: contain;
-    }
-    .applicant-login-help {
-        margin: 0;
-        font-size: clamp(1.25rem, 3.2vw, 1.9rem);
-        line-height: 1.55;
-        font-weight: 400;
-    }
-    @media (max-width: 576px) {
-        .applicant-login-wrap { padding: 20px 12px 35px; }
-        .applicant-login-inner { padding: 30px 18px 42px; }
-        .applicant-login-title { margin-bottom: 36px; }
-        .applicant-google-link { margin-bottom: 32px; gap: 8px; }
-        .applicant-google-mark { width: 50px; height: 50px; flex-basis: 50px; }
-    }
+    .applicant-login-wrap { padding: 12px 12px 28px; background: #f4f6f9; }
+    .applicant-login-card { width: 100%; max-width: 390px; margin: 0 auto; background: #fff; border: 1px solid #e1e3e5; border-radius: 0; box-shadow: 0 1px 4px rgba(0,0,0,.11); }
+    .applicant-login-inner { padding: 23px 17px 27px; text-align: center; color: #666; }
+    .applicant-login-title { margin: 0 0 24px; font-size: 16px; font-weight: 400; line-height: 1.4; }
+    .applicant-google-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; color: #007bff; font-size: 16px; font-weight: 400; text-decoration: none; margin-bottom: 25px; line-height: 1.3; }
+    .applicant-google-link:hover, .applicant-google-link:focus { color: #0056b3; text-decoration: underline; }
+    .applicant-google-mark { width: 35px; height: 35px; flex: 0 0 35px; object-fit: contain; }
+    .applicant-login-help { margin: 0; font-size: 13px; line-height: 1.6; font-weight: 400; }
+    @media (max-width: 576px) { .applicant-login-wrap { padding: 10px 12px 24px; } .applicant-login-card { max-width: 390px; } .applicant-login-inner { padding: 20px 12px 24px; } }
 </style>
 @endsection
 
