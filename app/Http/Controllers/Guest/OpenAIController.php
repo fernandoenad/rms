@@ -13,6 +13,7 @@ class OpenAIController extends Controller
 {
     public function inquire2(Application $application, Request $request)
     {
+        app(\App\Services\Applicant\ApplicationOwnershipService::class)->authorize($request, $application);
         // Validate input
         $request->validate([
             'message' => 'required|string|max:500',
