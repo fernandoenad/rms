@@ -24,7 +24,7 @@ class ApplicantPortalSecurityTest extends TestCase
             ->assertSee('Sign in with Google')
             ->assertSee(route('applicant.google'))
             ->assertSee('https://hrms.depedbohol.org/help/reset')
-            ->assertSee('Staff login');
+            ->assertDontSee('Staff login');
     }
 
     public function test_an_authenticated_applicant_can_open_profile_editor(): void
