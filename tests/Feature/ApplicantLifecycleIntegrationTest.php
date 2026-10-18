@@ -136,6 +136,42 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $this->assertDatabaseHas('applicant_audit_logs', ['event_type' => 'historical_claim_approved']);
     }
 
+    public function test_hr_approval_http_flow_grants_only_the_verified_claimant_access(): void
+    {
+        $claimant = $this->profile('current@example.test');
+        $unrelated = $this->profile('other@example.test');
+        $application = $this->historical($this->vacancy(), 'previous@example.test');
+        $admin = User::factory()->create(['email' => 'approver@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $admin->id, 'level' => 1, 'status' => 1]);
+
+        $this->actingAs($claimant->user)->post(route('applicant.claims.store'), [
+            'application_code' => $application->application_code,
+            'email' => 'previous@example.test',
+        ])->assertRedirect(route('applicant.dashboard'));
+
+        $claim = \App\Models\ApplicationClaimRequest::where('applicant_profile_id', $claimant->id)->firstOrFail();
+        $this->assertSame('pending', $claim->status);
+        $this->actingAs($claimant->user)->get(route('guest.applications.show', $application))->assertForbidden();
+        $this->actingAs($unrelated->user)->get(route('guest.applications.show', $application))->assertForbidden();
+
+        $this->actingAs($admin)->post(route('admin.applicant_claims.approve', $claim), [
+            'review_notes' => 'Verified government identification and original application documents.',
+            'identity_verified' => '1',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('application_claim_requests', ['id' => $claim->id, 'status' => 'approved']);
+        $this->assertDatabaseHas('applicant_application_links', [
+            'application_id' => $application->id,
+            'applicant_profile_id' => $claimant->id,
+            'link_method' => 'hr_approved_claim',
+        ]);
+        $this->actingAs($claimant->user)->get(route('applicant.dashboard'))
+            ->assertOk()->assertSee($application->application_code);
+        $this->actingAs($claimant->user)->get(route('guest.applications.show', $application))->assertOk();
+        $this->actingAs($unrelated->user)->get(route('guest.applications.show', $application))->assertForbidden();
+        $this->assertSame('Old', $application->fresh()->first_name);
+    }
+
     public function test_claimant_cannot_approve_their_own_application(): void
     {
         $profile = $this->profile();
