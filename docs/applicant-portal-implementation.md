@@ -219,3 +219,9 @@ Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./ven
 - The submission transaction still denies attempts after the posting deadline using the locked vacancy.
 - Two lifecycle regressions cover access to historical submissions after closure and rejection of new late submissions.
 - Verify locally with `./vendor/bin/phpunit --filter ApplicantLifecycleIntegration --testdox` and the full PHPUnit suite; draft PR remains unmerged.
+
+## Closed vacancy deep-link behavior
+- For a vacancy review URL, existing linked applicants retain access to their application details, including after closure.
+- For unlinked applicants, vacancy availability is checked before prompting for a master profile. Closed postings are not presented as actionable application opportunities.
+- Added a security regression for first-time users opening a closed vacancy application link.
+- Verify with `./vendor/bin/phpunit --filter ApplicantPortalSecurity --testdox` and then the full PHPUnit suite before merge.
