@@ -68,7 +68,8 @@ class PortalController extends Controller
         // Do not update any existing application record.
         // Resume only an internally recorded vacancy ID, never an arbitrary return URL.
         $pendingVacancyId = $request->session()->pull('applicant_pending_vacancy_id');
-        if ($pendingVacancyId) {
+        $pendingUserId = $request->session()->pull('applicant_pending_vacancy_user_id');
+        if ($pendingVacancyId && (int) $pendingUserId === (int) $request->user()->id) {
             $vacancy = \App\Models\Vacancy::find($pendingVacancyId);
             if ($vacancy && $vacancy->isOpenForApplications()) {
                 return redirect()->route('applicant.apply.review', $vacancy)
