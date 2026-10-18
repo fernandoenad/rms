@@ -34,6 +34,7 @@ class ApplicationController extends Controller
 
     public function show(Request $request, Application $application, EquivalentSetScheduleResolver $setResolver)
     {
+        app(\App\Services\Applicant\ApplicationOwnershipService::class)->authorize($request, $application);
         $applicationInquiries = $application->inquiries;
         $exams = \App\Models\Exam::where('vacancy_id', $application->vacancy_id)
             ->where(function ($q) use ($application) {
@@ -166,7 +167,6 @@ class ApplicationController extends Controller
 
         $skillTests = $visibleSkillTests->sortBy('start_date')->values();
 
-        app(\App\Services\Applicant\ApplicationOwnershipService::class)->authorize($request, $application);
         $oldDate = Carbon::parse($application->updated_at);
         $diffInDays = $oldDate->diffInDays(now());
         return view('guest.applications.show', compact('application', 'applicationInquiries', 'diffInDays', 'exams', 'skillTests'));
