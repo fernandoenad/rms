@@ -72,6 +72,12 @@
                         </li> 
                         -->
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ auth()->check() ? route('applicant.dashboard') : route('applicant.login') }}">Applicant Portal</a>
+                        </li>
+                        @if(auth()->check() && auth()->user()->role?->status == 1)
+                        <li class="nav-item"><a class="nav-link" href="{{ route('admin.index') }}">Staff Portal</a></li>
+                        @endif
+                        <li class="nav-item">
                             <a class="nav-link {{ Route::currentRouteName() == 'guest.rqas.index' ? 'active' : ''}}" href="{{ route('guest.rqas.index') }}">CAR-RQAs</a>
                         </li> 
                     </ul>
