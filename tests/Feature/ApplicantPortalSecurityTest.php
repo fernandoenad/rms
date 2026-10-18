@@ -46,6 +46,22 @@ class ApplicantPortalSecurityTest extends TestCase
             ->assertDontSee('>Administration</a>', false);
     }
 
+    public function test_historical_claim_review_is_discoverable_from_admin_menu(): void
+    {
+        $item = collect(config('adminlte.menu'))->first(fn ($item) =>
+            is_array($item) && ($item['text'] ?? null) === 'Historical Claims'
+        );
+
+        $this->assertNotNull($item);
+        $this->assertSame('admin/applicant-claims', $item['url']);
+        $this->assertContains('admin/applicant-claims', $item['active']);
+    }
+
+    public function test_guest_cannot_open_hr_historical_claim_review(): void
+    {
+        $this->get(route('admin.applicant_claims.index'))->assertRedirect();
+    }
+
     public function test_active_staff_can_switch_between_staff_and_applicant_portals(): void
     {
         $user = User::factory()->create(['email' => 'staff@deped.gov.ph']);
