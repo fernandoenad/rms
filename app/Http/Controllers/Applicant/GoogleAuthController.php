@@ -71,7 +71,7 @@ class GoogleAuthController extends Controller
         $profile = ApplicantProfile::where('user_id', $user->id)->firstOrFail();
         try {
             $linker->linkMatchingEmail($profile, $email);
-        } catch (\\Throwable $exception) {
+        } catch (\Throwable $exception) {
             report($exception);
         }
         return redirect()->route('applicant.dashboard')
