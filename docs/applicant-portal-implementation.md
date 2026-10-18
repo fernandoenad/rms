@@ -32,3 +32,19 @@ Branch: `feature/applicant-portal-foundation`
 9. Run migrations and tests in staging; do not enable features in production prematurely.
 
 This branch is deliberately a non-routed foundation; it does not change the existing login or public applicant behavior.
+
+## October 18 integration pass
+- Added stateful applicant Google OAuth endpoint and callback. Existing staff OAuth flow remains intact.
+- Added authenticated applicant dashboard, master profile edit/update, and historical claim request routes.
+- Added HR claim review controller and approval/rejection interface restricted to existing admin middleware.
+- Added new vacancy submission service that copies profile fields into the existing applications schema with an ownership link in one transaction.
+- Added read-only new application review view and a dashboard vacancy navigation link.
+
+## Important limitations after this pass
+- The public guest vacancy apply route still displays the legacy applicant form; it must be redirected into the new authenticated review workflow before launch.
+- Legacy guest_email-based application, inquiry and assessment authorization has NOT been replaced; the insecure paths remain in the current app until a coordinated cutover.
+- Staff-to-applicant switching is available from the applicant dashboard only in this pass; add staff navigation entry and refine role checks.
+- Google identity/account linking and existing active staff protections require integration/regression tests.
+- HR approval UI needs more robust identity evidence and conflict review before production use.
+- Automated tests and migrations have not been executed by this GitHub connector session.
+- This draft PR must NOT be merged or deployed as a finished applicant portal.
