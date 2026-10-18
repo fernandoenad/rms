@@ -114,6 +114,8 @@ jobs:
           extensions: mbstring, dom, fileinfo, pdo_mysql
           coverage: none
       - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Create empty CI environment file for Laravel migration bootstrap
+        run: touch .env
       - name: Verify legacy applications schema and third-party SQL read contract
         env:
           RMS_DISPOSABLE_MYSQL_CI: '1'
