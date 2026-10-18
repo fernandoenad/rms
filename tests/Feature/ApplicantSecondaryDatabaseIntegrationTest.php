@@ -100,4 +100,84 @@ class ApplicantSecondaryDatabaseIntegrationTest extends TestCase
             $schema->drop('stations');
         }
     }
+
+    public function test_ajax_profile_choices_and_save_use_real_secondary_mysql_references(): void
+    {
+        // The tests own these tables only in a disposable GitHub Actions DB.
+        if (config('database.connections.mysql_2.driver') !== 'mysql'
+            || config('database.connections.mysql_2.database') !== 'rms_test_aux') {
+            $this->markTestSkipped('Requires disposable rms_test_aux MySQL database.');
+        }
+
+        $schema = Schema::connection('mysql_2');
+        foreach (['towns', 'dropdowns', 'offices'] as $table) {
+            $this->assertFalse($schema->hasTable($table), 'Expected isolated and empty secondary schema.');
+        }
+        $schema->create('towns', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+        });
+        $schema->create('dropdowns', function (Blueprint $table) {
+            $table->id();
+            $table->string('type');
+            $table->string('details');
+        });
+        $schema->create('offices', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+        });
+
+        try {
+            $db = DB::connection('mysql_2');
+            $db->table('towns')->insert(['id' => 1, 'name' => 'Sagbayan']);
+            $db->table('dropdowns')->insert([
+                ['id' => 1, 'type' => 'sex', 'details' => 'Female'],
+                ['id' => 2, 'type' => 'sex', 'details' => 'Male'],
+                ['id' => 3, 'type' => 'civilstatus', 'details' => 'Single'],
+            ]);
+            $db->table('offices')->insert(['id' => 7, 'name' => 'Sagbayan District']);
+            $user = User::factory()->create();
+
+            $this->actingAs($user)->getJson(route('applicant.profile.options'))
+                ->assertOk()
+                ->assertJsonPath('municipalities.0', 'Sagbayan')
+                ->assertJsonPath('genders.0', 'Female')
+                ->assertJsonPath('civil_statuses.0', 'Single')
+                ->assertJsonPath('districts.0.id', 7);
+
+            $dob = now()->subYears(27)->toDateString();
+            $this->actingAs($user)->putJson(route('applicant.profile.update'), [
+                'first_name' => 'Synthetic',
+                'middle_name' => 'M',
+                'last_name' => 'Applicant',
+                'sitio' => 'Purok 1',
+                'barangay' => 'Central',
+                'municipality' => 'Sagbayan',
+                'district_id' => 7,
+                'zip' => 6331,
+                'date_of_birth' => $dob,
+                'age' => 70,
+                'gender' => 'Female',
+                'civil_status' => 'Single',
+                'religion' => 'None',
+                'disability' => 'None',
+                'ethnic_group' => 'None',
+                'email' => 'synthetic@example.test',
+                'phone' => '09123456789',
+            ])->assertOk()->assertJsonPath('age', 27);
+
+            $this->assertDatabaseHas('applicant_profiles', [
+                'user_id' => $user->id,
+                'date_of_birth' => $dob,
+                'age' => 27,
+                'district_id' => 7,
+                'municipality' => 'Sagbayan',
+            ]);
+            $this->assertDatabaseCount('applications', 0);
+        } finally {
+            foreach (['offices', 'dropdowns', 'towns'] as $table) {
+                $schema->dropIfExists($table);
+            }
+        }
+    }
 }
