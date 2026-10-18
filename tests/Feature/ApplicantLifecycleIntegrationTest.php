@@ -123,6 +123,31 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $service->approve($claim, $profile->user_id, 'Official supporting records verified.');
     }
 
+    public function test_hr_clarification_does_not_grant_ownership_and_can_later_be_approved(): void
+    {
+        $profile = $this->profile();
+        $application = $this->historical($this->vacancy(), 'previous@example.test');
+        $service = app(ApplicationClaimService::class);
+        $claim = $service->request($profile, $application->application_code, 'previous@example.test');
+        $reviewer = User::factory()->create();
+
+        $service->requestClarification($claim, $reviewer->id, 'Present a valid government identification document to HR.');
+        $this->assertDatabaseHas('application_claim_requests', [
+            'id' => $claim->id, 'status' => 'clarification', 'reviewed_by' => $reviewer->id,
+        ]);
+        $this->assertDatabaseCount('applicant_application_links', 0);
+        $this->assertDatabaseHas('applicant_audit_logs', [
+            'event_type' => 'historical_claim_clarification_requested',
+            'application_id' => $application->id,
+        ]);
+
+        $service->approve($claim, $reviewer->id, 'Government identification and archived application verified.');
+        $this->assertDatabaseHas('applicant_application_links', [
+            'application_id' => $application->id, 'applicant_profile_id' => $profile->id,
+        ]);
+        $this->assertSame('approved', $claim->fresh()->status);
+    }
+
     public function test_rejecting_claim_records_reason_without_linking_application(): void
     {
         $profile = $this->profile();
