@@ -200,3 +200,9 @@ Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./ven
 - The applicant is redirected to the master-profile editor and cannot submit until the profile is completed.
 - Added ApplicantPortalSecurityTest regression covering this first-time review path and no premature application creation.
 - Local PHPUnit execution and real browser review are required; no production deployment has occurred.
+
+## Applicant submission normalization and transaction safeguards
+- The submission transaction rechecks master-profile completion under lock.
+- Duplicate application matching for the same vacancy uses `LOWER(TRIM(email))` to match legacy records with inconsistent casing or surrounding whitespace.
+- Added lifecycle regression tests for historical duplicate email normalization and incomplete-profile submission rejection.
+- No changes to the legacy applications table. Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./vendor/bin/phpunit --filter ApplicantLifecycleIntegration --testdox` and `./vendor/bin/phpunit --testdox`.
