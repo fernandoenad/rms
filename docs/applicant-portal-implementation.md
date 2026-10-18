@@ -206,3 +206,9 @@ Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./ven
 - Duplicate application matching for the same vacancy uses `LOWER(TRIM(email))` to match legacy records with inconsistent casing or surrounding whitespace.
 - Added lifecycle regression tests for historical duplicate email normalization and incomplete-profile submission rejection.
 - No changes to the legacy applications table. Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./vendor/bin/phpunit --filter ApplicantLifecycleIntegration --testdox` and `./vendor/bin/phpunit --testdox`.
+
+## Repeat application review usability
+- Authenticated applicants who already have a linked application for a vacancy are redirected to its existing application details rather than seeing a duplicate submission review form.
+- Submission endpoint remains authoritative and rejects duplicate attempts inside its transaction.
+- Added a lifecycle test asserting the redirect and unchanged application count.
+- Tests require local verification; PR #46 remains draft.
