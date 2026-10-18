@@ -81,3 +81,18 @@ This branch is deliberately a non-routed foundation; it does not change the exis
 - HR identity verification remains a manual judgment requiring documented evidence and controls.
 - Run PHP syntax, route:list, Laravel migrations and PHPUnit in a staging environment; connector commits alone do not execute tests.
 - Integration-test the previous in-progress assessment sessions, external application read contract, and database compatibility before merging.
+
+## Staff account Google identity linking phase
+- Added `/auth/staff/link-google` which requires an authenticated, active staff session.
+- Added a separate Google callback, protected by session-bound staff user ID, Socialite state, Google subject, verified email, and staff email equality.
+- Existing staff accounts are not silently adopted by applicant onboarding based only on matching email.
+- Once staff OAuth binding succeeds, the current session can use the applicant dashboard and switch to the staff dashboard without a second sign-in.
+- Applicant and staff Google entry points explicitly set their OAuth redirect URLs. Register both callback addresses in Google Cloud Console.
+- Added starter route guard tests.
+
+### Important limitations
+- A staff member must initially authenticate through the existing staff login before explicitly linking Google; this is a migration step, not a recurring second login.
+- Verify whether the registered staff email is the same address returned by Google; staff email changes and delegated accounts need administrative reconciliation.
+- Callback tests using mocked Google user responses, database concurrency tests, and staged live Google OAuth tests are still required.
+- No PHP runtime, database migrations, or automated tests were executed through the GitHub integration.
+- The draft PR is not approved for production deployment.
