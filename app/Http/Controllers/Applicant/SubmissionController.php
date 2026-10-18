@@ -22,7 +22,7 @@ class SubmissionController extends Controller
             ->whereHas('application', fn ($query) => $query->where('vacancy_id', $vacancy->id))
             ->first();
         if ($existingLink) {
-            $request->session()->forget(['applicant_pending_vacancy_id', 'applicant_pending_vacancy_user_id']);
+            $request->session()->forget(['applicant_pending_vacancy_id', 'applicant_pending_vacancy_user_id', 'applicant_pending_vacancy_started_at']);
             return redirect()->route('guest.applications.show', $existingLink->application)
                 ->with('status', 'You already submitted an application for this vacancy.');
         }
@@ -30,6 +30,7 @@ class SubmissionController extends Controller
         if (!$profile->profile_completed_at) {
             $request->session()->put('applicant_pending_vacancy_id', $vacancy->id);
             $request->session()->put('applicant_pending_vacancy_user_id', $request->user()->id);
+            $request->session()->put('applicant_pending_vacancy_started_at', now()->timestamp);
             return redirect()->route('applicant.profile.edit')
                 ->with('status', 'Complete your master profile before applying.');
         }
