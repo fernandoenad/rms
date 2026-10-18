@@ -146,6 +146,23 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $this->assertDatabaseCount('applications', 1);
     }
 
+    public function test_other_applicant_cannot_read_an_owned_application_detail(): void
+    {
+        $owner = $this->profile('owner@example.test');
+        $intruder = $this->profile('intruder@example.test');
+        $application = $this->historical($this->vacancy(), 'owner@example.test');
+        ApplicantApplicationLink::create([
+            'applicant_profile_id' => $owner->id,
+            'application_id' => $application->id,
+            'link_method' => 'google_email_match',
+            'verified_at' => now(),
+        ]);
+
+        $this->actingAs($intruder->user)
+            ->get(route('guest.applications.show', $application))
+            ->assertForbidden();
+    }
+
     public function test_profile_changes_never_rewrite_a_historical_application(): void
     {
         $profile = $this->profile();
