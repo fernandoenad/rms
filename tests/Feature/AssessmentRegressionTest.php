@@ -603,6 +603,59 @@ class AssessmentRegressionTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_foreign_applicant_cannot_save_written_answer_or_modify_attempt(): void
+    {
+        [$vacancy, $application] = $this->makeTakenInApplication();
+        $exam = Exam::create([
+            'vacancy_id' => $vacancy->id, 'title' => 'Written Isolation',
+            'code' => 'W-ISOLATION-'.uniqid(), 'enrollment_key' => 'KEY-ISOLATION',
+            'start_date' => now()->subHour(), 'end_date' => now()->addHour(),
+            'duration' => 30, 'access_mode' => 'all_taken_in',
+            'shuffle_items' => false, 'shuffle_options' => false,
+            'status' => 1, 'approval_status' => 'approved',
+        ]);
+        $attempt = ExamAttempt::create([
+            'exam_id' => $exam->id, 'application_id' => $application->id,
+            'started_at' => now(), 'expires_at' => now()->addMinutes(30), 'status' => 1,
+        ]);
+        $intruder = \App\Models\User::factory()->create();
+        $this->actingAs($intruder)->post(
+            route('guest.assessments.attempts.answer', $attempt),
+            ['written_exam_id' => 100001, 'selected_option_id' => 100002]
+        )->assertForbidden();
+        $this->assertDatabaseMissing('exam_attempt_answers', ['exam_attempt_id' => $attempt->id]);
+        $this->assertSame(1, (int) $attempt->fresh()->status);
+    }
+
+    public function test_foreign_applicant_cannot_submit_skills_attempt_or_save_response(): void
+    {
+        [$vacancy, $application] = $this->makeTakenInApplication();
+        $test = SkillTest::create([
+            'vacancy_id' => $vacancy->id, 'title' => 'Skills Isolation',
+            'code' => 'S-ISOLATION-'.uniqid(), 'instructions' => 'Task',
+            'expected_output' => 'Response', 'start_date' => now()->subHour(),
+            'end_date' => now()->addHour(), 'duration' => 30,
+            'access_mode' => 'all_taken_in', 'submission_modes' => ['inline'],
+            'allowed_extensions' => ['docx'], 'max_file_size_kb' => 10240,
+            'ai_scoring' => false, 'score_release_policy' => 'manual',
+            'status' => 1, 'approval_status' => 'approved',
+        ]);
+        $attempt = SkillTestAttempt::create([
+            'skill_test_id' => $test->id, 'application_id' => $application->id,
+            'started_at' => now(), 'expires_at' => now()->addMinutes(30), 'status' => 1,
+        ]);
+        $intruder = \App\Models\User::factory()->create();
+        $this->actingAs($intruder)->post(
+            route('guest.skills.attempts.inline', $attempt),
+            ['inline_response' => 'Malicious replacement']
+        )->assertForbidden();
+        $this->actingAs($intruder)->post(
+            route('guest.skills.attempts.submit', $attempt)
+        )->assertForbidden();
+        $this->assertDatabaseMissing('skill_test_submissions', ['skill_test_attempt_id' => $attempt->id]);
+        $this->assertSame(1, (int) $attempt->fresh()->status);
+    }
+
     protected function makeTakenInApplication(array $criteria = ['Written_Examination' => 20, 'Skills_Test' => 20, 'Interview' => 60]): array
     {
         $template = Template::create([
