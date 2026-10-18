@@ -46,6 +46,31 @@ class ApplicantPortalSecurityTest extends TestCase
             ->assertDontSee('>Administration</a>', false);
     }
 
+    public function test_active_staff_can_switch_between_staff_and_applicant_portals(): void
+    {
+        $user = User::factory()->create(['email' => 'staff@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $user->id, 'level' => 2, 'status' => 1]);
+
+        $this->actingAs($user)->get(route('admin.index'))->assertOk();
+        $this->actingAs($user)->get(route('applicant.dashboard'))
+            ->assertOk()
+            ->assertSee('Switch to Staff Portal')
+            ->assertSee(route('admin.index'));
+
+        $this->assertDatabaseHas('applicant_profiles', ['user_id' => $user->id]);
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_applicant_without_staff_role_cannot_access_staff_portal(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->get(route('applicant.dashboard'))
+            ->assertOk()
+            ->assertDontSee('Switch to Staff Portal');
+
+        $this->actingAs($user)->get(route('admin.index'))->assertStatus(403);
+    }
+
     public function test_an_authenticated_applicant_can_open_profile_editor(): void
     {
         $user = User::factory()->create();
