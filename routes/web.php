@@ -48,24 +48,47 @@ use App\Providers\RouteServiceProvider;
 */
 
 Route::get('/auth/google', function () {
-    return Socialite::driver('google')->redirect();
+    return Socialite::driver('google')->redirectUrl(url('/auth/google/callback'))->redirect();
 });
 
-Route::get('/auth/google/callback', function () {
-    $googleUser = Socialite::driver('google')->stateless()->user();
+Route::get('/auth/google/callback', function (\Illuminate\Http\Request $request) {
+    $googleUser = Socialite::driver('google')->redirectUrl(url('/auth/google/callback'))->user();
+    $subject = (string) $googleUser->getId();
+    $email = mb_strtolower(trim((string) $googleUser->getEmail()));
+    $verified = filter_var(data_get($googleUser->user, 'email_verified', data_get($googleUser->user, 'verified_email', false)), FILTER_VALIDATE_BOOLEAN);
 
-    if (!str_ends_with($googleUser->getEmail(), '@deped.gov.ph')) {
-        return redirect('/login')->with('not_deped','Only DepEd emails are allowed.');
+    if (!$subject || !$verified || !filter_var($email, FILTER_VALIDATE_EMAIL)
+        || !str_ends_with($email, '@deped.gov.ph')) {
+        return redirect('/login')->with('not_deped', 'A verified DepEd Google email is required.');
     }
 
-    // Check if user already exists
-    $user = User::where('email', $googleUser->getEmail())->first();
-
-    if (!$user) {
-        return redirect('/login')->with('not_reg', 'DepEd email is not registered.');
+    // Staff access is granted only to a pre-authorized active RMS staff user.
+    $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
+    if (!$user || $user->role?->status != 1) {
+        return redirect('/login')->with('not_reg', 'This Google account is not authorized for RMS staff access.');
     }
+
+    $identity = \App\Models\OAuthIdentity::where('provider', 'google')
+        ->where('provider_subject', $subject)->first();
+    if ($identity && (int) $identity->user_id !== (int) $user->id) {
+        abort(403, 'This Google identity is linked to another account.');
+    }
+    if (\App\Models\OAuthIdentity::where('provider', 'google')
+        ->where('user_id', $user->id)->where('provider_subject', '!=', $subject)->exists()) {
+        abort(403, 'A different Google identity is already linked to this staff account.');
+    }
+
+    // Existing staff OAuth login remains independent of applicant onboarding.
+    // Bind the verified Google subject so subsequent applicant login uses the same user.
+    \Illuminate\Support\Facades\DB::transaction(function () use ($user, $email, $subject) {
+        \App\Models\OAuthIdentity::firstOrCreate(
+            ['provider' => 'google', 'provider_subject' => $subject],
+            ['user_id' => $user->id, 'provider_email' => $email, 'email_verified' => true]
+        );
+    });
 
     Auth::login($user);
+    $request->session()->regenerate();
 
     return redirect(session('url.intended', RouteServiceProvider::HOME));
 });
