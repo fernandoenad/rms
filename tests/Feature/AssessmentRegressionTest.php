@@ -278,6 +278,14 @@ class AssessmentRegressionTest extends TestCase
 
         [$vacancy, $application, $assessment] = $this->makeTakenInApplication();
         $assessment->delete();
+        $user = \App\Models\User::factory()->create();
+        $profile = \App\Models\ApplicantProfile::create(['user_id' => $user->id]);
+        \App\Models\ApplicantApplicationLink::create([
+            'applicant_profile_id' => $profile->id,
+            'application_id' => $application->id,
+            'link_method' => 'new_submission',
+            'verified_at' => now(),
+        ]);
 
         $exam = Exam::create([
             'vacancy_id' => $vacancy->id,
@@ -295,7 +303,7 @@ class AssessmentRegressionTest extends TestCase
         ]);
 
         $response = $this
-            ->withSession(['guest_email' => $application->email])
+            ->actingAs($user)
             ->post(route('guest.assessments.attempts.start', [$application, $exam]));
 
         $response->assertForbidden();
@@ -311,6 +319,14 @@ class AssessmentRegressionTest extends TestCase
 
         [$vacancy, $application, $assessment] = $this->makeTakenInApplication();
         $assessment->delete();
+        $user = \App\Models\User::factory()->create();
+        $profile = \App\Models\ApplicantProfile::create(['user_id' => $user->id]);
+        \App\Models\ApplicantApplicationLink::create([
+            'applicant_profile_id' => $profile->id,
+            'application_id' => $application->id,
+            'link_method' => 'new_submission',
+            'verified_at' => now(),
+        ]);
 
         $test = SkillTest::create([
             'vacancy_id' => $vacancy->id,
@@ -332,7 +348,7 @@ class AssessmentRegressionTest extends TestCase
         ]);
 
         $response = $this
-            ->withSession(['guest_email' => $application->email])
+            ->actingAs($user)
             ->post(route('guest.skills.start', [$application, $test]));
 
         $response->assertForbidden();
