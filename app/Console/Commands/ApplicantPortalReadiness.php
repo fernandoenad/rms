@@ -61,6 +61,42 @@ class ApplicantPortalReadiness extends Command
             $missingRoutes ? 'Missing route names: '.implode(', ', $missingRoutes) : 'Required applicant and HR route names are registered.'
         );
 
+        // Routes can exist and still be unsafe if a group middleware is
+        // accidentally removed during refactoring. Check the effective
+        // middleware stack for every privilege-sensitive entry point.
+        $routeGuards = [
+            'applicant.dashboard' => ['auth'],
+            'applicant.profile.update' => ['auth'],
+            'applicant.apply.store' => ['auth'],
+            'applicant.claims.store' => ['auth', 'throttle:5,1'],
+            'applicant.staff.google.link' => ['auth', 'active'],
+            'applicant.staff.google.callback' => ['auth', 'active'],
+            'admin.applicant_claims.index' => ['auth', 'active', 'admin'],
+            'admin.applicant_claims.approve' => ['auth', 'active', 'admin'],
+            'admin.applicant_claims.reject' => ['auth', 'active', 'admin'],
+            'admin.applicant_claims.clarification' => ['auth', 'active', 'admin'],
+        ];
+        $unguarded = [];
+        foreach ($routeGuards as $name => $required) {
+            $route = Route::getRoutes()->getByName($name);
+            if (!$route) {
+                $unguarded[] = $name.' (not registered)';
+                continue;
+            }
+            $actual = $route->gatherMiddleware();
+            $missing = array_values(array_diff($required, $actual));
+            if ($missing) {
+                $unguarded[] = $name.' (missing '.implode(', ', $missing).')';
+            }
+        }
+        $record(
+            $unguarded ? 'FAIL' : 'PASS',
+            'Route access controls',
+            $unguarded
+                ? 'Required middleware absent: '.implode('; ', $unguarded)
+                : 'Authentication, staff, HR review and claim rate-limit middleware are present.'
+        );
+
         $oauthMissing = [];
         foreach (['client_id', 'client_secret'] as $key) {
             if (!filled(config("services.google.{$key}"))) {
