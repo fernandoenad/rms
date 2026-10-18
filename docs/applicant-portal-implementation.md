@@ -65,3 +65,19 @@ This branch is deliberately a non-routed foundation; it does not change the exis
 - Audit every applicant-facing endpoint and linked documents for remaining direct-ID access paths.
 - Confirm and test the external reader's expectations of the protected applications table.
 - Verify the Google OAuth callback URL has been added to the Google Cloud OAuth client.
+
+## Security hardening pass — October 18
+- Existing staff accounts are no longer silently attached to applicant Google OAuth identities solely by matching email.
+- Existing Google identity subject remains the durable identity key.
+- Historical discovery failures are reported rather than invalidating an otherwise successful applicant session.
+- Applicant profile updates and HR claim decisions now insert applicant_audit_logs rows.
+- Added smoke tests for unauthenticated access, authenticated profile editing and claim input validation.
+- Existing applications schema remains untouched.
+
+### Outstanding release-critical work
+- Build a secure, explicit migration for **existing staff** to link their Google subject to their pre-existing user record. The current protection rejects unmatched staff identities; portal switching is not fully ready for staff with pre-existing accounts.
+- Confirm Google provider returns the verified email claim with the configured Socialite driver.
+- Add authorization policies and test all staff/admin routes, beyond the claim-review queue.
+- HR identity verification remains a manual judgment requiring documented evidence and controls.
+- Run PHP syntax, route:list, Laravel migrations and PHPUnit in a staging environment; connector commits alone do not execute tests.
+- Integration-test the previous in-progress assessment sessions, external application read contract, and database compatibility before merging.
