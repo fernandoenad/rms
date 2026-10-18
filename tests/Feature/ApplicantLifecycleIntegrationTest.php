@@ -175,6 +175,25 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $this->assertSame('Old', $application->fresh()->first_name);
     }
 
+    public function test_hr_approval_requires_explicit_identity_verification(): void
+    {
+        $profile = $this->profile('current@example.test');
+        $application = $this->historical($this->vacancy(), 'old@example.test');
+        $claim = app(ApplicationClaimService::class)->request($profile, $application->application_code, 'old@example.test');
+        $admin = User::factory()->create(['email' => 'admin@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $admin->id, 'level' => 1, 'status' => 1]);
+
+        $this->actingAs($admin)->post(route('admin.applicant_claims.approve', $claim), [
+            'review_notes' => 'Original documents have been inspected in person.',
+        ])->assertSessionHasErrors('identity_verified');
+
+        $this->assertSame('pending', $claim->fresh()->status);
+        $this->assertDatabaseMissing('applicant_application_links', ['application_id' => $application->id]);
+        $this->assertDatabaseMissing('applicant_audit_logs', [
+            'application_id' => $application->id, 'event_type' => 'historical_claim_approved',
+        ]);
+    }
+
     public function test_claimant_cannot_approve_their_own_application(): void
     {
         $profile = $this->profile();
