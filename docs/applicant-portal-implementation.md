@@ -132,3 +132,12 @@ Added `tests/Feature/ApplicantLifecycleIntegrationTest.php` with six integration
 `./vendor/bin/phpunit --testdox`
 
 Do not merge before resolving any failures and testing real OAuth callback and assessments in staging.
+
+## Staff Google login hardening (October 18, 2026)
+- Existing /auth/google/callback now validates Google subject, verified email, DepEd domain and currently authorized active staff role.
+- Staff Google login binds subject into oauth_identities under existing user ID after rejecting cross-account or conflicting-subject associations; applicant login can reuse the same identity.
+- Staff callback now uses Socialite's stateful flow and regenerates session after login.
+- Added tests/Feature/StaffGoogleCallbackIntegrationTest.php: verified staff login, rejection of unverified Google email, rejection without active staff role, and prevention of subject rebinding.
+- OAuth redirect URI for /auth/google/callback must be authorized in Google Cloud settings; existing staff sessions are retained after migration.
+- These four tests have NOT yet been run in the user's PHP environment. Prior passing baseline: 31 tests, 96 assertions.
+- Run `git pull --ff-only origin feature/applicant-portal-foundation` followed by `./vendor/bin/phpunit --filter StaffGoogleCallbackIntegration --testdox` and `./vendor/bin/phpunit --testdox`; fix any failures before deployment.
