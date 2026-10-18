@@ -231,3 +231,8 @@ Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./ven
 - Successful profile update consumes that session key and resumes review only if the posting is still open; a closed/deleted vacancy returns the applicant to the dashboard.
 - No untrusted redirect URL is accepted, and saving a profile never automatically submits an application.
 - Added two feature tests for open and subsequently closed vacancy continuation. Local PHPUnit run is pending.
+
+## Google login session transition
+- Applicant Google callback clears any old pending vacancy ID, owner ID and timestamp, plus an obsolete staff Google linking marker, before authenticating the resolved Google user. This prevents cross-account onboarding context leakage when a browser is reused.
+- Added ApplicantGoogleCallbackIntegration test for cleanup of previous pending vacancy session state. A valid applicant must select a vacancy again after an explicit Google sign-in.
+- Local verification required before merging: run the applicant Google callback integration tests and the full PHPUnit suite.
