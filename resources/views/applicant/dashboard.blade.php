@@ -29,7 +29,7 @@
 @if($links->isEmpty())<p>No linked applications yet.</p>@endif
 <ul class="list-group">@foreach($links as $link)
 <li class="list-group-item">
-<strong>{{ $link->application?->application_code }}</strong>
+<a href="{{ route('guest.applications.show', $link->application) }}"><strong>{{ $link->application?->application_code }}</strong></a>
 — {{ $link->application?->vacancy?->position_title ?? 'Application' }}
 <span class="badge badge-secondary">{{ str_replace('_',' ', $link->link_method) }}</span>
 </li>@endforeach</ul></div></div>
