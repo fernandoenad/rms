@@ -236,3 +236,9 @@ Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./ven
 - Applicant Google callback clears any old pending vacancy ID, owner ID and timestamp, plus an obsolete staff Google linking marker, before authenticating the resolved Google user. This prevents cross-account onboarding context leakage when a browser is reused.
 - Added ApplicantGoogleCallbackIntegration test for cleanup of previous pending vacancy session state. A valid applicant must select a vacancy again after an explicit Google sign-in.
 - Local verification required before merging: run the applicant Google callback integration tests and the full PHPUnit suite.
+
+## Guest vacancy selection through Google login
+- A guest selecting an open vacancy has its ID and selection timestamp retained in the web session before redirection to applicant login.
+- After verified Google sign-in, the callback consumes this state and resumes vacancy review only within 30 minutes and only if the vacancy remains open. The subsequent review enforces profile completion and application ownership checks.
+- Guest vacancy state does not authorize ownership or create an application. Old account-specific pending profile state is still cleared when Google sign-in occurs.
+- Added a Google callback integration test for guest selection continuation. Local PHPUnit and actual OAuth browser tests remain required.
