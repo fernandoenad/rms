@@ -299,6 +299,12 @@ return [
             'active'       => ['/admin', '/admin/change_password']
         ],
         [
+            'text' => 'Switch to Applicant Portal',
+            'url' => 'applicant/dashboard',
+            'topnav_user' => true,
+            'icon' => 'fas fa-fw fa-exchange-alt',
+        ],
+        [
             'text'  => 'Change Password',
             'route' => 'admin.change_password',
             'topnav_user' => true,
