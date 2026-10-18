@@ -9,12 +9,17 @@ use App\Models\ApplicationClaimRequest;
 use App\Services\Applicant\ApplicationClaimService;
 use Illuminate\Http\Request;
 use App\Models\ApplicantAuditLog;
+use App\Services\Applicant\ProfileReferenceData;
+use Carbon\Carbon;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class PortalController extends Controller
 {
     private const PROFILE_FIELDS = [
         'first_name','middle_name','last_name','sitio','barangay','municipality','zip',
-        'age','gender','civil_status','religion','disability','ethnic_group','email','phone',
+        'date_of_birth','age','gender','civil_status','religion','disability','ethnic_group','email','phone','district_id',
     ];
 
     public function login()
@@ -38,25 +43,63 @@ class PortalController extends Controller
         return view('applicant.profile', compact('profile'));
     }
 
-    public function update(Request $request)
+    public function options(ProfileReferenceData $references)
     {
+        try {
+            return response()->json($references->all())
+                ->header('Cache-Control', 'private, no-store');
+        } catch (Throwable $e) {
+            report($e);
+            return response()->json([
+                'message' => 'Location and choice lists are temporarily unavailable. Please retry later.',
+            ], 503);
+        }
+    }
+
+    public function update(Request $request, ProfileReferenceData $references)
+    {
+        // These options are authoritative values from the existing HRMIS
+        // secondary database, not arbitrary strings supplied by the browser.
+        try {
+            $options = $references->all();
+        } catch (Throwable $e) {
+            report($e);
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'The district and dropdown references are temporarily unavailable. Please retry.',
+                ], 503);
+            }
+            return back()->withInput()->withErrors([
+                'municipality' => 'Reference lists are temporarily unavailable. Please try again later.',
+            ]);
+        }
+
         $data = $request->validate([
-            'first_name'=>'required|string|min:2|max:255',
-            'middle_name'=>'required|string|min:1|max:255',
-            'last_name'=>'required|string|min:2|max:255',
-            'sitio'=>'required|string|max:255',
-            'barangay'=>'required|string|max:255',
-            'municipality'=>'required|string|max:255',
-            'zip'=>'required|integer|between:1000,9999',
-            'age'=>'required|integer|between:18,70',
-            'gender'=>'required|string|max:255',
-            'civil_status'=>'required|string|max:255',
-            'religion'=>'required|string|max:255',
-            'disability'=>'required|string|max:255',
-            'ethnic_group'=>'required|string|max:255',
-            'email'=>'required|email|max:255',
-            'phone'=>['required','regex:/^09\\d{9}$/'],
+            'first_name' => 'required|string|min:2|max:255',
+            'middle_name' => 'required|string|min:1|max:255',
+            'last_name' => 'required|string|min:2|max:255',
+            'sitio' => 'required|string|max:255',
+            'barangay' => 'required|string|max:255',
+            'municipality' => ['required', 'string', Rule::in($options['municipalities'])],
+            'district_id' => ['nullable', 'integer', Rule::in(array_column($options['districts'], 'id'))],
+            'zip' => 'required|integer|between:1000,9999',
+            'date_of_birth' => 'required|date_format:Y-m-d|before_or_equal:today',
+            'gender' => ['required', 'string', Rule::in($options['genders'])],
+            'civil_status' => ['required', 'string', Rule::in($options['civil_statuses'])],
+            'religion' => 'required|string|max:255',
+            'disability' => 'required|string|max:255',
+            'ethnic_group' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'phone' => ['required','regex:/^09\d{9}$/'],
         ]);
+        // An age sent by the browser must NEVER be trusted or persisted.
+        $data['age'] = Carbon::createFromFormat('!Y-m-d', $data['date_of_birth'])->age;
+        if ($data['age'] < 18 || $data['age'] > 70) {
+            throw ValidationException::withMessages([
+                'date_of_birth' => 'Applicants must be between 18 and 70 years old.',
+            ]);
+        }
+
         $profile = ApplicantProfile::firstOrCreate(['user_id' => $request->user()->id]);
         $profile->update($data + ['profile_completed_at' => now()]);
         ApplicantAuditLog::create([
@@ -76,11 +119,20 @@ class PortalController extends Controller
         if ($pendingVacancyId && $pendingIsRecent && (int) $pendingUserId === (int) $request->user()->id) {
             $vacancy = \App\Models\Vacancy::find($pendingVacancyId);
             if ($vacancy && $vacancy->isOpenForApplications()) {
-                return redirect()->route('applicant.apply.review', $vacancy)
-                    ->with('status', 'Profile saved. Review your application before submitting.');
+                $destination = route('applicant.apply.review', $vacancy);
+                $message = 'Profile saved. Review your application before submitting.';
+                if ($request->expectsJson()) {
+                    return response()->json(['message' => $message, 'redirect' => $destination, 'age' => $data['age']]);
+                }
+                return redirect($destination)->with('status', $message);
             }
         }
-        return redirect()->route('applicant.dashboard')->with('status', 'Profile saved. Existing applications remain unchanged.');
+        $destination = route('applicant.dashboard');
+        $message = 'Profile saved. Existing applications remain unchanged.';
+        if ($request->expectsJson()) {
+            return response()->json(['message' => $message, 'redirect' => $destination, 'age' => $data['age']]);
+        }
+        return redirect($destination)->with('status', $message);
     }
 
     public function claim(Request $request, ApplicationClaimService $claims)
