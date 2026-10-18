@@ -153,3 +153,10 @@ New `tests/Feature/ApplicantGoogleCallbackIntegrationTest.php` adds six mocked O
 
 These tests mock the Google response; they do not simulate a real browser OAuth state and external Google handshake. Previously reported passing baseline was 31 tests and 96 assertions. The new six tests have not yet been executed.
 Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./vendor/bin/phpunit --filter ApplicantGoogleCallbackIntegration --testdox` followed by `./vendor/bin/phpunit --testdox`. Keep PR in draft pending local execution and staging acceptance.
+
+## Assessment access boundary review (October 18, 2026)
+- Skills attempt detail controller now authorizes authenticated ownership and eligible assessment access before eagerly loading rubric criteria or submission answers.
+- Skills time-status reuses ownedAttempt authorization rather than a separate access path.
+- Added test verifying a different authenticated applicant cannot read an already-owned application detail.
+- No changes to legacy applications schema.
+- Validation pending in user's local environment. Run `./vendor/bin/phpunit --testdox` and review results; do not merge if failing.
