@@ -6,14 +6,17 @@
 
 - [x] GitHub Actions: `Applicant Portal Full Suite` completed successfully on PHP 8.2 and PHP 8.4, run [39103144540](https://github.com/fernandoenad/rms/actions/runs/39103144540). This covers the suite at commit `8c099339` (before later changes).
 - [x] GitHub Actions: `Assessment Regression Suite` and `Assessment Center CI` completed successfully at commit `8c099339`.
-- [x] Full PHPUnit on PHP 8.2 and PHP 8.4, Assessment Regression Suite and Assessment Center CI passed for commit `b5eb7497` (before the runbook documentation change), including [full suite run 39112374461](https://github.com/fernandoenad/rms/actions/runs/39112374461).\n- [ ] Reconfirm the suite for the final candidate commit. Passing CI on older code commits does not certify later changes.
+- [x] Full PHPUnit on PHP 8.2 and PHP 8.4, Assessment Regression Suite and Assessment Center CI passed for commit `b5eb7497` (before the runbook documentation change), including [full suite run 39112374461](https://github.com/fernandoenad/rms/actions/runs/39112374461).
+- [ ] Reconfirm the suite for the final candidate commit. Passing CI on older code commits does not certify later changes.
 - [ ] Complete live-browser Google OAuth, staff/applicant switching, recruitment submission, HR validation, assessment flows, and external-reader tests. Automated tests do **not** replace these checks.
 
 ### Evidence capture for manual UAT
 
 For each manual scenario below, record tester, local date/time, environment/URL, test account ID (non-sensitive), result (pass/fail/blocked), screenshot or log reference, and a defect ID if applicable. Do not include OAuth secrets or personally identifiable application records in screenshots.
 
-**Step-by-step execution:** [Staging UAT Runbook](applicant-portal-staging-runbook.md). Evidence in this checklist remains unchecked until performed in the real staging environment.\n\n## Preconditions
+**Step-by-step execution:** [Staging UAT Runbook](applicant-portal-staging-runbook.md). Evidence in this checklist remains unchecked until performed in the real staging environment.
+
+## Preconditions
 
 - [ ] Record current branch, commit SHA, migration status and a restorable database backup.
 - [ ] Separate staging `.env`, test Google OAuth client, HTTPS callback URLs, session domain, queue worker and application URL configured.
