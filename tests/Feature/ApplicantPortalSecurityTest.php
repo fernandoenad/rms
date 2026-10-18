@@ -33,7 +33,7 @@ class ApplicantPortalSecurityTest extends TestCase
             ->assertSee('Date of birth')
             ->assertSee('Preferred DepEd district')
             ->assertSee('computedAge')
-            ->assertSee(route('applicant.profile.options'))
+            ->assertSee('Loading municipalities')
             ->assertDontSee('name="age"', false);
     }
 
@@ -59,8 +59,9 @@ class ApplicantPortalSecurityTest extends TestCase
             ->assertJsonPath('redirect', route('applicant.dashboard'));
         $this->assertDatabaseHas('applicant_profiles', [
             'user_id' => $user->id, 'age' => 30, 'district_id' => 3,
-            'date_of_birth' => $data['date_of_birth'],
         ]);
+        $this->assertSame($data['date_of_birth'],
+            ApplicantProfile::where('user_id', $user->id)->sole()->date_of_birth->format('Y-m-d'));
         $this->assertDatabaseCount('applications', 0);
     }
 
