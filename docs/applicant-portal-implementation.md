@@ -96,3 +96,17 @@ This branch is deliberately a non-routed foundation; it does not change the exis
 - Callback tests using mocked Google user responses, database concurrency tests, and staged live Google OAuth tests are still required.
 - No PHP runtime, database migrations, or automated tests were executed through the GitHub integration.
 - The draft PR is not approved for production deployment.
+
+## Integration code review: October 18, 2026
+- Move ownership checks to the beginning of application details requests, before loading private inquiries and assessment data.
+- Lock master profile during the new application transaction so submitted fields are read consistently.
+- Require explicit HR identity-evidence confirmation for approvals (rejections require reasons, but not proof of ownership).
+- Restore legacy age range (18–70) and required middle-name validation for new profiles, consistent with current application form.
+- Link applicant-dashboard application codes to authenticated, owner-checked application details.
+- No migration alters `applications` or updates historical applicant data.
+
+### Verification needed
+- These are code-level fixes. No successful PHPUnit execution or migration dry-run is claimed.
+- Run `php artisan route:list`, `php artisan migrate --pretend`, and `php artisan test --filter=Applicant` in a configured staging checkout, followed by full `php artisan test`.
+- Verify assessment access for active examinees during the transition, OAuth verified-email claim from Google, staff onboarding, and third-party read-only database contract.
+- Do not merge Draft PR #46 without passing security and staging regression tests.
