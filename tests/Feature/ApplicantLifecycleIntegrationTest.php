@@ -247,6 +247,21 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $this->assertDatabaseCount('applications', 1);
     }
 
+    public function test_repeat_vacancy_review_redirects_to_existing_application(): void
+    {
+        $profile = $this->profile();
+        $vacancy = $this->vacancy();
+        $this->actingAs($profile->user)->post(
+            route('applicant.apply.store', $vacancy), ['confirm' => 1]
+        )->assertRedirect(route('applicant.dashboard'));
+
+        $application = Application::where('vacancy_id', $vacancy->id)->sole();
+        $this->actingAs($profile->user)
+            ->get(route('applicant.apply.review', $vacancy))
+            ->assertRedirect(route('guest.applications.show', $application));
+        $this->assertDatabaseCount('applications', 1);
+    }
+
     public function test_submission_rejects_historical_duplicate_email_with_whitespace_and_case(): void
     {
         $profile = $this->profile('applicant@example.test');
