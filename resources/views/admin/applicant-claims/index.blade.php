@@ -1,11 +1,16 @@
-@extends('layouts.guest')
+@extends('adminlte::page')
 @section('title', 'HR Application Claims')
-@section('main')
-<div class="container py-4">
-<h1 class="h3">Historical Application Claim Review</h1>
+@section('content_header')
+<h1>Historical Application Claim Review</h1>
+@stop
+@section('content')
+<div class="container-fluid pb-4">
 <p>Check the applicant's identity and evidence against existing recruitment records before approving any claim.</p>
 @if(session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="alert alert-danger">{{ $errors->first() }}</div>@endif
+@if($claims->isEmpty())
+<div class="alert alert-info" role="status">No pending or clarification-requested application claims are awaiting HR review.</div>
+@endif
 @foreach($claims as $claim)
 <div class="card mb-3"><div class="card-body">
 <h2 class="h5">{{ $claim->claimed_application_code }}</h2>
@@ -35,4 +40,4 @@
 @endforeach
 {{ $claims->links() }}
 </div>
-@endsection
+@stop
