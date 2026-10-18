@@ -167,3 +167,9 @@ Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./ven
 - Both tests use existing assessment fixtures and temporary SQLite test data. No changes to the historical applications table.
 - Local execution required: `git pull --ff-only origin feature/applicant-portal-foundation` and `./vendor/bin/phpunit --filter AssessmentRegression --testdox` and then `./vendor/bin/phpunit --testdox`.
 - Tests do not yet cover actual Google browser OAuth or complete submission flows. PR remains draft.
+
+## Cross-applicant mutation protection tests
+- Added two regression tests in AssessmentRegressionTest verifying an authenticated nonowner receives HTTP 403 for written answer autosave, skills inline autosave, and skills attempt submission.
+- Assertions also verify unauthorized calls create no answer/submission rows and do not advance attempt status.
+- These are additive tests only, without production schema changes. Local PHPUnit execution is still required.
+- Run: `git pull --ff-only origin feature/applicant-portal-foundation` then `./vendor/bin/phpunit --filter AssessmentRegression --testdox` and `./vendor/bin/phpunit --testdox`.
