@@ -160,6 +160,10 @@ class ApplicationClaimService
             if (!in_array($claim->status, ['pending', 'clarification'], true)) {
                 throw ValidationException::withMessages(['claim' => 'This claim is already finalized.']);
             }
+            $profile = ApplicantProfile::findOrFail($claim->applicant_profile_id);
+            if ((int) $profile->user_id === $reviewerUserId) {
+                throw ValidationException::withMessages(['claim' => 'You cannot review your own claim.']);
+            }
             ApplicantAuditLog::create([
                 'actor_user_id' => $reviewerUserId,
                 'applicant_profile_id' => $claim->applicant_profile_id,
