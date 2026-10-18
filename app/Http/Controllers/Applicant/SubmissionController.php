@@ -34,6 +34,8 @@ class SubmissionController extends Controller
         }
 
         DB::transaction(function () use ($vacancy, $profile, $mapper) {
+            // Re-read the profile under lock so submission reflects saved values at commit time.
+            $profile = ApplicantProfile::whereKey($profile->id)->lockForUpdate()->firstOrFail();
             // Serialize submissions for the same vacancy and prevent duplicate account submissions.
             $lockedVacancy = Vacancy::whereKey($vacancy->id)->lockForUpdate()->firstOrFail();
             abort_unless($lockedVacancy->isOpenForApplications(), 403);
