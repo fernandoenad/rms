@@ -262,6 +262,39 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $this->assertDatabaseCount('applications', 1);
     }
 
+    public function test_existing_application_remains_accessible_after_vacancy_closes(): void
+    {
+        $profile = $this->profile();
+        $vacancy = $this->vacancy();
+        $this->actingAs($profile->user)->post(
+            route('applicant.apply.store', $vacancy), ['confirm' => 1]
+        )->assertRedirect(route('applicant.dashboard'));
+        $application = Application::where('vacancy_id', $vacancy->id)->sole();
+
+        $vacancy->update(['posting_end_at' => now()->subMinute()]);
+        $profile->update(['profile_completed_at' => null]);
+
+        $this->actingAs($profile->user)
+            ->get(route('applicant.apply.review', $vacancy))
+            ->assertRedirect(route('guest.applications.show', $application));
+
+        $this->assertDatabaseCount('applications', 1);
+    }
+
+    public function test_application_cannot_be_submitted_after_vacancy_closes(): void
+    {
+        $profile = $this->profile();
+        $vacancy = $this->vacancy();
+        $vacancy->update(['posting_end_at' => now()->subMinute()]);
+
+        $this->actingAs($profile->user)
+            ->post(route('applicant.apply.store', $vacancy), ['confirm' => 1])
+            ->assertForbidden();
+
+        $this->assertDatabaseCount('applications', 0);
+        $this->assertDatabaseCount('applicant_application_links', 0);
+    }
+
     public function test_submission_rejects_historical_duplicate_email_with_whitespace_and_case(): void
     {
         $profile = $this->profile('applicant@example.test');
