@@ -11,6 +11,77 @@ class ApplicantPortalSecurityTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // SQLite unit tests isolate mysql_2 reference data with a fixture.
+        $references = \Mockery::mock(\App\Services\Applicant\ProfileReferenceData::class);
+        $references->shouldReceive('all')->andReturn([
+            'municipalities' => ['Sagbayan', 'Tagbilaran City'],
+            'genders' => ['Female', 'Male'],
+            'civil_statuses' => ['Single', 'Married'],
+            'districts' => [['id' => 3, 'name' => 'Sagbayan District']],
+        ]);
+        $this->app->instance(\App\Services\Applicant\ProfileReferenceData::class, $references);
+    }
+
+    public function test_new_profile_form_uses_birthdate_and_dynamic_selects(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->get(route('applicant.profile.edit'))
+            ->assertOk()
+            ->assertSee('Date of birth')
+            ->assertSee('Preferred DepEd district')
+            ->assertSee('computedAge')
+            ->assertSee(route('applicant.profile.options'))
+            ->assertDontSee('name="age"', false);
+    }
+
+    public function test_profile_options_require_authentication_and_return_official_choices(): void
+    {
+        $this->get(route('applicant.profile.options'))->assertRedirect('/login');
+        $user = User::factory()->create();
+        $this->actingAs($user)->getJson(route('applicant.profile.options'))
+            ->assertOk()
+            ->assertJsonPath('municipalities.0', 'Sagbayan')
+            ->assertJsonPath('genders.0', 'Female')
+            ->assertJsonPath('districts.0.name', 'Sagbayan District');
+    }
+
+    public function test_ajax_profile_save_calculates_age_and_ignores_submitted_age(): void
+    {
+        $user = User::factory()->create();
+        $data = $this->validProfile();
+        $data['age'] = 65;
+        $data['district_id'] = 3;
+        $this->actingAs($user)->putJson(route('applicant.profile.update'), $data)
+            ->assertOk()->assertJsonPath('age', 30)
+            ->assertJsonPath('redirect', route('applicant.dashboard'));
+        $this->assertDatabaseHas('applicant_profiles', [
+            'user_id' => $user->id, 'age' => 30, 'district_id' => 3,
+            'date_of_birth' => $data['date_of_birth'],
+        ]);
+        $this->assertDatabaseCount('applications', 0);
+    }
+
+    public function test_profile_rejects_birthdate_missing_or_unlisted_dropdown_values(): void
+    {
+        $user = User::factory()->create();
+        $data = $this->validProfile();
+        unset($data['date_of_birth']);
+        $this->actingAs($user)->putJson(route('applicant.profile.update'), $data)
+            ->assertUnprocessable()->assertJsonValidationErrors('date_of_birth');
+
+        $data = $this->validProfile();
+        $data['municipality'] = 'Nonexistent Municipality';
+        $data['gender'] = 'Unlisted Option';
+        $data['district_id'] = 99999;
+        $this->actingAs($user)->putJson(route('applicant.profile.update'), $data)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['municipality', 'gender', 'district_id']);
+        $this->assertDatabaseCount('applicant_audit_logs', 0);
+    }
+
     public function test_an_unauthenticated_visitor_cannot_access_applicant_dashboard(): void
     {
         $this->get('/applicant/dashboard')->assertRedirect('/login');
@@ -325,7 +396,7 @@ class ApplicantPortalSecurityTest extends TestCase
         return [
             'first_name' => 'Ana', 'middle_name' => 'M', 'last_name' => 'Reyes',
             'sitio' => 'Poblacion', 'barangay' => 'Central', 'municipality' => 'Sagbayan',
-            'zip' => 6331, 'age' => 30, 'gender' => 'Female',
+            'zip' => 6331, 'date_of_birth' => now()->subYears(30)->toDateString(), 'gender' => 'Female',
             'civil_status' => 'Single', 'religion' => 'None',
             'disability' => 'None', 'ethnic_group' => 'None',
             'email' => 'applicant@example.test', 'phone' => '09123456789',
