@@ -51,6 +51,9 @@
 <p class="small text-muted">Contact HR through the established official channel and reference your application code. Your application remains inaccessible until ownership is approved.</p>
 @elseif($claim->status === 'rejected')
 <p class="small text-muted">HR did not approve this ownership request. Contact HR for guidance if you believe this was an error.</p>
+@if($claim->review_notes && str_starts_with($claim->review_notes, 'This application was linked to another verified claimant.'))
+<p class="small text-muted">Another ownership claim has already been approved for this record. Contact HR through the official channel to dispute the outcome.</p>
+@endif
 @endif
 </li>
 @endforeach</ul>
