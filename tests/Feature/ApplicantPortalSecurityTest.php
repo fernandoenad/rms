@@ -99,6 +99,27 @@ class ApplicantPortalSecurityTest extends TestCase
         }
     }
 
+    public function test_hr_claim_queue_shows_claimant_and_hides_own_review_actions(): void
+    {
+        $admin = User::factory()->create(['email' => 'reviewer@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $admin->id, 'level' => 1, 'status' => 1]);
+        $profile = ApplicantProfile::create([
+            'user_id' => $admin->id, 'first_name' => 'Maria', 'last_name' => 'Reyes',
+        ]);
+        \App\Models\ApplicationClaimRequest::create([
+            'applicant_profile_id' => $profile->id,
+            'claimed_application_code' => 'HIST-SELF-1',
+            'claimed_email' => 'previous@example.test',
+            'status' => 'pending',
+        ]);
+        $this->actingAs($admin)->get(route('admin.applicant_claims.index'))
+            ->assertOk()
+            ->assertSee('Maria Reyes')
+            ->assertSee('You cannot review your own claim')
+            ->assertDontSee('Approve ownership')
+            ->assertDontSee('Reject claim');
+    }
+
     public function test_active_staff_can_switch_between_staff_and_applicant_portals(): void
     {
         $user = User::factory()->create(['email' => 'staff@deped.gov.ph']);
