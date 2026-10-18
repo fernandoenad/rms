@@ -17,7 +17,7 @@ class ApplicantClaimReviewController extends Controller
 
     public function approve(Request $request, ApplicationClaimRequest $claim, ApplicationClaimService $service)
     {
-        $data = $request->validate(['review_notes' => 'required|string|min:10|max:2000']);
+        $data = $request->validate(['review_notes' => 'required|string|min:10|max:2000', 'identity_verified' => 'accepted']);
         $service->approve($claim, $request->user()->id, $data['review_notes']);
         return back()->with('status', 'Claim approved.');
     }
