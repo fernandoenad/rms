@@ -10,6 +10,19 @@
 4. Record the relevant passing CI URLs **for exactly this commit**; a newer commit needs its own CI result.
 5. Prepare synthetic vacancies/applications and a written mapping of applicant and reviewer test identities. Never upload IDs, OAuth tokens, secrets, or applicant PII to an issue.
 
+### Read-only readiness preflight
+
+Before creating synthetic test records, run:
+
+```bash
+php artisan optimize:clear
+php artisan rms:applicant-readiness
+```
+
+This command uses only connection checks, schema introspection, and `SELECT ... LIMIT 0` against the legacy `applications` table. It **does not write data or display applicant records, database credentials, or Google secrets**. It checks that applicant and HR routes exist, Google OAuth credentials are configured, original application columns are present, new portal tables are installed, and the separate HRMIS `stations` table is reachable. It **cannot** determine which redirect URIs are registered in Google Cloud Console or run the actual third-party application reader.
+
+Use `php artisan rms:applicant-readiness --strict` for the staging release gate: any **FAIL** or **WARN** causes a nonzero exit code. If the HRMIS secondary database is intentionally unavailable in a local environment, `--skip-secondary` suppresses its connection attempt, but marks that gate as **WARN** (and therefore cannot pass `--strict`). Do not paste unredacted logs or credentials into GitHub issues. Record the command results and exact commit SHA in the UAT evidence worksheet.
+
 ## 2. Configure Google OAuth and test real redirects
 
 In Google Cloud Console, register **exact** callback URLs used by the deployment, separately for staff, applicant, and (when staff linking is tested) staff linking:
