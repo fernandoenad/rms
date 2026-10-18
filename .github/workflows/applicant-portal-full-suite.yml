@@ -88,7 +88,7 @@ jobs:
           MAIL_MAILER: array
           QUEUE_CONNECTION: sync
           SESSION_DRIVER: array
-        run: php artisan test --filter=test_assigned_station_detail_page_renders_with_separate_mysql_connection --testdox
+        run: php artisan test --filter=ApplicantSecondaryDatabaseIntegrationTest --testdox
 
   legacy-primary-mysql:
     name: Legacy application contract (primary MySQL)
