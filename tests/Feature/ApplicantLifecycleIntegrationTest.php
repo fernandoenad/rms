@@ -247,6 +247,35 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $this->assertDatabaseCount('applications', 1);
     }
 
+    public function test_submission_rejects_historical_duplicate_email_with_whitespace_and_case(): void
+    {
+        $profile = $this->profile('applicant@example.test');
+        $vacancy = $this->vacancy();
+        $existing = $this->historical($vacancy, '  APPLICANT@EXAMPLE.TEST  ');
+
+        $this->actingAs($profile->user)
+            ->post(route('applicant.apply.store', $vacancy), ['confirm' => 1])
+            ->assertSessionHasErrors('application');
+
+        $this->assertDatabaseCount('applications', 1);
+        $this->assertDatabaseCount('applicant_application_links', 0);
+        $this->assertSame('Old', $existing->fresh()->first_name);
+    }
+
+    public function test_profile_marked_incomplete_cannot_create_an_application(): void
+    {
+        $profile = $this->profile();
+        $profile->update(['profile_completed_at' => null]);
+        $vacancy = $this->vacancy();
+
+        $this->actingAs($profile->user)
+            ->post(route('applicant.apply.store', $vacancy), ['confirm' => 1])
+            ->assertSessionHasErrors('profile');
+
+        $this->assertDatabaseCount('applications', 0);
+        $this->assertDatabaseCount('applicant_application_links', 0);
+    }
+
     public function test_other_applicant_cannot_read_an_owned_application_detail(): void
     {
         $owner = $this->profile('owner@example.test');
