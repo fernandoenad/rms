@@ -15,6 +15,13 @@ class ApplicantClaimReviewController extends Controller
         return view('admin.applicant-claims.index', compact('claims'));
     }
 
+    public function clarification(Request $request, ApplicationClaimRequest $claim, ApplicationClaimService $service)
+    {
+        $data = $request->validate(['review_notes' => 'required|string|min:10|max:2000']);
+        $service->requestClarification($claim, $request->user()->id, $data['review_notes']);
+        return back()->with('status', 'Clarification requested. No ownership access has been granted.');
+    }
+
     public function approve(Request $request, ApplicationClaimRequest $claim, ApplicationClaimService $service)
     {
         $data = $request->validate(['review_notes' => 'required|string|min:10|max:2000', 'identity_verified' => 'accepted']);
