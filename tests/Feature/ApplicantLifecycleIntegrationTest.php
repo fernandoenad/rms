@@ -7,6 +7,7 @@ use App\Models\ApplicantProfile;
 use App\Models\Application;
 use App\Models\User;
 use App\Models\Vacancy;
+use App\Models\Template;
 use App\Services\Applicant\ApplicationClaimService;
 use App\Services\Applicant\HistoricalApplicationLinkingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -33,11 +34,17 @@ class ApplicantLifecycleIntegrationTest extends TestCase
 
     private function vacancy(): Vacancy
     {
+        $template = Template::create([
+            'type' => 'Applicant Lifecycle Test Template',
+            'template' => json_encode(['Written_Examination' => 20, 'Skills_Test' => 20, 'Interview' => 60, 'Remarks' => 'Remarks']),
+            'status' => 1,
+        ]);
+
         return Vacancy::create([
             'cycle' => 2026, 'position_title' => 'Teacher I',
             'salary_grade' => 11, 'base_pay' => 27000,
             'office_level' => 1, 'qualifications' => 'Required',
-            'vacancy' => 1, 'status' => 1, 'level1_status' => 1,
+            'vacancy' => 1, 'status' => 1, 'template_id' => $template->id, 'level1_status' => 1,
             'level2_status' => 0,
         ]);
     }
