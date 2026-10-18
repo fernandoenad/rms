@@ -9,6 +9,7 @@
 - [x] Full PHPUnit on PHP 8.2 and PHP 8.4, Assessment Regression Suite and Assessment Center CI passed for commit `b5eb7497` (before the runbook documentation change), including [full suite run 39112374461](https://github.com/fernandoenad/rms/actions/runs/39112374461).
 - [ ] Reconfirm the suite for the final candidate commit. Passing CI on older code commits does not certify later changes.
 - [x] Full PHPUnit on PHP 8.2 and PHP 8.4, plus disposable secondary-MySQL assigned-station detail rendering, passed at commit `da6d9215`: [run 39119075494](https://github.com/fernandoenad/rms/actions/runs/39119075494). This confirms synthetic route rendering, **not** the live HRMIS station data or production external reader.
+- [x] Disposable **primary MySQL 8.0** contract test passed: original `applications` columns remain intact, synthetic historical and new records are readable using a direct SQL query, and later profile edits preserve submitted snapshots. Disposable **secondary MySQL** station-detail test and full PHP 8.2/8.4 suite also passed: [CI run 39121671376](https://github.com/fernandoenad/rms/actions/runs/39121671376) on code commit `55ec3ab6`. This is **not** a live test of the actual third-party consumer or production HRMIS database.
 - [ ] Complete live-browser Google OAuth, staff/applicant switching, recruitment submission, HR validation, assessment flows, and external-reader tests. Automated tests do **not** replace these checks.
 
 ### Evidence capture for manual UAT
