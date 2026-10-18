@@ -17,7 +17,7 @@ class SubmissionController extends Controller
     public function review(Request $request, Vacancy $vacancy)
     {
         abort_unless($vacancy->isOpenForApplications(), 404);
-        $profile = ApplicantProfile::where('user_id', $request->user()->id)->firstOrFail();
+        $profile = ApplicantProfile::firstOrCreate(['user_id' => $request->user()->id]);
         if (!$profile->profile_completed_at) {
             return redirect()->route('applicant.profile.edit')
                 ->with('status', 'Complete your master profile before applying.');
@@ -28,7 +28,7 @@ class SubmissionController extends Controller
     public function store(Request $request, Vacancy $vacancy, ApplicantProfileToApplicationMapper $mapper)
     {
         $request->validate(['confirm' => 'accepted']);
-        $profile = ApplicantProfile::where('user_id', $request->user()->id)->firstOrFail();
+        $profile = ApplicantProfile::firstOrCreate(['user_id' => $request->user()->id]);
         if (!$profile->profile_completed_at) {
             throw ValidationException::withMessages(['profile' => 'Complete your master profile first.']);
         }
