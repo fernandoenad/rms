@@ -42,13 +42,13 @@ class PortalController extends Controller
     {
         $data = $request->validate([
             'first_name'=>'required|string|min:2|max:255',
-            'middle_name'=>'nullable|string|max:255',
+            'middle_name'=>'required|string|min:1|max:255',
             'last_name'=>'required|string|min:2|max:255',
             'sitio'=>'required|string|max:255',
             'barangay'=>'required|string|max:255',
             'municipality'=>'required|string|max:255',
             'zip'=>'required|integer|between:1000,9999',
-            'age'=>'required|integer|between:18,100',
+            'age'=>'required|integer|between:18,70',
             'gender'=>'required|string|max:255',
             'civil_status'=>'required|string|max:255',
             'religion'=>'required|string|max:255',
