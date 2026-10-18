@@ -188,3 +188,9 @@ Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./ven
 - Existing service allows subsequent HR approval after independent evidence verification; pending/clarification remain eligible, finalized claims remain immutable.
 - Added lifecycle regression test verifying clarification leaves ownership absent until explicit approval.
 - Local PHPUnit tests and browser checks remain required; PR #46 is still draft.
+
+## Conflict resolution after HR approval
+- When HR approves a verified historical claim, other pending or clarification requests for the same application are closed as rejected in the same database transaction. This avoids permanently unresolvable claims in HR's queue.
+- Competing claims receive a neutral notice; the applicant portal never reveals the approved claimant's identity.
+- Each conflict closure is audited as `historical_claim_conflict_closed`.
+- The competing-claim regression test now checks closed status and audit trail. Local PHPUnit execution remains required.
