@@ -30,6 +30,29 @@ class ApplicantPortalSecurityTest extends TestCase
             ->assertSessionHasErrors(['application_code', 'email']);
     }
 
+    public function test_first_time_applicant_is_redirected_to_profile_instead_of_404(): void
+    {
+        $template = \App\Models\Template::create([
+            'type' => 'First Time Profile Test',
+            'template' => json_encode(['Written_Examination' => 20, 'Interview' => 80, 'Remarks' => 'Remarks']),
+            'status' => 1,
+        ]);
+        $vacancy = \App\Models\Vacancy::create([
+            'cycle' => 2026, 'position_title' => 'Teacher I',
+            'salary_grade' => 11, 'base_pay' => 27000,
+            'office_level' => 1, 'qualifications' => 'Required',
+            'vacancy' => 1, 'status' => 1,
+            'template_id' => $template->id,
+            'level1_status' => 1, 'level2_status' => 0,
+        ]);
+        $user = User::factory()->create();
+        $this->actingAs($user)
+            ->get(route('applicant.apply.review', $vacancy))
+            ->assertRedirect(route('applicant.profile.edit'));
+        $this->assertDatabaseHas('applicant_profiles', ['user_id' => $user->id]);
+        $this->assertDatabaseCount('applications', 0);
+    }
+
     public function test_guest_cannot_read_a_legacy_application_record(): void
     {
         $this->get('/applications/999999')->assertRedirect('/login');
