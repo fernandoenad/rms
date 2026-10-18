@@ -134,6 +134,19 @@ class GoogleAuthController extends Controller
         } catch (\Throwable $exception) {
             report($exception);
         }
+        // Continue only a recent vacancy selected explicitly by this browser
+        // before Google sign-in. The review controller rechecks availability,
+        // profile completion and ownership; no submission happens here.
+        $guestVacancyId = $request->session()->pull('applicant_guest_vacancy_id');
+        $guestSelectedAt = $request->session()->pull('applicant_guest_vacancy_started_at');
+        if ($guestVacancyId && is_numeric($guestSelectedAt)
+            && (int) $guestSelectedAt <= now()->timestamp
+            && (int) $guestSelectedAt >= now()->subMinutes(30)->timestamp) {
+            $vacancy = \App\Models\Vacancy::find($guestVacancyId);
+            if ($vacancy && $vacancy->isOpenForApplications()) {
+                return redirect()->route('applicant.apply.review', $vacancy);
+            }
+        }
         return redirect()->route('applicant.dashboard');
     }
 }
