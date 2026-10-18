@@ -21,11 +21,14 @@
 @foreach($claims as $claim)
 <div class="card mb-3"><div class="card-body">
 <h2 class="h5">{{ $claim->claimed_application_code }}</h2>
-<p>Claimant profile #{{ $claim->applicant_profile_id }} • Previous email: {{ $claim->claimed_email }} • Status: {{ $claim->status }}</p>
+<p>Claimant: {{ trim(($claim->profile?->first_name ?? '').' '.($claim->profile?->last_name ?? '')) ?: 'Profile unavailable' }} (profile #{{ $claim->applicant_profile_id }}) • Previous email: {{ $claim->claimed_email }} • Status: {{ $claim->status }}</p>
 <p>Application ID: {{ $claim->application_id }}</p>
 @if($status !== 'open')
 <p>Reviewed: {{ $claim->reviewed_at?->format('M j, Y g:i A') ?? 'Not recorded' }} · Reviewer user #{{ $claim->reviewed_by ?? 'Not recorded' }}</p>
 <p><strong>Review notes:</strong> {{ $claim->review_notes ?: 'Not recorded' }}</p>
+@else
+@if((int) $claim->profile?->user_id === (int) auth()->id())
+<div class="alert alert-warning">You cannot review your own claim. Ask another authorized administrator to review it.</div>
 @else
 <div class="row">
 <div class="col-md-6">
@@ -48,6 +51,7 @@
 <button class="btn btn-outline-primary">Request clarification (no access granted)</button>
 </form></div>
 </div>
+@endif
 @endif
 </div></div>
 @endforeach
