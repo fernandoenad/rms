@@ -11,7 +11,6 @@
     .applicant-google-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; color: #007bff; font-size: 16px; font-weight: 400; text-decoration: none; margin-bottom: 25px; line-height: 1.3; }
     .applicant-google-link:hover, .applicant-google-link:focus { color: #0056b3; text-decoration: underline; }
     .applicant-google-mark { width: 35px; height: 35px; flex: 0 0 35px; object-fit: contain; }
-    .applicant-login-help { margin: 0; font-size: 13px; line-height: 1.6; font-weight: 400; }
     @media (max-width: 576px) { .applicant-login-wrap { padding: 10px 12px 24px; } .applicant-login-card { max-width: 390px; } .applicant-login-inner { padding: 20px 12px 24px; } }
 </style>
 @endsection
@@ -48,11 +47,6 @@
                 <span>Sign in with Google</span>
             </a>
 
-            <p class="applicant-login-help">
-                Forgot your DepEd GMail/Microsoft password?<br>
-                Request for reset
-                <a href="https://hrms.depedbohol.org/help/reset" target="_blank" rel="noopener noreferrer">here</a>.
-            </p>
         </div>
     </div>
 </main>
