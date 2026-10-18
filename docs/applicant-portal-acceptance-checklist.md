@@ -13,6 +13,9 @@
 ## Applicant journey
 
 - [ ] New verified Google account signs in and receives an applicant profile without staff role.
+- [ ] Guest who selects an open vacancy before Google sign-in returns to that vacancy after authentication.
+- [ ] Guest whose selection is older than 30 minutes returns to dashboard with no application created.
+- [ ] Guest whose vacancy closes during Google sign-in returns to dashboard and cannot submit.
 - [ ] Unverified or invalid Google identity is rejected.
 - [ ] New applicant opens open vacancy deep link and is prompted to finish profile.
 - [ ] Profile validation errors are shown; valid profile saves, then vacancy review shows exactly the saved values.
