@@ -27,6 +27,7 @@ class SubmissionController extends Controller
         }
         abort_unless($vacancy->isOpenForApplications(), 404);
         if (!$profile->profile_completed_at) {
+            $request->session()->put('applicant_pending_vacancy_id', $vacancy->id);
             return redirect()->route('applicant.profile.edit')
                 ->with('status', 'Complete your master profile before applying.');
         }
