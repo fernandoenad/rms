@@ -99,6 +99,43 @@ class ApplicantPortalSecurityTest extends TestCase
         }
     }
 
+    public function test_completed_claim_history_shows_decision_notes_without_review_forms(): void
+    {
+        $admin = User::factory()->create(['email' => 'history.reviewer@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $admin->id, 'level' => 1, 'status' => 1]);
+        $claimant = User::factory()->create();
+        $profile = ApplicantProfile::create([
+            'user_id' => $claimant->id,
+            'first_name' => 'Ana',
+            'last_name' => 'Reyes',
+        ]);
+        foreach (['approved', 'rejected'] as $status) {
+            \App\Models\ApplicationClaimRequest::create([
+                'applicant_profile_id' => $profile->id,
+                'claimed_application_code' => 'HIST-'.strtoupper($status),
+                'claimed_email' => 'old@example.test',
+                'status' => $status,
+                'reviewed_by' => $admin->id,
+                'reviewed_at' => now(),
+                'review_notes' => 'Historical identity documents reviewed for '.$status.'.',
+            ]);
+        }
+
+        foreach (['approved', 'rejected'] as $status) {
+            $other = $status === 'approved' ? 'rejected' : 'approved';
+            $this->actingAs($admin)
+                ->get(route('admin.applicant_claims.index', ['status' => $status]))
+                ->assertOk()
+                ->assertSee('HIST-'.strtoupper($status))
+                ->assertDontSee('HIST-'.strtoupper($other))
+                ->assertSee('Historical identity documents reviewed for '.$status.'.')
+                ->assertSee('Ana Reyes')
+                ->assertDontSee('Approve ownership')
+                ->assertDontSee('Reject claim')
+                ->assertDontSee('Request clarification (no access granted)');
+        }
+    }
+
     public function test_hr_claim_queue_shows_claimant_and_hides_own_review_actions(): void
     {
         $admin = User::factory()->create(['email' => 'reviewer@deped.gov.ph']);
