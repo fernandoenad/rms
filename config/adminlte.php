@@ -417,6 +417,7 @@ return [
         ],
         [
             'text' => 'Historical Claims',
+            'can'  => 'review-applicant-claims',
             'url'  => 'admin/applicant-claims',
             'icon' => 'fas fa-fw fa-user-check',
             'active' => ['admin/applicant-claims', 'admin/applicant-claims/*'],
