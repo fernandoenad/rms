@@ -368,3 +368,24 @@ Route::group(['middleware' => ['admin']], function () {
     Route::put('/admin/discrepancies/{assessment}', [AdminDiscrepancy::class, 'update'])->name('admin.discrepancies.update');
 
 });
+
+
+/*
+|--------------------------------------------------------------------------
+| Applicant portal (separate from the existing staff Google callback)
+|--------------------------------------------------------------------------
+*/
+Route::get('/applicant/login', [\App\Http\Controllers\Applicant\PortalController::class, 'login'])
+    ->name('applicant.login');
+Route::get('/auth/applicant/google', [\App\Http\Controllers\Applicant\GoogleAuthController::class, 'redirect'])
+    ->name('applicant.google');
+Route::get('/auth/applicant/google/callback', [\App\Http\Controllers\Applicant\GoogleAuthController::class, 'callback'])
+    ->name('applicant.google.callback');
+
+Route::middleware('auth')->prefix('applicant')->name('applicant.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\Applicant\PortalController::class, 'dashboard'])->name('dashboard');
+    Route::get('/profile', [\App\Http\Controllers\Applicant\PortalController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [\App\Http\Controllers\Applicant\PortalController::class, 'update'])->name('profile.update');
+    Route::post('/claims', [\App\Http\Controllers\Applicant\PortalController::class, 'claim'])
+        ->middleware('throttle:5,1')->name('claims.store');
+});
