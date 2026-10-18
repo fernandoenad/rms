@@ -179,3 +179,12 @@ Run `git pull --ff-only origin feature/applicant-portal-foundation`, then `./ven
 - These are additive tests only; the existing application schema and historical records are not changed.
 - Run `git pull --ff-only origin feature/applicant-portal-foundation` and `./vendor/bin/phpunit --filter ApplicantLifecycleIntegration --testdox`, followed by the full PHPUnit suite.
 - Local verification is outstanding and PR #46 remains draft.
+
+## HR clarification phase
+- Added explicit `clarification` status action to manual historical-application claim review, alongside approval and rejection.
+- HR must record an actionable reason / evidence request. No ownership link is created merely because clarification is requested.
+- Applicant dashboard displays HR clarification instructions and directs applicants to official HR channels; no new evidence-upload feature or insecure email-code self-approval introduced.
+- Clarification decision logs `historical_claim_clarification_requested` with reviewer and claim ID.
+- Existing service allows subsequent HR approval after independent evidence verification; pending/clarification remain eligible, finalized claims remain immutable.
+- Added lifecycle regression test verifying clarification leaves ownership absent until explicit approval.
+- Local PHPUnit tests and browser checks remain required; PR #46 is still draft.
