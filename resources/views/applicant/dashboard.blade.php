@@ -17,6 +17,11 @@
 <a href="{{ route('applicant.profile.edit') }}" class="btn btn-primary">Edit master profile</a>
 </div></div>
 <div class="card mb-3"><div class="card-body">
+<h2 class="h5">Available Vacancies</h2>
+<p>Browse currently open recruitment opportunities. Your master profile will fill in your next application.</p>
+<a class="btn btn-outline-primary" href="{{ route('guest.vacancies.index') }}">Browse vacancies</a>
+</div></div>
+<div class="card mb-3"><div class="card-body">
 <h2 class="h5">My Applications</h2>
 @if($links->isEmpty())<p>No linked applications yet.</p>@endif
 <ul class="list-group">@foreach($links as $link)
