@@ -560,6 +560,49 @@ class AssessmentRegressionTest extends TestCase
         $this->assertCount(0, $integrity->anomalies('written'));
     }
 
+    public function test_another_applicant_cannot_read_written_attempt_time_status(): void
+    {
+        [$vacancy, $application] = $this->makeTakenInApplication();
+        $exam = Exam::create([
+            'vacancy_id' => $vacancy->id,
+            'title' => 'Security Written', 'code' => 'SEC-W-'.uniqid(),
+            'enrollment_key' => 'SEC-W-KEY', 'start_date' => now()->subHour(),
+            'end_date' => now()->addHour(), 'duration' => 30,
+            'access_mode' => 'all_taken_in', 'shuffle_items' => false,
+            'shuffle_options' => false, 'status' => 1, 'approval_status' => 'approved',
+        ]);
+        $attempt = ExamAttempt::create([
+            'exam_id' => $exam->id, 'application_id' => $application->id,
+            'status' => 1, 'started_at' => now(), 'expires_at' => now()->addMinutes(30),
+        ]);
+        $intruder = \App\Models\User::factory()->create();
+        $this->actingAs($intruder)
+            ->get(route('guest.assessments.attempts.time_status', $attempt))
+            ->assertForbidden();
+    }
+
+    public function test_another_applicant_cannot_read_skills_attempt_time_status(): void
+    {
+        [$vacancy, $application] = $this->makeTakenInApplication();
+        $skillTest = SkillTest::create([
+            'vacancy_id' => $vacancy->id, 'title' => 'Security Skills',
+            'code' => 'SEC-S-'.uniqid(), 'instructions' => 'Test', 'expected_output' => 'Answer',
+            'start_date' => now()->subHour(), 'end_date' => now()->addHour(),
+            'duration' => 30, 'access_mode' => 'all_taken_in',
+            'submission_modes' => ['inline'], 'allowed_extensions' => ['docx'],
+            'max_file_size_kb' => 10240, 'ai_scoring' => false,
+            'score_release_policy' => 'manual', 'status' => 1, 'approval_status' => 'approved',
+        ]);
+        $attempt = SkillTestAttempt::create([
+            'skill_test_id' => $skillTest->id, 'application_id' => $application->id,
+            'status' => 1, 'started_at' => now(), 'expires_at' => now()->addMinutes(30),
+        ]);
+        $intruder = \App\Models\User::factory()->create();
+        $this->actingAs($intruder)
+            ->get(route('guest.skills.attempts.time_status', $attempt))
+            ->assertForbidden();
+    }
+
     protected function makeTakenInApplication(array $criteria = ['Written_Examination' => 20, 'Skills_Test' => 20, 'Interview' => 60]): array
     {
         $template = Template::create([
