@@ -6,7 +6,10 @@
 <h1 class="h3">Applicant Dashboard</h1>
 <div>
 @if(auth()->user()->role && auth()->user()->role->status)
-<a class="btn btn-outline-secondary" href="{{ url('/admin') }}">Switch to Staff Portal</a>
+<a class="btn btn-outline-secondary" href="{{ route('admin.index') }}">Switch to Staff Portal</a>
+@if(!\App\Models\OAuthIdentity::where('user_id', auth()->id())->where('provider', 'google')->exists())
+<a class="btn btn-outline-primary" href="{{ route('applicant.staff.google.link') }}">Link Staff Google Account</a>
+@endif
 @endif
 <form class="d-inline" action="{{ route('logout') }}" method="POST">@csrf<button class="btn btn-outline-secondary">Sign out</button></form>
 </div></div>
