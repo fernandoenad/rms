@@ -116,3 +116,19 @@ Local report: 25 tests, 3 failures; applicant-only tests had passed 11/11.
 - AssessmentRegressionTest: both eligibility tests previously authenticated via guest_email session, which is intentionally no longer trusted. Tests now create a proper applicant profile and ownership link and call actingAs(user); expected 403 for not-taken-in remains.
 - ExampleTest: homepage is intentionally a 302 redirect to /applications, so assert that redirect.
 - These are regression test fixture/expectation updates; rerun full suite locally before making any pass claims.
+
+## Lifecycle integration-test phase (October 18, 2026)
+Added `tests/Feature/ApplicantLifecycleIntegrationTest.php` with six integration checks:
+1. Exact normalized email matching auto-links once, never rewriting historical personal information.
+2. Existing application ownership cannot be taken over by a subsequent email match.
+3. Different-email claim remains pending until HR approves; decision is audited.
+4. Claimant cannot approve their own request.
+5. New application copies master-profile fields, preserves legacy code and creates a single ownership link; duplicate submission rejected.
+6. Updating master profile leaves historical records unchanged.
+
+**Test execution not available through this GitHub connector.** Run locally:
+`git pull --ff-only origin feature/applicant-portal-foundation`
+`./vendor/bin/phpunit --filter ApplicantLifecycleIntegration --testdox`
+`./vendor/bin/phpunit --testdox`
+
+Do not merge before resolving any failures and testing real OAuth callback and assessments in staging.
