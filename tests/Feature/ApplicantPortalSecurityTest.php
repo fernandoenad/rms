@@ -123,6 +123,20 @@ class ApplicantPortalSecurityTest extends TestCase
         $this->assertDatabaseCount('applications', 0);
     }
 
+    public function test_pending_vacancy_from_another_account_does_not_redirect_after_profile_save(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)
+            ->withSession(['applicant_pending_vacancy_id' => 1234, 'applicant_pending_vacancy_user_id' => $user->id + 100])
+            ->put(route('applicant.profile.update'), $this->validProfile())
+            ->assertRedirect(route('applicant.dashboard'));
+
+        $this->assertDatabaseHas('applicant_profiles', ['user_id' => $user->id]);
+        $this->assertDatabaseCount('applications', 0);
+        $this->assertNull(session('applicant_pending_vacancy_id'));
+        $this->assertNull(session('applicant_pending_vacancy_user_id'));
+    }
+
     private function validProfile(): array
     {
         return [
