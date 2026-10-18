@@ -390,6 +390,13 @@ Route::get('/auth/applicant/google', [\App\Http\Controllers\Applicant\GoogleAuth
 Route::get('/auth/applicant/google/callback', [\App\Http\Controllers\Applicant\GoogleAuthController::class, 'callback'])
     ->name('applicant.google.callback');
 
+Route::middleware(['auth', 'active'])->group(function () {
+    Route::get('/auth/staff/link-google', [\App\Http\Controllers\Applicant\GoogleAuthController::class, 'linkStaff'])
+        ->name('applicant.staff.google.link');
+    Route::get('/auth/staff/link-google/callback', [\App\Http\Controllers\Applicant\GoogleAuthController::class, 'completeStaffLink'])
+        ->name('applicant.staff.google.callback');
+});
+
 Route::middleware('auth')->prefix('applicant')->name('applicant.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Applicant\PortalController::class, 'dashboard'])->name('dashboard');
     Route::get('/profile', [\App\Http\Controllers\Applicant\PortalController::class, 'edit'])->name('profile.edit');
