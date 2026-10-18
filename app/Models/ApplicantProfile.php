@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ApplicantProfile extends Model
 {
     protected $guarded = ['id'];
-    protected $casts = ['profile_completed_at' => 'datetime'];
+    protected $casts = ['profile_completed_at' => 'datetime', 'date_of_birth' => 'date'];
 
     public function user(): BelongsTo { return $this->belongsTo(User::class); }
     public function applicationLinks(): HasMany { return $this->hasMany(ApplicantApplicationLink::class); }
