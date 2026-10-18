@@ -123,6 +123,77 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $service->approve($claim, $profile->user_id, 'Official supporting records verified.');
     }
 
+    public function test_rejecting_claim_records_reason_without_linking_application(): void
+    {
+        $profile = $this->profile();
+        $application = $this->historical($this->vacancy(), 'previous@example.test');
+        $service = app(ApplicationClaimService::class);
+        $claim = $service->request($profile, $application->application_code, 'previous@example.test');
+        $reviewer = User::factory()->create();
+
+        $service->reject($claim, $reviewer->id, 'The supporting documents did not establish original ownership.');
+
+        $this->assertDatabaseHas('application_claim_requests', [
+            'id' => $claim->id, 'status' => 'rejected', 'reviewed_by' => $reviewer->id,
+        ]);
+        $this->assertDatabaseCount('applicant_application_links', 0);
+        $this->assertDatabaseHas('applicant_audit_logs', [
+            'event_type' => 'historical_claim_rejected', 'application_id' => $application->id,
+        ]);
+    }
+
+    public function test_duplicate_pending_request_is_idempotent(): void
+    {
+        $profile = $this->profile();
+        $application = $this->historical($this->vacancy(), 'previous@example.test');
+        $service = app(ApplicationClaimService::class);
+
+        $first = $service->request($profile, $application->application_code, 'previous@example.test');
+        $second = $service->request($profile, $application->application_code, 'PREVIOUS@example.test');
+
+        $this->assertSame($first->id, $second->id);
+        $this->assertDatabaseCount('application_claim_requests', 1);
+        $this->assertDatabaseCount('applicant_application_links', 0);
+    }
+
+    public function test_competing_claim_cannot_override_prior_approval(): void
+    {
+        $first = $this->profile('first@example.test');
+        $second = $this->profile('second@example.test');
+        $application = $this->historical($this->vacancy(), 'previous@example.test');
+        $service = app(ApplicationClaimService::class);
+        $claimA = $service->request($first, $application->application_code, 'previous@example.test');
+        $claimB = $service->request($second, $application->application_code, 'previous@example.test');
+        $reviewer = User::factory()->create();
+        $service->approve($claimA, $reviewer->id, 'Independent identification and historical documentation verified.');
+
+        try {
+            $service->approve($claimB, $reviewer->id, 'Competing claim submitted with supporting documents.');
+            $this->fail('Competing claim must never replace existing ownership.');
+        } catch (ValidationException $exception) {
+            $this->assertDatabaseHas('applicant_application_links', [
+                'application_id' => $application->id, 'applicant_profile_id' => $first->id,
+            ]);
+            $this->assertDatabaseHas('application_claim_requests', [
+                'id' => $claimB->id, 'status' => 'pending',
+            ]);
+            $this->assertDatabaseCount('applicant_application_links', 1);
+        }
+    }
+
+    public function test_finalized_claim_cannot_be_approved_twice(): void
+    {
+        $profile = $this->profile();
+        $application = $this->historical($this->vacancy(), 'previous@example.test');
+        $service = app(ApplicationClaimService::class);
+        $claim = $service->request($profile, $application->application_code, 'previous@example.test');
+        $reviewer = User::factory()->create();
+        $service->reject($claim, $reviewer->id, 'The submitted evidence is insufficient to establish ownership.');
+
+        $this->expectException(ValidationException::class);
+        $service->approve($claim, $reviewer->id, 'Attempt to reverse finalized decision without review.');
+    }
+
     public function test_profile_based_submission_creates_legacy_application_and_owner_link(): void
     {
         $profile = $this->profile();
