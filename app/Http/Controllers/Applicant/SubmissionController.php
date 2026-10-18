@@ -17,10 +17,6 @@ class SubmissionController extends Controller
     public function review(Request $request, Vacancy $vacancy)
     {
         $profile = ApplicantProfile::firstOrCreate(['user_id' => $request->user()->id]);
-        if (!$profile->profile_completed_at) {
-            return redirect()->route('applicant.profile.edit')
-                ->with('status', 'Complete your master profile before applying.');
-        }
         $existingLink = ApplicantApplicationLink::with('application')
             ->where('applicant_profile_id', $profile->id)
             ->whereHas('application', fn ($query) => $query->where('vacancy_id', $vacancy->id))
@@ -28,6 +24,10 @@ class SubmissionController extends Controller
         if ($existingLink) {
             return redirect()->route('guest.applications.show', $existingLink->application)
                 ->with('status', 'You already submitted an application for this vacancy.');
+        }
+        if (!$profile->profile_completed_at) {
+            return redirect()->route('applicant.profile.edit')
+                ->with('status', 'Complete your master profile before applying.');
         }
         abort_unless($vacancy->isOpenForApplications(), 404);
         return view('applicant.review', compact('vacancy', 'profile'));
