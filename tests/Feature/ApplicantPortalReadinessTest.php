@@ -19,6 +19,7 @@ class ApplicantPortalReadinessTest extends TestCase
 
         $this->artisan('rms:applicant-readiness', ['--skip-secondary' => true])
             ->expectsOutput('[PASS] Routes: Required applicant and HR route names are registered.')
+            ->expectsOutput('[PASS] Route access controls: Authentication, staff, HR review and claim rate-limit middleware are present.')
             ->expectsOutput('[PASS] Primary database: Connection succeeded.')
             ->expectsOutput('[PASS] Portal tables: Legacy and new portal tables exist.')
             ->expectsOutput('[PASS] Legacy applications schema: Original applications column contract is present.')
@@ -36,6 +37,28 @@ class ApplicantPortalReadinessTest extends TestCase
         $this->artisan('rms:applicant-readiness', ['--skip-secondary' => true])
             ->expectsOutput('[FAIL] Portal tables: Missing tables: application_claim_requests')
             ->assertExitCode(1);
+    }
+
+    public function test_readiness_fails_if_hr_approval_route_loses_admin_guard(): void
+    {
+        $route = \Illuminate\Support\Facades\Route::getRoutes()
+            ->getByName('admin.applicant_claims.approve');
+        $this->assertNotNull($route);
+
+        // Model an accidental removal of the admin route group's security
+        // middleware. Restore the route even if the assertion fails.
+        $original = $route->action;
+        try {
+            $route->action['middleware'] = ['auth', 'active'];
+            $this->artisan('rms:applicant-readiness', ['--skip-secondary' => true])
+                ->expectsOutput(
+                    '[FAIL] Route access controls: Required middleware absent: '.
+                    'admin.applicant_claims.approve (missing admin)'
+                )
+                ->assertExitCode(1);
+        } finally {
+            $route->action = $original;
+        }
     }
 
     public function test_strict_readiness_requires_secondary_and_oauth_checks_to_be_resolved(): void
