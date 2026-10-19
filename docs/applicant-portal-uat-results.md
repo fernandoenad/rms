@@ -37,6 +37,7 @@
 | CLAIM-04 | Level-one administrator verifies and approves claim | One link, audit entry, approved applicant gains access | NOT RUN | |
 | CLAIM-05 | Unrelated applicant opens approved application | Access denied | NOT RUN | |
 | CLAIM-06 | Self-review, conflicting claims and finalized claims | No unauthorized approval, takeover or second decision | NOT RUN | |
+| CLAIM-07 | Cancel an HR-approved claim and inspect cancelled history | Confirmed, reasoned revocation removes only its HR link; original record and approval audit retained; repeat or unrelated ownership cancellation denied | NOT RUN | |
 | ASSESS-01 | Approved applicant opens legacy application detail and assigned assessments | MySQL-backed views render and rightful owner can proceed | NOT RUN | |
 | ASSESS-02 | Foreign applicant attempts written/skills assessment access and writes | Denied; no changes to foreign attempts or scores | NOT RUN | |
 | SESSION-01 | Expire session during profile AJAX save and historical claim | Sign in again action; no false success or automatic resubmission | NOT RUN | |
