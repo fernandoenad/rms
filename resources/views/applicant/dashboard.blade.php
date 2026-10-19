@@ -174,6 +174,25 @@
                     <p class="app-claim-note mt-2 mb-0">This feed reflects current records. It is not an official email or SMS notification service.</p>
                 </div>
             </section>
+            <section class="app-panel" aria-labelledby="notificationPreferences">
+                <div class="app-panel-heading">
+                    <div class="app-panel-icon"><i class="far fa-envelope" aria-hidden="true"></i></div>
+                    <div><h2 id="notificationPreferences">Notification Preferences</h2><p>Choose your future optional email alerts.</p></div>
+                </div>
+                <div class="app-panel-content">
+                    <form action="{{ route('applicant.notification_preferences.update') }}" method="POST">
+                        @csrf
+                        <input type="hidden" name="email_enabled" value="0">
+                        <input type="hidden" name="email_application_updates" value="0">
+                        <input type="hidden" name="email_assessment_updates" value="0">
+                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="prefEmail" name="email_enabled" value="1" {{ $notificationPreferences->email_enabled ? 'checked' : '' }}><label class="form-check-label" for="prefEmail">Allow email notifications when available</label></div>
+                        <div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="prefApplications" name="email_application_updates" value="1" {{ $notificationPreferences->email_application_updates ? 'checked' : '' }}><label class="form-check-label" for="prefApplications">Application status updates</label></div>
+                        <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="prefAssessments" name="email_assessment_updates" value="1" {{ $notificationPreferences->email_assessment_updates ? 'checked' : '' }}><label class="form-check-label" for="prefAssessments">Assessment announcements</label></div>
+                        <p class="app-claim-note">Email delivery is not yet active. Essential account notifications remain visible in the portal.</p>
+                        <button type="submit" class="btn btn-outline-primary btn-block">Save preferences</button>
+                    </form>
+                </div>
+            </section>
             <section class="app-panel" aria-labelledby="profileTitle">
                 <div class="app-panel-heading">
                     <div class="app-panel-icon"><i class="far fa-address-card"></i></div>
