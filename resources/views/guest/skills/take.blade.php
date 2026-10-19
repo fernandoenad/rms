@@ -238,6 +238,7 @@
     }
 
     async function logEvent(type){
+        if(window.RMSApplicantSession.expired) return;
         try {
             const response=await fetch(eventUrl,{
                 method:'POST',
@@ -260,6 +261,7 @@
     });
     window.addEventListener('offline',()=>logEvent('connection_lost'));
     window.addEventListener('online',()=>{
+        if(window.RMSApplicantSession.expired) return;
         logEvent('connection_restored');
         syncAuthoritativeTime();
     });
@@ -316,6 +318,7 @@
         });
 
         window.addEventListener('online',()=>{
+            if(window.RMSApplicantSession.expired) return;
             const pending=storageGet(pendingKey);
             if(pending !== null){
                 persistInline(pending);
@@ -323,6 +326,7 @@
         });
 
         window.addEventListener('offline',()=>{
+            if(window.RMSApplicantSession.expired) return;
             if(state){
                 state.textContent='Offline — response kept on this device';
                 state.className='float-right small text-warning';
