@@ -200,6 +200,62 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $this->assertDatabaseHas('applicant_audit_logs', ['event_type' => 'historical_claim_approved']);
     }
 
+    public function test_hr_claim_review_compares_claimant_account_with_original_application_fields(): void
+    {
+        $claimant = $this->profile('different.profile.email@example.test');
+        $claimant->user->update(['name' => 'Google Account Name', 'email' => 'verified.claimant@example.test']);
+        $vacancy = $this->vacancy();
+        $vacancy->update(['position_title' => 'Science Research Teacher']);
+        $historical = $this->historical($vacancy, 'original.application@example.test');
+        $claim = app(ApplicationClaimService::class)->request(
+            $claimant, $historical->application_code, 'original.application@example.test'
+        );
+        $reviewer = User::factory()->create(['email' => 'reviewer@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $reviewer->id, 'level' => 1, 'status' => 1]);
+
+        $this->actingAs($reviewer)->get(route('admin.applicant_claims.index'))
+            ->assertOk()
+            ->assertSee('Application code:')
+            ->assertSee($historical->application_code)
+            ->assertSee('Position:')
+            ->assertSee('Science Research Teacher')
+            ->assertSee('Claimant details')
+            ->assertSee('Ana M Reyes')
+            ->assertSee('verified.claimant@example.test')
+            ->assertSee('Application details')
+            ->assertSee('Old B Applicant')
+            ->assertSee('original.application@example.test')
+            ->assertDontSee('different.profile.email@example.test')
+            ->assertSee('Approve ownership');
+        $this->assertSame('pending', $claim->fresh()->status);
+        $this->assertSame('Old', $historical->fresh()->first_name);
+    }
+
+    public function test_hr_claim_identity_comparison_is_preserved_in_approved_history(): void
+    {
+        $claimant = $this->profile('claimant.profile@example.test');
+        $claimant->user->update(['email' => 'claimant.account@example.test']);
+        $historical = $this->historical($this->vacancy(), 'legacy@example.test');
+        $reviewer = User::factory()->create(['email' => 'history.admin@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $reviewer->id, 'level' => 1, 'status' => 1]);
+        $claim = app(ApplicationClaimService::class)->request(
+            $claimant, $historical->application_code, 'legacy@example.test'
+        );
+        app(ApplicationClaimService::class)->approve(
+            $claim, $reviewer->id, 'Independent records and identification verified.'
+        );
+
+        $this->actingAs($reviewer)->get(route('admin.applicant_claims.index', ['status' => 'approved']))
+            ->assertOk()
+            ->assertSee('Position:')
+            ->assertSee('Teacher I')
+            ->assertSee('Ana M Reyes')
+            ->assertSee('claimant.account@example.test')
+            ->assertSee('Old B Applicant')
+            ->assertSee('legacy@example.test')
+            ->assertSee('Cancel Approval');
+    }
+
     public function test_hr_approval_http_flow_grants_only_the_verified_claimant_access(): void
     {
         $claimant = $this->profile('current@example.test');
