@@ -704,6 +704,11 @@ class AssessmentGroupController extends Controller
 
         $assessmentGroup->update(['scores_released_at' => now()]);
         $sync = $scoreSync->syncWrittenGroup($assessmentGroup->fresh());
+        try {
+            app(\App\Services\Applicant\OfficialScoreReleaseNotifier::class)->written($assessmentGroup);
+        } catch (\Throwable $exception) {
+            report($exception); // Official score release must not be reversed by a notice failure.
+        }
         $governance->log('scores_released', [
             'assessment_group_id' => $assessmentGroup->id,
         ], [
