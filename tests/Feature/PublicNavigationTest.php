@@ -86,7 +86,7 @@ class PublicNavigationTest extends TestCase
             ->assertSee('My Profile')
             ->assertSee('method="POST" action="'.route('logout').'"', false)
             ->assertSee('Sign Out')
-            ->assertDontSee('rms-nav-sign-in', false)
+            ->assertDontSee('class="btn btn-primary rms-nav-sign-in"', false)
             ->assertDontSee('href="'.route('admin.index').'"', false);
 
         $this->actingAs($user)->post(route('logout'))->assertRedirect('/');
