@@ -65,7 +65,7 @@ class ApplicantPortalSecurityTest extends TestCase
 
     public function test_profile_options_require_authentication_and_return_official_choices(): void
     {
-        $this->get(route('applicant.profile.options'))->assertRedirect('/login');
+        $this->get(route('applicant.profile.options'))->assertRedirect(route('applicant.login'));
         $user = User::factory()->create();
         $this->actingAs($user)->getJson(route('applicant.profile.options'))
             ->assertOk()
@@ -111,7 +111,32 @@ class ApplicantPortalSecurityTest extends TestCase
 
     public function test_an_unauthenticated_visitor_cannot_access_applicant_dashboard(): void
     {
-        $this->get('/applicant/dashboard')->assertRedirect('/login');
+        $this->get('/applicant/dashboard')->assertRedirect(route('applicant.login'));
+    }
+
+    public function test_expired_applicant_routes_redirect_to_applicant_sign_in_not_staff_login(): void
+    {
+        $this->get(route('applicant.profile.edit'))->assertRedirect(route('applicant.login'));
+        $this->get(route('applicant.apply.review', ['vacancy' => 1]))
+            ->assertRedirect(route('applicant.login'));
+        $this->get(route('guest.applications.my'))->assertRedirect(route('applicant.login'));
+        $this->get(route('guest.applications.show', ['application' => 1]))
+            ->assertRedirect(route('applicant.login'));
+        $this->get(route('guest.assessments.attempts.take', ['attempt' => 1]))
+            ->assertRedirect(route('applicant.login'));
+        $this->get(route('guest.skills.attempts.take', ['attempt' => 1]))
+            ->assertRedirect(route('applicant.login'));
+    }
+
+    public function test_expired_ajax_profile_requests_return_401_instead_of_login_html(): void
+    {
+        $this->getJson(route('applicant.profile.options'))->assertUnauthorized();
+        $this->putJson(route('applicant.profile.update'), [])->assertUnauthorized();
+    }
+
+    public function test_unauthenticated_staff_identity_link_remains_on_staff_login(): void
+    {
+        $this->get(route('applicant.staff.google.link'))->assertRedirect(route('login'));
     }
 
     public function test_applicant_login_uses_google_sign_in_and_shows_deped_reset_guidance(): void
