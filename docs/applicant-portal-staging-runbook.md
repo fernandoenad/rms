@@ -151,6 +151,14 @@ Use a **synthetic unowned historical** application with an old email address and
 
 **Record:** claim request ID, synthetic application code, reviewer, UTC/local decision timestamp, result, sanitized screenshot, event/audit ID. Do not record IDs of genuine applicants in shared CI outputs.
 
+### Approved claim cancellation (new acceptance case CLAIM-07)
+
+- [ ] In **Approved history**, locate a synthetic **HR-approved** claim. Expand **Cancel Approval**, provide a documented reason (at least 15 characters), acknowledge access revocation, and submit. Confirm redirect to **Cancelled history** with original approval notes, cancellation timestamp, actor and reason retained.
+- [ ] Verify the approved claimant immediately loses application-detail and assessment access, while the legacy `applications` row, records, scores and original HR approval evidence are **not deleted or rewritten**.
+- [ ] Retry cancellation, attempt it without a reason or acknowledgment, and attempt cancellation as a claimant or unauthorized staff. All must fail without changing ownership or producing duplicate cancellation audits.
+- [ ] Verify claims resolved by **Google email matching** cannot be cancelled via this HR-approval-only action; it must never delete an unrelated ownership link.
+- [ ] If a previous approval was wrong, submit a **new synthetic claim** after revocation and require normal independent HR identity verification again. Existing rejected competing claims are not silently reactivated.
+
 ## 6. Assessments and legacy integration
 
 - On staging MySQL, open the *actual* application details page for approved owner. This rendering is **not fully tested by SQLite CI** and must be independently checked.
