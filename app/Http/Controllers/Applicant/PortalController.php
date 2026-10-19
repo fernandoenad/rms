@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Applicant;
 
 use App\Http\Controllers\Controller;
 use App\Models\ApplicantProfile;
+use App\Models\ApplicantNotification;
 use App\Models\ApplicantApplicationLink;
 use App\Models\ApplicationClaimRequest;
 use App\Services\Applicant\ApplicationClaimService;
@@ -63,7 +64,11 @@ class PortalController extends Controller
             ]);
         }
         $updates = $updates->sortByDesc(fn ($update) => $update['date']?->timestamp ?? PHP_INT_MAX)->take(8)->values();
-        return view('applicant.dashboard', compact('profile', 'links', 'claims', 'updates'));
+        $notifications = ApplicantNotification::where('applicant_profile_id', $profile->id)
+            ->latest()->limit(15)->get();
+        $unreadCount = ApplicantNotification::where('applicant_profile_id', $profile->id)
+            ->whereNull('read_at')->count();
+        return view('applicant.dashboard', compact('profile', 'links', 'claims', 'updates', 'notifications', 'unreadCount'));
     }
 
     public function edit(Request $request)
