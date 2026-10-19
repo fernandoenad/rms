@@ -63,6 +63,31 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         ]);
     }
 
+
+    public function test_official_release_notifier_does_not_notify_without_completed_attempts_or_public_release(): void
+    {
+        $vacancy = $this->vacancy();
+        $written = \App\Models\AssessmentGroup::create([
+            'vacancy_id' => $vacancy->id, 'title' => 'Written Test', 'code' => 'WR-NOTIFY-1',
+            'expected_sets' => 1, 'status' => 1, 'score_release_policy' => 'manual',
+        ]);
+        $skills = \App\Models\SkillTestGroup::create([
+            'vacancy_id' => $vacancy->id, 'title' => 'Skills Test', 'code' => 'SK-NOTIFY-1',
+            'expected_sets' => 1, 'status' => 1, 'score_release_policy' => 'manual',
+        ]);
+        $notifier = app(\App\Services\Applicant\OfficialScoreReleaseNotifier::class);
+        $notifier->written($written);
+        $notifier->skills($skills);
+        $this->assertDatabaseCount('applicant_notifications', 0);
+
+        // Release without a completed, owned attempt must not notify applicants.
+        $written->update(['scores_released_at' => now()]);
+        $skills->update(['scores_released_at' => now()]);
+        $notifier->written($written);
+        $notifier->skills($skills);
+        $this->assertDatabaseCount('applicant_notifications', 0);
+    }
+
     public function test_public_vacancy_list_and_details_match_applicant_design_without_exposing_private_links(): void
     {
         $vacancy = $this->vacancy();
