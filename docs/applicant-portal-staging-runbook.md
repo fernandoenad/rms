@@ -140,6 +140,15 @@ Use a **synthetic unowned historical** application with an old email address and
 - Run the **existing third-party reader** of the legacy `applications` table against synthetic legacy and newly submitted rows. Confirm unchanged column contract and values. Record the consumer version, result, and any exception.
 - Check database migrations for additions only; no edits to the legacy `applications` schema.
 
+### Final AJAX session-recovery acceptance
+
+- [ ] In a disposable staging browser session, expire the applicant session while editing the **master profile** or preparing a **historical claim**. Submit once and verify a visible **Sign in again** action appears, not the staff login page. The form must not auto-resubmit or report success.
+- [ ] Repeat during **application review**. A 401/419 must **not** resubmit the application; sign in and review My Applications to confirm whether the original request completed before attempting another submission.
+- [ ] During a **written assessment**, expire authentication in isolated staging and trigger answer-save and timer-status requests. Verify the sign-in banner appears, pending answers are not falsely marked saved, and no automatic retry or final submission occurs. Check the server-side official timer/finalization separately.
+- [ ] Repeat in the **skills assessment**. Verify authentication failure stops repeated save attempts. Do not claim an unsaved response is accepted. Confirm the original test timing, completion and integrity rules are unchanged.
+- [ ] Test unrelated failures (offline, HTTP 403, 409, 422, 429, 500): they must not incorrectly be labeled session expiry. Check desktop, mobile, and keyboard access.
+- [ ] Verify the shared JavaScript behavior test and PHP/MySQL/assessment CI checks have passed on the candidate commit. This does not replace interactive staging UAT.
+
 ## 7. Evidence and release decision
 
 For each case, log: case ID, environment, commit SHA, tester, date/time/timezone, synthetic user fixture, expected/actual outcome, pass/fail/blocked, evidence reference, severity and issue link.
