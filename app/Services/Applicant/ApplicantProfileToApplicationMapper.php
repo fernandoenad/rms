@@ -14,6 +14,12 @@ class ApplicantProfileToApplicationMapper
 
     public function map(ApplicantProfile $profile): array
     {
-        return $profile->only(self::FIELDS);
+        $snapshot = $profile->only(self::FIELDS);
+        // The legacy applications table stores only age, not date of birth.
+        // Recompute it on submission so a saved profile does not grow stale.
+        if ($profile->date_of_birth) {
+            $snapshot['age'] = $profile->date_of_birth->age;
+        }
+        return $snapshot;
     }
 }
