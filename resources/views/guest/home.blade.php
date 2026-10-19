@@ -27,6 +27,8 @@
 .rms-home-step .step-number{background:#eaf3fa;border-radius:10px;color:#275c89;width:41px;height:41px;display:grid;place-items:center;font-size:1.08rem;font-weight:700;margin-bottom:13px}
 .rms-home-step h3{font-size:1rem;color:#30495e;font-weight:700;margin-bottom:6px}
 .rms-home-step p{color:#66798b;font-size:.87rem;margin:0;line-height:1.5}
+.rms-home-staff-footer{display:flex;justify-content:flex-end;gap:7px;align-items:center;flex-wrap:wrap;padding:16px 3px 12px;font-size:.9rem;color:#64788a}
+.rms-home-staff-footer a{font-weight:600}
 @media(max-width:767px){.rms-home-hero{padding:27px 21px}.rms-home-hero h1{font-size:1.5rem}.rms-home-panel-head,.rms-home-panel-body{padding:17px}.rms-home-open-list,.rms-home-steps{grid-template-columns:1fr}.rms-home-actions .btn{flex:1 1 auto;justify-content:center}}
 </style>
 @endsection
@@ -88,5 +90,9 @@
             </div>
         </div>
     </section>
+    <footer class="rms-home-staff-footer">
+        <span>DepEd Bohol staff?</span>
+        <a href="{{ route('login') }}"><i class="fas fa-user-shield mr-1" aria-hidden="true"></i>Staff Login</a>
+    </footer>
 </div>
 @endsection
