@@ -63,6 +63,70 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         ]);
     }
 
+    public function test_public_vacancy_list_and_details_match_applicant_design_without_exposing_private_links(): void
+    {
+        $vacancy = $this->vacancy();
+
+        $this->get(route('guest.vacancies.index'))
+            ->assertOk()
+            ->assertSee('Available Vacancies')
+            ->assertSee('Vacancy navigation')
+            ->assertSee('Applicant Sign In')
+            ->assertSee('View Details')
+            ->assertSee('vacancySearch')
+            ->assertSee($vacancy->position_title)
+            ->assertSee('href="'.route('guest.vacancies.show', $vacancy).'"', false)
+            ->assertDontSee('Back to Dashboard');
+
+        $this->get(route('guest.vacancies.show', $vacancy))
+            ->assertOk()
+            ->assertSee('Vacancy Overview')
+            ->assertSee('Qualifications and Requirements')
+            ->assertSee('Apply for Position')
+            ->assertSee('Back to Vacancies')
+            ->assertSee('href="'.route('guest.vacancies.apply', $vacancy).'"', false)
+            ->assertDontSee('My Profile');
+    }
+
+    public function test_signed_in_vacancy_pages_have_page_local_dashboard_links_and_preserve_apply_flow(): void
+    {
+        $profile = $this->profile();
+        $vacancy = $this->vacancy();
+
+        $this->actingAs($profile->user)->get(route('guest.vacancies.index'))
+            ->assertOk()->assertSee('Back to Dashboard')->assertSee('My Profile')
+            ->assertSee('My Applications')
+            ->assertDontSee('aria-label="Applicant page navigation"', false);
+
+        $this->actingAs($profile->user)->get(route('guest.vacancies.show', $vacancy))
+            ->assertOk()->assertSee('Back to Vacancies')->assertSee('Dashboard')
+            ->assertSee('My Profile')
+            ->assertSee('href="'.route('applicant.dashboard').'"', false);
+
+        $this->actingAs($profile->user)->get(route('guest.vacancies.apply', $vacancy))
+            ->assertRedirect(route('applicant.apply.review', $vacancy));
+    }
+
+    public function test_vacancies_only_show_open_postings_and_escape_untrusted_qualifications(): void
+    {
+        $open = $this->vacancy();
+        $open->update(['qualifications' => "Required\n<script>alert('example')</script>"]);
+        $closed = $this->vacancy();
+        $closed->update(['position_title' => 'Hidden Recruitment Position', 'posting_end_at' => now()->subMinute()]);
+
+        $this->get(route('guest.vacancies.index'))
+            ->assertOk()->assertSee($open->position_title)
+            ->assertDontSee('Hidden Recruitment Position');
+
+        $this->get(route('guest.vacancies.show', $closed))->assertNotFound();
+
+        $this->get(route('guest.vacancies.show', $open))
+            ->assertOk()
+            ->assertSee('Required')
+            ->assertSee('&lt;script&gt;', false)
+            ->assertDontSee("<script>alert('example')</script>", false);
+    }
+
     public function test_matching_google_email_auto_links_once_without_rewriting_historical_data(): void
     {
         $profile = $this->profile();
