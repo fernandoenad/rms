@@ -14,6 +14,11 @@ class ApplicationClaimRequest extends Model
         return $this->hasOne(ApplicantApplicationLink::class, 'application_id', 'application_id');
     }
 
+    public function application(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Application::class, 'application_id');
+    }
+
     public function profile(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(ApplicantProfile::class, 'applicant_profile_id');
