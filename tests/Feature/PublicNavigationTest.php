@@ -50,19 +50,27 @@ class PublicNavigationTest extends TestCase
             ->assertSee('href="'.route('guest.vacancies.index').'"', false)
             ->assertSee('Sign In')
             ->assertSee('href="'.route('applicant.login').'"', false)
-            ->assertSee('Staff Sign In')
-            ->assertSee('href="'.route('login').'"', false)
+            ->assertDontSee('Previously applied?')
+            ->assertDontSee('Open Application Lookup')
+            ->assertDontSee('Staff Sign In')
+            ->assertDontSee('CAR-RQAs')
+            ->assertDontSee('href="'.route('guest.rqas.index').'"', false)
             ->assertDontSee('Not Public Position')
             ->assertDontSee('id="rmsUserMenu"', false)
             ->assertDontSee('rms-nav-sign-out', false);
     }
 
-    public function test_public_home_has_clear_no_vacancies_state_and_legacy_lookup_link(): void
+    public function test_public_home_omits_utility_links_but_legacy_lookup_route_remains_accessible(): void
     {
         $this->get('/')->assertOk()
             ->assertSee('No recruitment vacancies are currently open')
-            ->assertSee('Open Application Lookup')
-            ->assertSee('href="'.route('guest.applications.index').'"', false);
+            ->assertDontSee('Previously applied?')
+            ->assertDontSee('Open Application Lookup')
+            ->assertDontSee('Staff Sign In')
+            ->assertDontSee('CAR-RQAs');
+        // Only links are hidden; existing external bookmarks and routes remain.
+        $this->assertTrue(\Illuminate\Support\Facades\Route::has('guest.rqas.index'));
+        $this->assertTrue(\Illuminate\Support\Facades\Route::has('guest.applications.index'));
         $this->get(route('guest.applications.index'))->assertOk()
             ->assertSee('Application Lookup');
     }
