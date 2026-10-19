@@ -95,7 +95,10 @@ class ApplicantSecondaryDatabaseIntegrationTest extends TestCase
             $this->actingAs($owner)->get(route('guest.applications.show', $application))
                 ->assertOk()
                 ->assertSee('Synthetic Station Integration Test')
-                ->assertSee($application->application_code);
+                ->assertSee($application->application_code)
+                ->assertSee('aria-label="Application details navigation"', false)
+                ->assertSee('Back to Dashboard')
+                ->assertSee('Browse Vacancies');
         } finally {
             $schema->drop('stations');
         }
