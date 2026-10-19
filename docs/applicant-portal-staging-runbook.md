@@ -2,6 +2,24 @@
 
 **Scope:** PR #46 only. **Environment:** isolated staging or a disposable local database cloned with sanitized records. **Prohibited:** destructive testing against production, merging before sign-off, changing the legacy `applications` schema.
 
+## Release gate: manual evidence, not just green CI
+
+The read-only UAT worksheet validator is part of PR #46. A passing environment preflight and green automated CI **do not** establish real-browser UAT or actual third-party reader compatibility.
+
+1. Run the scenarios below with **synthetic records in isolated staging**. Copy the worksheet to a private path **outside the Git worktree**. Do not commit real applicant information, screenshots, tokens, secrets, or internal evidence paths.
+2. For all HOME, NAV, PROFILE, OAUTH, SWITCH, APP, CLAIM, ASSESS, SESSION, LEGACY, MOBILE, OPS, and ROLLBACK scenarios, record PASS, FAIL, or BLOCKED with sanitized evidence references.
+3. Record the **full 40-character checked-out commit SHA**, the same CI-verified SHA, and the exact GitHub Actions run link, after independently confirming all checks passed.
+4. Complete the HR and technical reviewer signatures, six acceptance checkboxes, backup reference, and explicit release decision.
+5. Run the read-only release gate against that private, completed worksheet:
+
+```bash
+git rev-parse HEAD
+php artisan rms:applicant-readiness --strict
+python3 scripts/applicant_uat_gate.py --worksheet /private/path/applicant-portal-uat-results.md
+```
+
+An exit code of 1 means **BLOCKED** due to missing case results, evidence, matching commit IDs, sign-offs, or approval. An exit code of 0 only means the worksheet is complete for human review; it **does not verify** actual browser behavior, evidence authenticity, HR reviewer authority, or CI status independently. Keep Draft PR #46 unmerged and undeployed until the real external reader test, browser UAT, staging rollback, and release-owner approval are complete.
+
 ## 1. Freeze and record the tested build
 
 1. Record the feature-branch commit: `git rev-parse HEAD`.
