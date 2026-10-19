@@ -523,6 +523,11 @@ class SkillTestGroupController extends Controller
 
         $skillTestGroup->update(['scores_released_at'=>now()]);
         $sync = $scoreSync->syncSkillGroup($skillTestGroup->fresh());
+        try {
+            app(\App\Services\Applicant\OfficialScoreReleaseNotifier::class)->skills($skillTestGroup);
+        } catch (\Throwable $exception) {
+            report($exception); // Official score release must not be reversed by a notice failure.
+        }
 
         return back()->with(
             'status',
