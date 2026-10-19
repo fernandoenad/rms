@@ -35,6 +35,10 @@
 
 @section('main')
 <div class="container py-4 py-lg-5 profile-shell">
+    <div class="d-flex justify-content-between align-items-center flex-wrap mb-3" style="gap:10px">
+        <a class="btn btn-outline-secondary font-weight-bold" href="{{ route('applicant.dashboard') }}"><i class="fas fa-arrow-left mr-2" aria-hidden="true"></i>Back to Dashboard</a>
+        <a class="btn btn-outline-primary" href="{{ route('guest.vacancies.index') }}"><i class="fas fa-briefcase mr-2" aria-hidden="true"></i>Browse Vacancies</a>
+    </div>
     <div class="profile-hero mb-4">
         <div class="eyebrow"><i class="fas fa-user-circle mr-1"></i> Recruitment Management System</div>
         <h1>Master Applicant Profile</h1>
@@ -198,7 +202,7 @@
         <div class="profile-actions mb-5">
             <div class="profile-tip" id="saveStatus" aria-live="polite"><i class="far fa-check-circle mr-1"></i>Review your details before saving.</div>
             <div class="d-flex align-items-center" style="gap:10px;flex-wrap:wrap">
-                <a class="btn btn-outline-secondary" href="{{ route('applicant.dashboard') }}">Cancel</a>
+                <a class="btn btn-outline-secondary" href="{{ route('applicant.dashboard') }}"><i class="fas fa-arrow-left mr-1" aria-hidden="true"></i>Back to Dashboard</a>
                 <button type="submit" id="saveProfile" class="btn btn-primary profile-save" disabled><i class="fas fa-save mr-2"></i>Save profile</button>
             </div>
         </div>
