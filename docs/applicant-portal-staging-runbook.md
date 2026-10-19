@@ -137,6 +137,15 @@ The RMS root URL (`/`) is now a **public recruitment landing page**, not the old
 
 ## 5. HR historical claim review
 
+### Claimant versus original application identity (all claim tabs)
+
+- [ ] In the **Pending / Clarification** view, verify **Application code** and **Position** match the stored legacy application and its vacancy.
+- [ ] Compare the **Claimant** panel's profile name and signed-in account email against the **Application** panel's original submitted name and email. Use synthetic records where the two email addresses and names differ to ensure neither source is accidentally substituted for the other.
+- [ ] Repeat this visual comparison on Approved, Rejected, and Cancelled history. Approving or cancelling a claim must not rewrite the legacy application name/email or vacancy position.
+- [ ] Confirm that a deleted/missing related application or vacancy is shown as unavailable rather than causing a server error, and that only authorized HR reviewers can see the comparison.
+
+
+
 Use a **synthetic unowned historical** application with an old email address and an applicant whose verified Google email differs:
 
 1. Applicant submits historical claim with correct application code and historical email. Confirm **Pending** in applicant dashboard.
