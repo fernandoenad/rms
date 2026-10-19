@@ -91,10 +91,6 @@
                             <a class="nav-link {{ request()->routeIs('guest.vacancies.*', 'applicant.apply.*') ? 'active' : '' }}"
                                href="{{ route('guest.vacancies.index') }}">Vacancies</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link {{ request()->routeIs('guest.rqas.*') ? 'active' : '' }}"
-                               href="{{ route('guest.rqas.index') }}">CAR-RQAs</a>
-                        </li>
                         @guest
                             <li class="nav-item ml-md-2">
                                 <a class="btn btn-primary rms-nav-sign-in" href="{{ route('applicant.login') }}">
