@@ -46,7 +46,7 @@ class SubmissionController extends Controller
             throw ValidationException::withMessages(['profile' => 'Complete your master profile first.']);
         }
 
-        DB::transaction(function () use ($vacancy, $profile, $mapper) {
+        $submittedApplication = DB::transaction(function () use ($vacancy, $profile, $mapper) {
             // Re-read the profile under lock so submission reflects saved values at commit time.
             $profile = ApplicantProfile::whereKey($profile->id)->lockForUpdate()->firstOrFail();
             if (!$profile->profile_completed_at) {
@@ -74,8 +74,17 @@ class SubmissionController extends Controller
                 'link_method' => 'new_submission',
                 'verified_at' => now(),
             ]);
+            return $application;
         });
 
-        return redirect()->route('applicant.dashboard')->with('status', 'Application submitted successfully.');
+        $message = 'Application submitted successfully.';
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $message,
+                'application_code' => $submittedApplication->application_code,
+                'redirect' => route('guest.applications.show', $submittedApplication),
+            ], 201);
+        }
+        return redirect()->route('applicant.dashboard')->with('status', $message);
     }
 }
