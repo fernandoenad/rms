@@ -21,9 +21,46 @@
 @endif
 @foreach($claims as $claim)
 <div class="card mb-3"><div class="card-body">
-<h2 class="h5">{{ $claim->claimed_application_code }}</h2>
-<p>Claimant: {{ trim(($claim->profile?->first_name ?? '').' '.($claim->profile?->last_name ?? '')) ?: 'Profile unavailable' }} (profile #{{ $claim->applicant_profile_id }}) • Previous email: {{ $claim->claimed_email }} • Status: {{ $claim->status }}</p>
-<p>Application ID: {{ $claim->application_id }}</p>
+@php
+    $claimantProfile = $claim->profile;
+    $historicalApplication = $claim->application;
+    $claimantName = trim(implode(' ', array_filter([
+        $claimantProfile?->first_name,
+        $claimantProfile?->middle_name,
+        $claimantProfile?->last_name,
+    ], fn ($value) => is_string($value) && trim($value) !== '')));
+    $applicationName = trim(implode(' ', array_filter([
+        $historicalApplication?->first_name,
+        $historicalApplication?->middle_name,
+        $historicalApplication?->last_name,
+    ], fn ($value) => is_string($value) && trim($value) !== '')));
+@endphp
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3">
+    <div>
+        <h2 class="h5 mb-1"><span class="text-muted">Application code:</span> {{ $historicalApplication?->application_code ?? $claim->claimed_application_code }}</h2>
+        <p class="mb-1"><strong>Position:</strong> {{ $historicalApplication?->vacancy?->position_title ?: 'Position unavailable' }}</p>
+        <p class="text-muted small mb-0">Application ID: {{ $claim->application_id ?? 'Unavailable' }} · Claim #{{ $claim->id }}</p>
+    </div>
+    <span class="badge badge-{{ $claim->status === 'approved' ? 'success' : ($claim->status === 'pending' || $claim->status === 'clarification' ? 'warning' : 'secondary') }} mt-1">{{ ucfirst($claim->status) }}</span>
+</div>
+<div class="row mb-3">
+    <div class="col-md-6 mb-2 mb-md-0">
+        <section class="border rounded h-100 p-3 bg-light" aria-label="Claimant details">
+            <h3 class="h6 font-weight-bold mb-2">Claimant</h3>
+            <p class="mb-1"><strong>Name:</strong> {{ $claimantName ?: ($claimantProfile?->user?->name ?: 'Profile unavailable') }}</p>
+            <p class="mb-1"><strong>Email:</strong> {{ $claimantProfile?->user?->email ?: 'Account email unavailable' }}</p>
+            <p class="text-muted small mb-0">Account email · Profile #{{ $claim->applicant_profile_id }}</p>
+        </section>
+    </div>
+    <div class="col-md-6">
+        <section class="border rounded h-100 p-3" aria-label="Application details">
+            <h3 class="h6 font-weight-bold mb-2">Application</h3>
+            <p class="mb-1"><strong>Name:</strong> {{ $applicationName ?: 'Application name unavailable' }}</p>
+            <p class="mb-1"><strong>Email:</strong> {{ $historicalApplication?->email ?: 'Application email unavailable' }}</p>
+            <p class="text-muted small mb-0">Original submitted application record</p>
+        </section>
+    </div>
+</div>
 @if($status !== 'open')
 <p>Reviewed: {{ $claim->reviewed_at?->format('M j, Y g:i A') ?? 'Not recorded' }} · Reviewer user #{{ $claim->reviewed_by ?? 'Not recorded' }}</p>
 <p><strong>Review notes:</strong> {{ $claim->review_notes ?: 'Not recorded' }}</p>
