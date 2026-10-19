@@ -266,7 +266,7 @@
     }
 
     function retryPendingAnswers() {
-        if (finishing) return;
+        if (finishing || window.RMSApplicantSession.expired) return;
 
         const pending = loadPendingAnswers();
         let delay = 0;
@@ -293,7 +293,7 @@
             // Stagger retries slightly so a reconnect with many unsaved answers
             // does not create a sudden request burst.
             setTimeout(() => {
-                if (!finishing) {
+                if (!finishing && !window.RMSApplicantSession.expired) {
                     queueAnswerSave(radio);
                 }
             }, delay);
@@ -316,6 +316,7 @@
     }
 
     async function logEvent(eventType) {
+        if (window.RMSApplicantSession.expired) return;
         try {
             const response = await fetch(eventUrl, {
                 method:'POST',
@@ -420,6 +421,11 @@
     function queueAnswerSave(radio) {
         const itemId = String(radio.dataset.item);
         const optionId = String(radio.value);
+        if (window.RMSApplicantSession.expired) {
+            savePendingAnswer(itemId, optionId);
+            setSaveState('Session expired. Sign in again; this answer was not saved.', 'text-danger font-weight-bold');
+            return;
+        }
         const itemIndex = items.findIndex(function (item) {
             const input = item.querySelector('.answer-radio');
             return input && input.dataset.item === itemId;
@@ -585,6 +591,10 @@
 
     async function submitManually() {
         if (finishing) return;
+        if (window.RMSApplicantSession.expired) {
+            window.RMSApplicantSession.show();
+            return;
+        }
         finishing = true;
         finalSubmitBtn.disabled = true;
         finalSubmitBtn.textContent = 'Submitting…';
@@ -687,11 +697,13 @@
         });
 
         window.addEventListener('offline', () => {
+            if (window.RMSApplicantSession.expired) return;
             setSaveState('Offline. Previously confirmed answers remain safe.', 'text-warning font-weight-bold');
             logEvent('connection_lost');
         });
 
         window.addEventListener('online', () => {
+            if (window.RMSApplicantSession.expired) return;
             setSaveState('Connection restored. Retrying unsaved answers…', 'text-success');
             logEvent('connection_restored');
             syncAuthoritativeTime({reloadOnExpired:true});
