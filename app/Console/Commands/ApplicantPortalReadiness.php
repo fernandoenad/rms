@@ -183,11 +183,17 @@ class ApplicantPortalReadiness extends Command
         } else {
             try {
                 DB::connection('mysql_2')->select('SELECT 1 AS ready');
-                if (Schema::connection('mysql_2')->hasTable('stations')) {
-                    $record('PASS', 'Secondary station database', 'Connection and stations table verified.');
-                } else {
-                    $record('WARN', 'Secondary station database', 'Connected but stations table is missing.');
-                }
+                $hrmisTables = ['stations', 'towns', 'dropdowns', 'offices'];
+                $missingHrmis = array_values(array_filter($hrmisTables, fn (string $table) =>
+                    !Schema::connection('mysql_2')->hasTable($table)
+                ));
+                $record(
+                    $missingHrmis ? 'WARN' : 'PASS',
+                    'Secondary HRMIS references',
+                    $missingHrmis
+                        ? 'Reference tables missing: '.implode(', ', $missingHrmis)
+                        : 'Stations, municipalities, gender/civil status dropdowns and district offices are available.'
+                );
             } catch (Throwable $e) {
                 $record('WARN', 'Secondary station database', 'Connection/table check failed; assigned-station detail pages require investigation.');
             }
