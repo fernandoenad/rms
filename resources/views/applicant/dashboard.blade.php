@@ -24,6 +24,7 @@
 .app-status-pending,.app-status-clarification{background:#fff3d9;color:#825712}
 .app-status-approved{background:#e5f6ed;color:#167243}
 .app-status-rejected{background:#fce9e9;color:#982e2e}
+.app-status-cancelled{background:#fce9e9;color:#982e2e}
 .app-status-profile{background:#e7f1fb;color:#225f8b}
 .app-entry{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:15px 0;border-bottom:1px solid #eef1f5}
 .app-entry:first-child{padding-top:0}.app-entry:last-child{border-bottom:0;padding-bottom:0}
@@ -109,6 +110,8 @@
                                 @if($claim->status === 'clarification' && $claim->review_notes)
                                     <p>HR requests additional information: {{ $claim->review_notes }}</p>
                                     <p>Contact HR through the official channel. This application remains inaccessible until approval.</p>
+                                @elseif($claim->status === 'cancelled')
+                                    <p>HR has cancelled the earlier approval and revoked application access. Contact HR if you believe this is an error.</p>
                                 @elseif($claim->status === 'rejected')
                                     <p>HR did not approve this ownership request. Contact HR for guidance if you believe this is an error.</p>
                                     @if($claim->review_notes && str_starts_with($claim->review_notes, 'This application was linked to another verified claimant.'))
@@ -116,7 +119,7 @@
                                     @endif
                                 @endif
                             </div>
-                            <span class="app-status app-status-{{ in_array($claim->status, ['pending','clarification','approved','rejected'], true) ? $claim->status : 'pending' }}">{{ ucfirst($claim->status) }}</span>
+                            <span class="app-status app-status-{{ in_array($claim->status, ['pending','clarification','approved','rejected','cancelled'], true) ? $claim->status : 'pending' }}">{{ ucfirst($claim->status) }}</span>
                         </div>
                     @endforeach
                     @if($claims->isEmpty())
