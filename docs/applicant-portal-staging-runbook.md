@@ -94,6 +94,18 @@ The public Vacancies pages now match the dashboard design while retaining the ex
 - [ ] Closed, future, and draft recruitment postings stay hidden or inaccessible under existing vacancy rules.
 - [ ] Verify responsive card and action-button layout on narrow/mobile screens. The previously removed shared quick-navigation strip must remain absent.
 
+### Public homepage and account-aware navigation
+
+The RMS root URL (`/`) is now a **public recruitment landing page**, not the old `/applications` redirect. The existing application lookup remains at `/applications`.
+
+- [ ] As a **visitor**, Home shows up to three recently posted **currently open** vacancies, links to View All Vacancies, and a clear **Sign In** header button that leads to Applicant Google sign-in. Staff Sign In remains available from the public homepage.
+- [ ] Header menu is simple: **Home**, **Vacancies**, **CAR-RQAs**, **Sign In**. Closed and scheduled vacancies are not advertised. When no vacancy is open, Home displays an appropriate empty state.
+- [ ] As an **authenticated applicant**, the Sign In button becomes a **name dropdown** with Dashboard, My Profile, My Applications, and **Sign Out**. Confirm My Applications opens the application's section of the dashboard.
+- [ ] As **authorized active staff**, that same dropdown additionally includes **Staff Portal**. Staff Portal must not be visible to inactive or ordinary applicant accounts.
+- [ ] Sign Out uses a **POST** form with CSRF protection and returns the interface to guest navigation.
+- [ ] Check keyboard access, focus states, dropdown operation, responsive navbar collapse, and long display-name handling on desktop and mobile.
+- [ ] The redundant extra navigation strip that was previously removed must **not** reappear on any page.
+
 ## 4. Applicant application journey
 
 - From public Vacancies, choose an open synthetic vacancy, authenticate, and complete the master profile.
