@@ -60,6 +60,9 @@
                 <a class="btn btn-sm btn-outline-primary" href="{{ route('guest.vacancies.index') }}">
                     <i class="fas fa-briefcase mr-1" aria-hidden="true"></i>Vacancies
                 </a>
+                <a class="btn btn-sm btn-outline-primary" href="{{ route('applicant.dashboard') }}#applicationsTitle">
+                    <i class="fas fa-clipboard-list mr-1" aria-hidden="true"></i>My Applications
+                </a>
                 <a class="btn btn-sm btn-outline-primary" href="{{ route('applicant.profile.edit') }}">
                     <i class="fas fa-user-edit mr-1" aria-hidden="true"></i>My Profile
                 </a>
