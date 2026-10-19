@@ -21,6 +21,7 @@
 .rms-vacancy-list{padding:8px 22px}
 .rms-vacancy-entry{display:flex;justify-content:space-between;gap:18px;align-items:center;padding:19px 0;border-bottom:1px solid #eef1f5}
 .rms-vacancy-entry:last-child{border-bottom:0}
+.rms-vacancy-entry[hidden]{display:none!important}
 .rms-vacancy-info{flex:1;min-width:0}
 .rms-vacancy-info h3{font-size:1.02rem;font-weight:700;margin:0 0 8px;color:#294761}
 .rms-vacancy-meta{display:flex;flex-wrap:wrap;gap:9px 17px;color:#65788b;font-size:.85rem}
