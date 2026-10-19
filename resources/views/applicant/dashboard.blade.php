@@ -244,6 +244,7 @@
             method: 'POST', body: new FormData(form), credentials: 'same-origin',
             headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
         }).then(function(response) {
+            window.RMSApplicantSession.check(response);
             return response.json().then(function(payload) {
                 if (!response.ok) {
                     var error = new Error(payload.message || 'Unable to submit the claim.');
@@ -258,13 +259,17 @@
             addPendingClaim(data.application_code, data.status);
             form.reset();
         }).catch(function(error) {
+            if (window.RMSApplicantSession.expired || error.status === 401 || error.status === 419) {
+                window.RMSApplicantSession.show();
+                message('Your session expired. Use Sign in again to continue. Your claim has not been confirmed.', 'warning');
+                return;
+            }
             showErrors(error.fields || {});
             message(error.status === 429 ? 'Too many requests. Please wait a minute before trying again.' :
-                error.status === 419 ? 'Your session expired. Refresh and retry.' :
                 (error.fields && error.fields.claim ? error.fields.claim[0] : error.message || 'Unable to submit.'), 'danger');
         }).finally(function() {
-            button.disabled = false;
-            button.textContent = 'Request HR review';
+            button.disabled = window.RMSApplicantSession.expired;
+            button.textContent = window.RMSApplicantSession.expired ? 'Sign in again to continue' : 'Request HR review';
         });
     });
 })();
