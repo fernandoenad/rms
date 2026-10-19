@@ -46,7 +46,7 @@ class ApplicantPortalSecurityTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user)->get(route('guest.vacancies.index'))
             ->assertOk()
-            ->assertSee('Applicant Portal')
+            ->assertSee('id="rmsUserMenu"', false)
             ->assertSee('href="'.route('applicant.dashboard').'"', false)
             ->assertDontSee('aria-label="Applicant page navigation"', false);
     }
