@@ -94,7 +94,7 @@ Route::get('/auth/google/callback', function (\Illuminate\Http\Request $request)
 });
 
 // root route
-Route::redirect('/', '/applications')->name('guest.index');
+Route::get('/', [GuestHome::class, 'index'])->name('guest.index');
 
 // not yet applied
 Route::get('/vacancies', [GuestVacancy::class, 'index'])->name('guest.vacancies.index');
