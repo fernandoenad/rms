@@ -16,6 +16,6 @@ class NotificationController extends Controller
         if (!$notification->read_at) {
             $notification->update(['read_at' => now()]);
         }
-        return redirect()->route('applicant.dashboard').'#updatesTitle';
+        return redirect(route('applicant.dashboard').'#updatesTitle');
     }
 }
