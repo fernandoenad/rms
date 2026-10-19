@@ -12,6 +12,12 @@
 - [x] Disposable **primary MySQL 8.0** contract test passed: original `applications` columns remain intact, synthetic historical and new records are readable using a direct SQL query, and later profile edits preserve submitted snapshots. Disposable **secondary MySQL** station-detail test and full PHP 8.2/8.4 suite also passed: [CI run 39121671376](https://github.com/fernandoenad/rms/actions/runs/39121671376) on code commit `55ec3ab6`. This is **not** a live test of the actual third-party consumer or production HRMIS database.
 - [ ] Complete live-browser Google OAuth, staff/applicant switching, recruitment submission, HR validation, assessment flows, and external-reader tests. Automated tests do **not** replace these checks.
 
+### Release-evidence gate
+
+- [ ] Run the expanded manual UAT worksheet `docs/applicant-portal-uat-results.md` on isolated staging, including HOME/NAV/PROFILE and SESSION-01 through SESSION-05. The template intentionally remains `NOT RUN` until reviewed.
+- [ ] Place the completed, sanitized worksheet outside Git, reference the exact tested commit SHA and matching CI run, and use `python3 scripts/applicant_uat_gate.py --worksheet /private/path/applicant-portal-uat-results.md`.
+- [ ] Gate returns exit code 0, and the HR reviewer, technical owner and release owner independently verify the evidence, CI result, database backup/rollback and third-party reader compatibility. The gate only checks documentation completeness: it is **not** a live OAuth, browser, or external-reader test.
+
 ### Evidence capture for manual UAT
 
 For each manual scenario below, record tester, local date/time, environment/URL, test account ID (non-sensitive), result (pass/fail/blocked), screenshot or log reference, and a defect ID if applicable. Do not include OAuth secrets or personally identifiable application records in screenshots.
