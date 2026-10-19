@@ -171,6 +171,9 @@
     <script src="//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" ></script>
     <script src="//cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js" ></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js" ></script>
+    {{-- Loaded before page scripts, so AJAX handlers can use one consistent
+         401/419 recovery action without leaving their page automatically. --}}
+    <script src="{{ asset('js/applicant-session.js') }}" data-sign-in-url="{{ route('applicant.login') }}"></script>
     @yield('js')
 </body>
 </html>
