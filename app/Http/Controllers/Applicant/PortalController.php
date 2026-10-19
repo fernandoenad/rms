@@ -34,7 +34,36 @@ class PortalController extends Controller
             ->where('applicant_profile_id', $profile->id)->latest()->get();
         $claims = ApplicationClaimRequest::where('applicant_profile_id', $profile->id)
             ->latest()->get();
-        return view('applicant.dashboard', compact('profile', 'links', 'claims'));
+        // Build a private, read-only activity feed from the applicant's own records.
+        // This does not expose another applicant's applications or change legacy data.
+        $updates = collect();
+        if (!$profile->profile_completed_at || !$profile->date_of_birth) {
+            $updates->push([
+                'type' => 'action',
+                'title' => 'Complete your master profile',
+                'message' => 'Save your profile before submitting a new application.',
+                'url' => route('applicant.profile.edit'),
+                'date' => null,
+            ]);
+        }
+        foreach ($claims as $claim) {
+            $copy = match ($claim->status) {
+                'clarification' => ['action', 'HR requests clarification', 'Contact HR through the official channel about your claim.'],
+                'approved' => ['success', 'Historical claim approved', 'Your approved historical application is available in My Applications.'],
+                'rejected' => ['warning', 'Historical claim not approved', 'Contact HR if you need to dispute this decision.'],
+                'cancelled' => ['warning', 'Historical claim approval cancelled', 'Your historical application access was revoked. Contact HR for guidance.'],
+                default => ['info', 'Historical claim under review', 'HR has not yet completed verification.'],
+            };
+            $updates->push([
+                'type' => $copy[0],
+                'title' => $copy[1],
+                'message' => $claim->claimed_application_code.' — '.$copy[2],
+                'url' => route('applicant.dashboard').'#claimHistoryTitle',
+                'date' => $claim->updated_at,
+            ]);
+        }
+        $updates = $updates->sortByDesc(fn ($update) => $update['date']?->timestamp ?? PHP_INT_MAX)->take(8)->values();
+        return view('applicant.dashboard', compact('profile', 'links', 'claims', 'updates'));
     }
 
     public function edit(Request $request)
