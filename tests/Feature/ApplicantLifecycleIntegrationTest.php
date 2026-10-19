@@ -502,6 +502,9 @@ class ApplicantLifecycleIntegrationTest extends TestCase
             ->assertRedirect(route('applicant.dashboard'));
 
         $application = Application::where('vacancy_id', $vacancy->id)->sole();
+        // Navigation is independent of the optional secondary station data.
+        // The assigned-station page has a separate real-MySQL integration test.
+        $application->update(['station_id' => null]);
         $this->actingAs($profile->user)
             ->get(route('guest.applications.show', $application))
             ->assertOk()
