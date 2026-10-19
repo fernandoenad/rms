@@ -471,7 +471,7 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $claim = \App\Models\ApplicationClaimRequest::where('applicant_profile_id', $claimant->id)->sole();
 
         $this->actingAs($admin)->get(route('admin.applicant_claims.index'))
-            ->assertOk()->assertSee($application->application_code)->assertSee('Ana Reyes');
+            ->assertOk()->assertSee($application->application_code)->assertSee('Ana M Reyes');
 
         $this->actingAs($admin)->post(route('admin.applicant_claims.clarification', $claim), [
             'review_notes' => 'Please present original identification to the HR reviewer.',
