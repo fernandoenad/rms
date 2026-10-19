@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Applicant;
 use App\Http\Controllers\Controller;
 use App\Models\ApplicantProfile;
 use App\Models\ApplicantNotification;
+use App\Models\ApplicantNotificationPreference;
 use App\Models\ApplicantApplicationLink;
 use App\Models\ApplicationClaimRequest;
 use App\Services\Applicant\ApplicationClaimService;
@@ -68,7 +69,8 @@ class PortalController extends Controller
             ->latest()->limit(15)->get();
         $unreadCount = ApplicantNotification::where('applicant_profile_id', $profile->id)
             ->whereNull('read_at')->count();
-        return view('applicant.dashboard', compact('profile', 'links', 'claims', 'updates', 'notifications', 'unreadCount'));
+        $notificationPreferences = ApplicantNotificationPreference::firstOrCreate(['applicant_profile_id' => $profile->id]);
+        return view('applicant.dashboard', compact('profile', 'links', 'claims', 'updates', 'notifications', 'unreadCount', 'notificationPreferences'));
     }
 
     public function edit(Request $request)
