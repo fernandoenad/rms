@@ -25,6 +25,32 @@ class ApplicantPortalSecurityTest extends TestCase
         $this->app->instance(\App\Services\Applicant\ProfileReferenceData::class, $references);
     }
 
+    public function test_profile_editor_has_visible_dashboard_and_vacancies_navigation(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->get(route('applicant.profile.edit'))
+            ->assertOk()
+            ->assertSee('Back to Dashboard')
+            ->assertSee('Browse Vacancies')
+            ->assertSee('My Profile')
+            ->assertSee('href="'.route('applicant.dashboard').'"', false)
+            ->assertSee('href="'.route('guest.vacancies.index').'"', false);
+    }
+
+    public function test_vacancy_list_has_applicant_navigation_only_for_authenticated_users(): void
+    {
+        $this->get(route('guest.vacancies.index'))
+            ->assertOk()
+            ->assertDontSee('applicant-quick-nav-inner', false);
+
+        $user = User::factory()->create();
+        $this->actingAs($user)->get(route('guest.vacancies.index'))
+            ->assertOk()
+            ->assertSee('Back to Dashboard')
+            ->assertSee('My Profile')
+            ->assertSee('applicant-quick-nav-inner', false);
+    }
+
     public function test_new_profile_form_uses_birthdate_and_dynamic_selects(): void
     {
         $user = User::factory()->create();
