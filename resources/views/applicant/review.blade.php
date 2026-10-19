@@ -30,6 +30,10 @@
 
 @section('main')
 <div class="container py-4 py-lg-5 app-review">
+    <div class="d-flex justify-content-between align-items-center flex-wrap mb-3" style="gap:10px">
+        <a class="btn btn-outline-secondary font-weight-bold" href="{{ route('guest.vacancies.show', $vacancy) }}"><i class="fas fa-arrow-left mr-2" aria-hidden="true"></i>Back to Vacancy</a>
+        <a class="btn btn-outline-primary" href="{{ route('applicant.dashboard') }}">Dashboard</a>
+    </div>
     <div class="review-hero mb-4">
         <div class="eyebrow">Final review • Recruitment application</div>
         <h1>Review Application</h1>
@@ -93,7 +97,7 @@
                 <button type="submit" id="submitApplication" class="btn btn-primary" disabled>
                     <i class="fas fa-paper-plane mr-1"></i>Submit Application
                 </button>
-                <a class="btn btn-outline-secondary" href="{{ route('applicant.dashboard') }}">Cancel</a>
+                <a class="btn btn-outline-secondary" href="{{ route('applicant.dashboard') }}">Back to Dashboard</a>
             </div>
         </form>
         <div class="d-none mt-2" id="submittedResult" role="status" aria-live="polite">
