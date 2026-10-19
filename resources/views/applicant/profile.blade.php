@@ -295,7 +295,7 @@
     fetch(@json(route('applicant.profile.options')), {
         headers: {'Accept':'application/json', 'X-Requested-With':'XMLHttpRequest'}, credentials:'same-origin'
     })
-    .then(function (response) { if (!response.ok) throw new Error('Unable to load form choices.'); return response.json(); })
+    .then(function (response) { if (window.RMSApplicantSession.check(response)) throw new Error('Session expired'); if (!response.ok) throw new Error('Unable to load form choices.'); return response.json(); })
     .then(function (data) {
         fillSelect('municipality', data.municipalities || [], 'Select municipality / city');
         fillSelect('district_id', data.districts || [], 'No district selected', true);
@@ -310,7 +310,7 @@
     .catch(function () {
         var box = document.getElementById('referenceStatus');
         box.className = 'alert alert-warning mb-3';
-        box.textContent = 'Reference dropdowns are temporarily unavailable. Refresh to retry. You cannot save while choices are unavailable.';
+        box.textContent = window.RMSApplicantSession.expired ? 'Your session expired. Use Sign in again to continue; nothing has been saved.' : 'Reference dropdowns are temporarily unavailable. Refresh to retry. You cannot save while choices are unavailable.';
     });
 
     form.addEventListener('input', function (event) {
@@ -343,6 +343,7 @@
             headers:{'Accept':'application/json', 'X-Requested-With':'XMLHttpRequest'}
         })
         .then(function (response) {
+            window.RMSApplicantSession.check(response);
             return response.json().then(function (payload) {
                 if (!response.ok) {
                     var error = new Error(payload.message || 'Unable to save profile.');
@@ -359,9 +360,15 @@
             if (payload.redirect) window.location.assign(payload.redirect);
         })
         .catch(function (error) {
+            if (window.RMSApplicantSession.expired || error.status === 401 || error.status === 419) {
+                window.RMSApplicantSession.show();
+                ready = false; // Never retry or submit with an expired session.
+                report('Your session expired. Select Sign in again to continue. This profile was not saved.', 'warning');
+                status.textContent = 'Sign in again to continue.';
+                return;
+            }
             if (error.fields) fieldErrors(error.fields);
-            report(error.status === 419 ? 'Your session expired. Reload the page and try again.' :
-                (error.message || 'Unable to save. Please try again.'), 'danger');
+            report(error.message || 'Unable to save. Please try again.', 'danger');
             status.textContent = 'Not saved. Review the errors and retry.';
         })
         .finally(function () { save.disabled = !ready; });
