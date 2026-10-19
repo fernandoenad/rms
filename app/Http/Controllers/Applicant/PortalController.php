@@ -142,8 +142,15 @@ class PortalController extends Controller
             'email'=>'required|email|max:255',
         ]);
         $profile = ApplicantProfile::firstOrCreate(['user_id' => $request->user()->id]);
-        $claims->request($profile, $data['application_code'], $data['email']);
-        return redirect()->route('applicant.dashboard')
-            ->with('status', 'Claim request received. HR will review it in RMS.');
+        $claim = $claims->request($profile, $data['application_code'], $data['email']);
+        $message = 'Claim request received. HR will review it in RMS.';
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => $message,
+                'application_code' => $claim->claimed_application_code,
+                'status' => $claim->status,
+            ]);
+        }
+        return redirect()->route('applicant.dashboard')->with('status', $message);
     }
 }
