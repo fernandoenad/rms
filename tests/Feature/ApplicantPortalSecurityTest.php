@@ -41,7 +41,7 @@ class ApplicantPortalSecurityTest extends TestCase
     {
         $this->get(route('guest.vacancies.index'))
             ->assertOk()
-            ->assertDontSee('applicant-quick-nav-inner', false);
+            ->assertDontSee('aria-label="Applicant page navigation"', false);
 
         $user = User::factory()->create();
         $this->actingAs($user)->get(route('guest.vacancies.index'))
