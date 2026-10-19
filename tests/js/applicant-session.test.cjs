@@ -69,3 +69,72 @@ test('manual show reuses the same banner and never submits', () => {
     assert.equal(body.children.length, 1);
     assert.equal(window.location.href, '/assessments/attempts/100');
 });
+
+
+function functionSource(relativePath, start, end) {
+    const source = fs.readFileSync(relativePath, 'utf8');
+    const first = source.indexOf(start);
+    assert.notEqual(first, -1, 'Missing tested assessment function: ' + start);
+    const last = source.indexOf(end, first + start.length);
+    assert.notEqual(last, -1, 'Missing assessment function boundary: ' + end);
+    return source.slice(first, last);
+}
+
+test('written exam never schedules pending-answer retries after authentication expiry', () => {
+    const source = functionSource(
+        'resources/views/guest/assessments/take.blade.php',
+        '    function retryPendingAnswers() {',
+        '    function showItem(index) {'
+    );
+    let requested = false;
+    vm.runInNewContext(source + '\nretryPendingAnswers();', {
+        window: { RMSApplicantSession: { expired: true } },
+        finishing: false,
+        loadPendingAnswers() { requested = true; throw Error('Must not load or resend answers'); },
+        setTimeout() { throw Error('Must not schedule a retry'); }
+    });
+    assert.equal(requested, false);
+});
+
+test('written exam keeps an attempted answer locally but never sends it after expiry', () => {
+    const source = functionSource(
+        'resources/views/guest/assessments/take.blade.php',
+        '    function queueAnswerSave(radio) {',
+        '    async function processAnswerQueue(itemId) {'
+    );
+    const pending = [];
+    const statuses = [];
+    vm.runInNewContext(source + "\nqueueAnswerSave({dataset:{item:'11'},value:'22'});", {
+        window: { RMSApplicantSession: { expired: true } },
+        savePendingAnswer(item, value) { pending.push([item, value]); },
+        setSaveState(message) { statuses.push(message); },
+        saveQueues: new Map(),
+        items: [],
+        navButtons: [],
+        processAnswerQueue() { throw Error('Must not resubmit answer'); }
+    });
+    assert.deepEqual(pending, [['11', '22']]);
+    assert.match(statuses[0], /Session expired/);
+});
+
+test('skills exam keeps unsaved text locally but never submits it after expiry', async () => {
+    const source = functionSource(
+        'resources/views/guest/skills/take.blade.php',
+        '    async function persistInline(value){',
+        '    async function logEvent(type){'
+    );
+    const storage = [];
+    const messages = [];
+    const result = vm.runInNewContext(source + "\npersistInline('unsaved answer');", {
+        window: { RMSApplicantSession: { expired: true } },
+        pendingValue: null,
+        pendingKey: 'skills-pending',
+        saving: false,
+        storageSet(key, value) { storage.push([key, value]); },
+        state: { set textContent(message) { messages.push(message); }, className: '' },
+        fetch() { throw Error('Must not resend skills response'); }
+    });
+    await result;
+    assert.deepEqual(storage, [['skills-pending', 'unsaved answer']]);
+    assert.match(messages[0], /Session expired/);
+});
