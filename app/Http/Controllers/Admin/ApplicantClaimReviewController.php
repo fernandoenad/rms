@@ -12,7 +12,7 @@ class ApplicantClaimReviewController extends Controller
     {
         $status = $request->query('status', 'open');
         $status = in_array($status, ['open', 'approved', 'rejected', 'cancelled'], true) ? $status : 'open';
-        $query = ApplicationClaimRequest::with(['profile', 'ownershipLink']);
+        $query = ApplicationClaimRequest::with(['profile.user', 'application.vacancy', 'ownershipLink']);
         if ($status === 'open') {
             $query->whereIn('status', ['pending', 'clarification']);
         } else {
