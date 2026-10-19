@@ -82,6 +82,18 @@ From the **Applicant Dashboard**, confirm each outgoing screen provides a visibl
 - [ ] No redundant quick-navigation strip appears at desktop or mobile widths, for authenticated or public visitors.
 - [ ] Back links continue using named internal routes; no arbitrary return URL or HTTP Referer is trusted.
 
+### Vacancy discovery and detail-page acceptance
+
+The public Vacancies pages now match the dashboard design while retaining the existing recruitment routes and open-posting rules.
+
+- [ ] As a visitor, open **Vacancies**: see the gradient header, currently open opportunities, **View Details**, **Apply**, and **Applicant Sign In**, without private dashboard buttons.
+- [ ] As an authenticated applicant, verify **Back to Dashboard**, **My Applications**, and **My Profile** buttons on the listing; the details page should have **Back to Vacancies**, **Dashboard**, and **My Profile**.
+- [ ] Search by position title or recruitment cycle; nonmatching cards disappear, counts update, and clearing the search restores every open vacancy.
+- [ ] **View Details** displays the qualifications, salary grade, base pay, office level, and vacancy count. Confirm multiline requirements display safely without interpreting embedded HTML.
+- [ ] Clicking **Apply** preserves the existing Google sign-in/verified-applicant profile/review flow.
+- [ ] Closed, future, and draft recruitment postings stay hidden or inaccessible under existing vacancy rules.
+- [ ] Verify responsive card and action-button layout on narrow/mobile screens. The previously removed shared quick-navigation strip must remain absent.
+
 ## 4. Applicant application journey
 
 - From public Vacancies, choose an open synthetic vacancy, authenticate, and complete the master profile.
