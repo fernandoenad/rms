@@ -17,8 +17,8 @@
                 </div>
                 <div class="col-sm-6">
                     <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('guest.index')}}">Home</a></li>
-                        <li class="breadcrumb-item"><a href="{{route('guest.applications.my')}}">My Applications</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('applicant.dashboard') }}">Applicant Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('applicant.dashboard') }}">My Applications</a></li>
                         <li class="breadcrumb-item active">Details</li>
                     </ol>
                 </div>
