@@ -114,6 +114,28 @@ class ApplicantPortalSecurityTest extends TestCase
         $this->get('/applicant/dashboard')->assertRedirect(route('applicant.login'));
     }
 
+    public function test_applicant_pages_load_session_recovery_and_never_show_staff_login_on_expiry(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->get(route('applicant.profile.edit'))
+            ->assertOk()
+            ->assertSee('js/applicant-session.js')
+            ->assertSee('data-sign-in-url="'.route('applicant.login').'"', false)
+            ->assertSee('window.RMSApplicantSession.check(response)', false);
+
+        $this->actingAs($user)->get(route('applicant.dashboard'))
+            ->assertOk()
+            ->assertSee('window.RMSApplicantSession.check(response)', false);
+
+        // Source checks protect against accidentally restoring automatic
+        // assessment retries on authentication failures in future UI edits.
+        foreach (['guest/assessments/take.blade.php', 'guest/skills/take.blade.php'] as $view) {
+            $source = file_get_contents(resource_path('views/'.$view));
+            $this->assertStringContainsString('window.RMSApplicantSession.check(response)', $source);
+            $this->assertStringContainsString('window.RMSApplicantSession.expired', $source);
+        }
+    }
+
     public function test_expired_applicant_routes_redirect_to_applicant_sign_in_not_staff_login(): void
     {
         $this->get(route('applicant.profile.edit'))->assertRedirect(route('applicant.login'));
