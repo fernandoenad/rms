@@ -17,7 +17,7 @@ class IsActive
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::user() &&  Auth::user()->role->status == 1) {
+        if (Auth::user() &&  Auth::user()->role?->status == 1) {
             return $next($request);
         }
         

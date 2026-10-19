@@ -1,0 +1,169 @@
+name: Applicant Portal Full Suite
+
+on:
+  pull_request:
+    paths:
+      - 'app/**'
+      - 'routes/**'
+      - 'database/**'
+      - 'resources/views/**'
+      - 'public/js/applicant-session.js'
+      - 'scripts/applicant_uat_gate.py'
+      - 'scripts/tests/**'
+      - 'docs/applicant-portal-uat-results.md'
+      - 'tests/**'
+      - '.github/workflows/applicant-portal-full-suite.yml'
+      - 'phpunit.xml'
+      - 'composer.json'
+      - 'composer.lock'
+  workflow_dispatch:
+
+jobs:
+  uat-gate-selftest:
+    name: Applicant UAT evidence gate checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate release gate parsing and fail-closed behavior
+        run: python3 -m unittest discover -s scripts/tests -p 'test_applicant_uat_gate.py' -v
+      - name: Verify incomplete manual UAT does not report release-ready
+        run: |
+          if python3 scripts/applicant_uat_gate.py --worksheet docs/applicant-portal-uat-results.md; then
+            echo "ERROR: The UAT template must not be accepted as release evidence."
+            exit 1
+          fi
+          echo "Expected: manual release acceptance is blocked pending signed staging evidence."
+
+  session-recovery-js:
+    name: Session recovery JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check session recovery script syntax
+        run: node --check public/js/applicant-session.js
+      - name: Test safe session recovery
+        run: node --test tests/js/applicant-session.test.cjs
+
+  laravel-suite:
+    name: Full PHPUnit (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, dom, fileinfo, pdo_sqlite, sqlite3
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Full PHPUnit suite
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          CACHE_DRIVER: array
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+          MAIL_MAILER: array
+          QUEUE_CONNECTION: sync
+          SESSION_DRIVER: array
+        run: php artisan test --testdox
+      - name: Legacy applications table migration contract
+        run: |
+          if grep -R -n -E "Schema::(table|drop|rename)\(['\"]applications['\"]" database/migrations/2026_10_18_*.php; then
+            echo "Applicant portal migrations must not modify legacy applications table."
+            exit 1
+          fi
+          echo "Applicant portal migrations do not alter applications."
+
+  auxiliary-mysql:
+    name: Legacy detail (secondary MySQL)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: testpassword
+          MYSQL_DATABASE: rms_test_aux
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ptestpassword"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, dom, fileinfo, pdo_sqlite, sqlite3, pdo_mysql
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Verify real secondary MySQL station lookup and legacy detail rendering
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          CACHE_DRIVER: array
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+          SECOND_DB_HOST: 127.0.0.1
+          SECOND_DB_PORT: 3306
+          SECOND_DB_DATABASE: rms_test_aux
+          SECOND_DB_USERNAME: root
+          SECOND_DB_PASSWORD: testpassword
+          MAIL_MAILER: array
+          QUEUE_CONNECTION: sync
+          SESSION_DRIVER: array
+        run: php artisan test --filter=ApplicantSecondaryDatabaseIntegrationTest --testdox
+
+  legacy-primary-mysql:
+    name: Legacy application contract (primary MySQL)
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: testpassword
+          MYSQL_DATABASE: rms_test_primary
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ptestpassword"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, dom, fileinfo, pdo_mysql
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Create empty CI environment file for Laravel migration bootstrap
+        run: touch .env
+      - name: Verify legacy applications schema and third-party SQL read contract
+        env:
+          RMS_DISPOSABLE_MYSQL_CI: '1'
+          APP_ENV: testing
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          CACHE_DRIVER: array
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: rms_test_primary
+          DB_USERNAME: root
+          DB_PASSWORD: testpassword
+          MAIL_MAILER: array
+          QUEUE_CONNECTION: sync
+          SESSION_DRIVER: array
+        run: php artisan test --filter=test_legacy_application_reader_contract_with_disposable_primary_mysql --testdox --display-warnings

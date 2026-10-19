@@ -266,7 +266,7 @@
     }
 
     function retryPendingAnswers() {
-        if (finishing) return;
+        if (finishing || window.RMSApplicantSession.expired) return;
 
         const pending = loadPendingAnswers();
         let delay = 0;
@@ -293,7 +293,7 @@
             // Stagger retries slightly so a reconnect with many unsaved answers
             // does not create a sudden request burst.
             setTimeout(() => {
-                if (!finishing) {
+                if (!finishing && !window.RMSApplicantSession.expired) {
                     queueAnswerSave(radio);
                 }
             }, delay);
@@ -316,12 +316,14 @@
     }
 
     async function logEvent(eventType) {
+        if (window.RMSApplicantSession.expired) return;
         try {
-            await fetch(eventUrl, {
+            const response = await fetch(eventUrl, {
                 method:'POST',
                 headers:{'Content-Type':'application/json','X-CSRF-TOKEN':csrf,'Accept':'application/json'},
                 body:JSON.stringify({event_type:eventType})
             });
+            window.RMSApplicantSession.check(response);
         } catch (_) {}
     }
 
@@ -331,7 +333,7 @@
     }
 
     async function syncAuthoritativeTime(options={}) {
-        if (timeSyncInFlight) return null;
+        if (window.RMSApplicantSession.expired || timeSyncInFlight) return null;
         timeSyncInFlight = true;
 
         try {
@@ -340,6 +342,10 @@
                 cache:'no-store'
             });
 
+            if (window.RMSApplicantSession.check(response)) {
+                setSaveState('Session expired. Sign in again; answers may be unsaved.', 'text-danger font-weight-bold');
+                return null;
+            }
             const data = await response.json().catch(() => ({}));
 
             if (response.status === 409 || data.expired || data.submitted) {
@@ -391,7 +397,7 @@
 
         if (!status) {
             finishing = false;
-            setTimeout(finalizeAtTimeout, 2500);
+            if (!window.RMSApplicantSession.expired) setTimeout(finalizeAtTimeout, 2500);
         }
     }
 
@@ -415,6 +421,11 @@
     function queueAnswerSave(radio) {
         const itemId = String(radio.dataset.item);
         const optionId = String(radio.value);
+        if (window.RMSApplicantSession.expired) {
+            savePendingAnswer(itemId, optionId);
+            setSaveState('Session expired. Sign in again; this answer was not saved.', 'text-danger font-weight-bold');
+            return;
+        }
         const itemIndex = items.findIndex(function (item) {
             const input = item.querySelector('.answer-radio');
             return input && input.dataset.item === itemId;
@@ -457,7 +468,7 @@
         updateSubmitAvailability();
 
         try {
-            while (state.pending && !finishing) {
+            while (state.pending && !finishing && !window.RMSApplicantSession.expired) {
                 const current = state.pending;
                 state.pending = null;
 
@@ -475,6 +486,11 @@
                         })
                     });
 
+                    if (window.RMSApplicantSession.check(response)) {
+                        state.pending = null; // Keep existing local pending-answer storage; never retry after expiry.
+                        setSaveState('Session expired. Sign in again; this answer was not confirmed.', 'text-danger font-weight-bold');
+                        return;
+                    }
                     if (response.status === 409) {
                         state.pending = null;
                         await finalizeAtTimeout();
@@ -516,7 +532,7 @@
 
             // A selection may have arrived between the final loop check and
             // clearing the running flag.
-            if (state.pending && !finishing) {
+            if (state.pending && !finishing && !window.RMSApplicantSession.expired) {
                 processAnswerQueue(itemId);
             }
         }
@@ -532,6 +548,10 @@
                 headers:{'Accept':'application/json'}
             });
 
+            if (window.RMSApplicantSession.check(response)) {
+                continueFinalConfirmBtn.disabled = true;
+                return;
+            }
             if (response.status === 409) {
                 await finalizeAtTimeout();
                 return;
@@ -571,6 +591,10 @@
 
     async function submitManually() {
         if (finishing) return;
+        if (window.RMSApplicantSession.expired) {
+            window.RMSApplicantSession.show();
+            return;
+        }
         finishing = true;
         finalSubmitBtn.disabled = true;
         finalSubmitBtn.textContent = 'Submitting…';
@@ -586,6 +610,9 @@
                 body:JSON.stringify({confirmed:true})
             });
 
+            if (window.RMSApplicantSession.check(response)) {
+                throw new Error('Session expired. Sign in again; the assessment was not submitted.');
+            }
             if (!response.ok && !response.redirected) {
                 const data = await response.json().catch(() => ({}));
                 throw new Error(data.message || 'Unable to submit assessment.');
@@ -599,8 +626,8 @@
             window.location.reload();
         } catch (error) {
             finishing = false;
-            finalSubmitBtn.disabled = false;
-            finalSubmitBtn.textContent = 'Yes, Submit Now';
+            finalSubmitBtn.disabled = window.RMSApplicantSession.expired;
+            finalSubmitBtn.textContent = window.RMSApplicantSession.expired ? 'Sign in again to continue' : 'Yes, Submit Now';
             setSaveState(error.message || 'Submission failed. Please try again.', 'text-danger font-weight-bold');
             $('#finalConfirmModal').modal('hide');
         }
@@ -670,11 +697,13 @@
         });
 
         window.addEventListener('offline', () => {
+            if (window.RMSApplicantSession.expired) return;
             setSaveState('Offline. Previously confirmed answers remain safe.', 'text-warning font-weight-bold');
             logEvent('connection_lost');
         });
 
         window.addEventListener('online', () => {
+            if (window.RMSApplicantSession.expired) return;
             setSaveState('Connection restored. Retrying unsaved answers…', 'text-success');
             logEvent('connection_restored');
             syncAuthoritativeTime({reloadOnExpired:true});

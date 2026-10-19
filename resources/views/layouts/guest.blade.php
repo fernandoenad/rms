@@ -26,6 +26,29 @@
         img, video, canvas { max-width: 100%; height: auto; }
         .table-responsive { -webkit-overflow-scrolling: touch; }
         input, select, textarea, button { max-width: 100%; }
+        /* Single, context-aware public navigation; no separate action strip. */
+        .rms-main-nav { border-bottom: 1px solid #e4ebf2; background: #fff; box-shadow: 0 2px 12px rgba(35,66,99,.035); }
+        .rms-main-nav .navbar-brand { display:flex;align-items:center;gap:8px;max-width:calc(100% - 64px); }
+        .rms-main-nav .brand-text { font-size: 1.06rem;font-weight:700!important;color:#284967;white-space:nowrap; }
+        .rms-main-nav .nav-link { border-radius:7px;color:#465d71!important;font-weight:600;font-size:.93rem;padding:10px 13px!important; }
+        .rms-main-nav .nav-link:hover,.rms-main-nav .nav-link:focus { color:#18578a!important;background:#eef5fb; }
+        .rms-main-nav .nav-link.active { color:#175c94!important;background:#eaf3fa;font-weight:700; }
+        .rms-main-nav .rms-nav-sign-in { display:inline-flex;align-items:center;justify-content:center;border-radius:8px;padding:9px 17px;min-height:42px;font-weight:700;white-space:nowrap; }
+        .rms-main-nav .rms-user-trigger { border:1px solid #cddfea;background:#f5f9fc;color:#285477!important;display:flex;align-items:center;gap:9px;padding:8px 12px!important;max-width:250px;min-height:43px; }
+        .rms-main-nav .rms-user-name { overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px; }
+        .rms-main-nav .rms-user-dropdown { min-width:225px;padding:8px;border:1px solid #e0e9f1;border-radius:11px;box-shadow:0 12px 29px rgba(22,56,83,.14); }
+        .rms-main-nav .rms-user-dropdown .dropdown-item { border-radius:7px;padding:10px 11px;color:#2f4c65;font-size:.9rem; }
+        .rms-main-nav .rms-user-dropdown .dropdown-item:hover,.rms-main-nav .rms-user-dropdown .dropdown-item:focus { background:#edf5fb; }
+        .rms-main-nav .rms-menu-email { padding:7px 11px;color:#718292;font-size:.76rem;overflow-wrap:anywhere; }
+        .rms-main-nav .rms-logout-form { margin:0; }
+        .rms-main-nav .rms-logout-form button { border:0;background:transparent;width:100%;text-align:left;cursor:pointer; }
+        @media (max-width:767px) {
+            .rms-main-nav .navbar-collapse { padding:10px 0; }
+            .rms-main-nav .navbar-nav { gap:5px;align-items:stretch; }
+            .rms-main-nav .rms-nav-sign-in,.rms-main-nav .rms-user-trigger { width:100%;justify-content:flex-start;max-width:none; }
+            .rms-main-nav .rms-user-dropdown { box-shadow:none;width:100%;max-width:none;position:static; }
+            .rms-main-nav .rms-user-name { max-width:none; }
+        }
         @media (max-width: 576px) {
             body { font-size: 16px; }
             .content-wrapper { padding-top: .25rem; }
@@ -49,31 +72,74 @@
 
 <body class="hold-transition layout-top-nav layout-footer-fixed layout-navbar-fixed">
     <div class="wrapper">
-        <nav class="main-header navbar navbar-expand-md navbar-light navbar-white">
+        <nav class="main-header navbar navbar-expand-md navbar-light navbar-white rms-main-nav" aria-label="Main navigation">
             <div class="container">
-                <a href="/" class="navbar-brand">
-                    <img src="{{url('/')}}/images/bohol.png" alt="DepEd Bohol" class="brand-image img-circle elevation-3" style="opacity: .8">
-                    <span class="brand-text font-weight-light">@yield('navTitle')</span>
+                <a href="{{ route('guest.index') }}" class="navbar-brand">
+                    <img src="{{ url('/') }}/images/bohol.png" alt="DepEd Bohol" class="brand-image img-circle elevation-3" style="opacity:.8">
+                    <span class="brand-text">DepEd Bohol RMS</span>
                 </a>
                 <button class="navbar-toggler order-1" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse order-3" id="navbarCollapse">
-                    <ul class="navbar-nav ml-auto">
+                    <ul class="navbar-nav ml-auto align-items-md-center">
                         <li class="nav-item">
-                            <a class="nav-link {{ Route::currentRouteName() == 'guest.applications.index' ? 'active' : ''}}" href="{{ route('guest.index') }}">Home</a>
-                        </li> 
+                            <a class="nav-link {{ request()->routeIs('guest.index') ? 'active' : '' }}"
+                               href="{{ route('guest.index') }}" @if(request()->routeIs('guest.index')) aria-current="page" @endif>Home</a>
+                        </li>
                         <li class="nav-item">
-                            <a class="nav-link {{ Route::currentRouteName() == 'guest.vacancies.index' || Route::currentRouteName() == 'guest.vacancies.apply'  ? 'active' : ''}}" href="{{ route('guest.vacancies.index') }}">Vacancies</a>
-                        </li> 
-                        <!--
-                        <li class="nav-item">
-                            <a class="nav-link {{ Route::currentRouteName() == 'guest.reports.index' ? 'active' : ''}}" href="{{ route('guest.reports.index') }}">Reports</a>
-                        </li> 
-                        -->
-                        <li class="nav-item">
-                            <a class="nav-link {{ Route::currentRouteName() == 'guest.rqas.index' ? 'active' : ''}}" href="{{ route('guest.rqas.index') }}">CAR-RQAs</a>
-                        </li> 
+                            <a class="nav-link {{ request()->routeIs('guest.vacancies.*', 'applicant.apply.*') ? 'active' : '' }}"
+                               href="{{ route('guest.vacancies.index') }}">Vacancies</a>
+                        </li>
+                        @guest
+                            <li class="nav-item ml-md-2">
+                                <a class="btn btn-primary rms-nav-sign-in" href="{{ route('applicant.login') }}">
+                                    <i class="fas fa-sign-in-alt mr-2" aria-hidden="true"></i>Sign In
+                                </a>
+                            </li>
+                        @else
+                            @php
+                                $rmsNavUser = auth()->user();
+                                $rmsNavName = trim((string) $rmsNavUser->name);
+                                if ($rmsNavName === '') {
+                                    $rmsNavName = \Illuminate\Support\Str::before((string) $rmsNavUser->email, '@');
+                                }
+                            @endphp
+                            <li class="nav-item dropdown ml-md-2">
+                                <a id="rmsUserMenu" class="nav-link dropdown-toggle rms-user-trigger"
+                                   href="#" role="button" data-toggle="dropdown" aria-haspopup="true"
+                                   aria-expanded="false" aria-label="Account menu for {{ $rmsNavName }}">
+                                    <i class="fas fa-user-circle" aria-hidden="true"></i>
+                                    <span class="rms-user-name">{{ $rmsNavName }}</span>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-right rms-user-dropdown" aria-labelledby="rmsUserMenu">
+                                    <div class="rms-menu-email">{{ $rmsNavUser->email }}</div>
+                                    <div class="dropdown-divider"></div>
+                                    <a class="dropdown-item" href="{{ route('applicant.dashboard') }}">
+                                        <i class="fas fa-tachometer-alt mr-2" aria-hidden="true"></i>Dashboard
+                                    </a>
+                                    <a class="dropdown-item" href="{{ route('applicant.profile.edit') }}">
+                                        <i class="fas fa-user-edit mr-2" aria-hidden="true"></i>My Profile
+                                    </a>
+                                    <a class="dropdown-item" href="{{ route('applicant.dashboard') }}#applicationsTitle">
+                                        <i class="fas fa-clipboard-list mr-2" aria-hidden="true"></i>My Applications
+                                    </a>
+                                    @if($rmsNavUser->role?->status == 1)
+                                        <div class="dropdown-divider"></div>
+                                        <a class="dropdown-item" href="{{ route('admin.index') }}">
+                                            <i class="fas fa-user-shield mr-2" aria-hidden="true"></i>Staff Portal
+                                        </a>
+                                    @endif
+                                    <div class="dropdown-divider"></div>
+                                    <form class="rms-logout-form" method="POST" action="{{ route('logout') }}">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-sign-out-alt mr-2" aria-hidden="true"></i>Sign Out
+                                        </button>
+                                    </form>
+                                </div>
+                            </li>
+                        @endguest
                     </ul>
                 </div>
             </div>
@@ -88,7 +154,10 @@
 
         <footer class="main-footer">
             <div class="float-right d-none d-sm-inline">
-                <a href="{{route('admin.index')}}">Administration</a> | 
+                @if(auth()->check() && auth()->user()->role?->status == 1)
+                    <a href="{{ route('admin.index') }}">Administration</a> |
+                @endif
+                
                 Developed by Dr. Fernando B. Enad
             </div>
             Copyright &copy; 2023. <strong><a href="/">DepEd Bohol {{ config('app.name', '') }} v1.0</a>.</strong> All rights reserved.
@@ -102,6 +171,9 @@
     <script src="//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js" ></script>
     <script src="//cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js" ></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js" ></script>
+    {{-- Loaded before page scripts, so AJAX handlers can use one consistent
+         401/419 recovery action without leaving their page automatically. --}}
+    <script src="{{ asset('js/applicant-session.js') }}" data-sign-in-url="{{ route('applicant.login') }}"></script>
     @yield('js')
 </body>
 </html>

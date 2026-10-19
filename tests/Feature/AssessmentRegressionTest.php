@@ -278,6 +278,14 @@ class AssessmentRegressionTest extends TestCase
 
         [$vacancy, $application, $assessment] = $this->makeTakenInApplication();
         $assessment->delete();
+        $user = \App\Models\User::factory()->create();
+        $profile = \App\Models\ApplicantProfile::create(['user_id' => $user->id]);
+        \App\Models\ApplicantApplicationLink::create([
+            'applicant_profile_id' => $profile->id,
+            'application_id' => $application->id,
+            'link_method' => 'new_submission',
+            'verified_at' => now(),
+        ]);
 
         $exam = Exam::create([
             'vacancy_id' => $vacancy->id,
@@ -295,7 +303,7 @@ class AssessmentRegressionTest extends TestCase
         ]);
 
         $response = $this
-            ->withSession(['guest_email' => $application->email])
+            ->actingAs($user)
             ->post(route('guest.assessments.attempts.start', [$application, $exam]));
 
         $response->assertForbidden();
@@ -311,6 +319,14 @@ class AssessmentRegressionTest extends TestCase
 
         [$vacancy, $application, $assessment] = $this->makeTakenInApplication();
         $assessment->delete();
+        $user = \App\Models\User::factory()->create();
+        $profile = \App\Models\ApplicantProfile::create(['user_id' => $user->id]);
+        \App\Models\ApplicantApplicationLink::create([
+            'applicant_profile_id' => $profile->id,
+            'application_id' => $application->id,
+            'link_method' => 'new_submission',
+            'verified_at' => now(),
+        ]);
 
         $test = SkillTest::create([
             'vacancy_id' => $vacancy->id,
@@ -332,7 +348,7 @@ class AssessmentRegressionTest extends TestCase
         ]);
 
         $response = $this
-            ->withSession(['guest_email' => $application->email])
+            ->actingAs($user)
             ->post(route('guest.skills.start', [$application, $test]));
 
         $response->assertForbidden();
@@ -542,6 +558,102 @@ class AssessmentRegressionTest extends TestCase
         $scores = json_decode((string) $assessment->fresh()->assessment, true);
         $this->assertSame(10.0, (float) $scores['Written_Examination']);
         $this->assertCount(0, $integrity->anomalies('written'));
+    }
+
+    public function test_another_applicant_cannot_read_written_attempt_time_status(): void
+    {
+        [$vacancy, $application] = $this->makeTakenInApplication();
+        $exam = Exam::create([
+            'vacancy_id' => $vacancy->id,
+            'title' => 'Security Written', 'code' => 'SEC-W-'.uniqid(),
+            'enrollment_key' => 'SEC-W-KEY', 'start_date' => now()->subHour(),
+            'end_date' => now()->addHour(), 'duration' => 30,
+            'access_mode' => 'all_taken_in', 'shuffle_items' => false,
+            'shuffle_options' => false, 'status' => 1, 'approval_status' => 'approved',
+        ]);
+        $attempt = ExamAttempt::create([
+            'exam_id' => $exam->id, 'application_id' => $application->id,
+            'status' => 1, 'started_at' => now(), 'expires_at' => now()->addMinutes(30),
+        ]);
+        $intruder = \App\Models\User::factory()->create();
+        $this->actingAs($intruder)
+            ->get(route('guest.assessments.attempts.time_status', $attempt))
+            ->assertForbidden();
+    }
+
+    public function test_another_applicant_cannot_read_skills_attempt_time_status(): void
+    {
+        [$vacancy, $application] = $this->makeTakenInApplication();
+        $skillTest = SkillTest::create([
+            'vacancy_id' => $vacancy->id, 'title' => 'Security Skills',
+            'code' => 'SEC-S-'.uniqid(), 'instructions' => 'Test', 'expected_output' => 'Answer',
+            'start_date' => now()->subHour(), 'end_date' => now()->addHour(),
+            'duration' => 30, 'access_mode' => 'all_taken_in',
+            'submission_modes' => ['inline'], 'allowed_extensions' => ['docx'],
+            'max_file_size_kb' => 10240, 'ai_scoring' => false,
+            'score_release_policy' => 'manual', 'status' => 1, 'approval_status' => 'approved',
+        ]);
+        $attempt = SkillTestAttempt::create([
+            'skill_test_id' => $skillTest->id, 'application_id' => $application->id,
+            'status' => 1, 'started_at' => now(), 'expires_at' => now()->addMinutes(30),
+        ]);
+        $intruder = \App\Models\User::factory()->create();
+        $this->actingAs($intruder)
+            ->get(route('guest.skills.attempts.time_status', $attempt))
+            ->assertForbidden();
+    }
+
+    public function test_foreign_applicant_cannot_save_written_answer_or_modify_attempt(): void
+    {
+        [$vacancy, $application] = $this->makeTakenInApplication();
+        $exam = Exam::create([
+            'vacancy_id' => $vacancy->id, 'title' => 'Written Isolation',
+            'code' => 'W-ISOLATION-'.uniqid(), 'enrollment_key' => 'KEY-ISOLATION',
+            'start_date' => now()->subHour(), 'end_date' => now()->addHour(),
+            'duration' => 30, 'access_mode' => 'all_taken_in',
+            'shuffle_items' => false, 'shuffle_options' => false,
+            'status' => 1, 'approval_status' => 'approved',
+        ]);
+        $attempt = ExamAttempt::create([
+            'exam_id' => $exam->id, 'application_id' => $application->id,
+            'started_at' => now(), 'expires_at' => now()->addMinutes(30), 'status' => 1,
+        ]);
+        $intruder = \App\Models\User::factory()->create();
+        $this->actingAs($intruder)->post(
+            route('guest.assessments.attempts.answer', $attempt),
+            ['written_exam_id' => 100001, 'selected_option_id' => 100002]
+        )->assertForbidden();
+        $this->assertDatabaseMissing('exam_attempt_answers', ['exam_attempt_id' => $attempt->id]);
+        $this->assertSame(1, (int) $attempt->fresh()->status);
+    }
+
+    public function test_foreign_applicant_cannot_submit_skills_attempt_or_save_response(): void
+    {
+        [$vacancy, $application] = $this->makeTakenInApplication();
+        $test = SkillTest::create([
+            'vacancy_id' => $vacancy->id, 'title' => 'Skills Isolation',
+            'code' => 'S-ISOLATION-'.uniqid(), 'instructions' => 'Task',
+            'expected_output' => 'Response', 'start_date' => now()->subHour(),
+            'end_date' => now()->addHour(), 'duration' => 30,
+            'access_mode' => 'all_taken_in', 'submission_modes' => ['inline'],
+            'allowed_extensions' => ['docx'], 'max_file_size_kb' => 10240,
+            'ai_scoring' => false, 'score_release_policy' => 'manual',
+            'status' => 1, 'approval_status' => 'approved',
+        ]);
+        $attempt = SkillTestAttempt::create([
+            'skill_test_id' => $test->id, 'application_id' => $application->id,
+            'started_at' => now(), 'expires_at' => now()->addMinutes(30), 'status' => 1,
+        ]);
+        $intruder = \App\Models\User::factory()->create();
+        $this->actingAs($intruder)->post(
+            route('guest.skills.attempts.inline', $attempt),
+            ['inline_response' => 'Malicious replacement']
+        )->assertForbidden();
+        $this->actingAs($intruder)->post(
+            route('guest.skills.attempts.submit', $attempt)
+        )->assertForbidden();
+        $this->assertDatabaseMissing('skill_test_submissions', ['skill_test_attempt_id' => $attempt->id]);
+        $this->assertSame(1, (int) $attempt->fresh()->status);
     }
 
     protected function makeTakenInApplication(array $criteria = ['Written_Examination' => 20, 'Skills_Test' => 20, 'Interview' => 60]): array

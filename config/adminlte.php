@@ -299,6 +299,12 @@ return [
             'active'       => ['/admin', '/admin/change_password']
         ],
         [
+            'text' => 'Switch to Applicant Portal',
+            'url' => 'applicant/dashboard',
+            'topnav_user' => true,
+            'icon' => 'fas fa-fw fa-exchange-alt',
+        ],
+        [
             'text'  => 'Change Password',
             'route' => 'admin.change_password',
             'topnav_user' => true,
@@ -408,6 +414,13 @@ return [
             'url'  => 'admin/applications',
             'icon' => 'fas fa-fw fa-folder',
             'active' => ['admin/applications', 'admin/applications/create', 'regex:@^admin/applications/\d+/edit_scores+$@', 'regex:@^admin/applications/[0-9]+$@', 'regex:@^admin/applications/\d+/delete+$@', 'regex:@^admin/applications/\d+/edit+$@', 'regex:@^admin/applications/\d+/show+$@', 'regex:@^admin/applications/\d+/show/tagged+$@']
+        ],
+        [
+            'text' => 'Historical Claims',
+            'can'  => 'review-applicant-claims',
+            'url'  => 'admin/applicant-claims',
+            'icon' => 'fas fa-fw fa-user-check',
+            'active' => ['admin/applicant-claims', 'admin/applicant-claims/*'],
         ],
         [
             'text' => 'Inquiries',

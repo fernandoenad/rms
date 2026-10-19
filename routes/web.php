@@ -48,35 +48,67 @@ use App\Providers\RouteServiceProvider;
 */
 
 Route::get('/auth/google', function () {
-    return Socialite::driver('google')->redirect();
+    return Socialite::driver('google')->redirectUrl(url('/auth/google/callback'))->redirect();
 });
 
-Route::get('/auth/google/callback', function () {
-    $googleUser = Socialite::driver('google')->stateless()->user();
+Route::get('/auth/google/callback', function (\Illuminate\Http\Request $request) {
+    $googleUser = Socialite::driver('google')->redirectUrl(url('/auth/google/callback'))->user();
+    $subject = (string) $googleUser->getId();
+    $email = mb_strtolower(trim((string) $googleUser->getEmail()));
+    $verified = filter_var(data_get($googleUser->user, 'email_verified', data_get($googleUser->user, 'verified_email', false)), FILTER_VALIDATE_BOOLEAN);
 
-    if (!str_ends_with($googleUser->getEmail(), '@deped.gov.ph')) {
-        return redirect('/login')->with('not_deped','Only DepEd emails are allowed.');
+    if (!$subject || !$verified || !filter_var($email, FILTER_VALIDATE_EMAIL)
+        || !str_ends_with($email, '@deped.gov.ph')) {
+        return redirect('/login')->with('not_deped', 'A verified DepEd Google email is required.');
     }
 
-    // Check if user already exists
-    $user = User::where('email', $googleUser->getEmail())->first();
-
-    if (!$user) {
-        return redirect('/login')->with('not_reg', 'DepEd email is not registered.');
+    // Staff access is granted only to a pre-authorized active RMS staff user.
+    $user = User::whereRaw('LOWER(email) = ?', [$email])->first();
+    if (!$user || $user->role?->status != 1) {
+        return redirect('/login')->with('not_reg', 'This Google account is not authorized for RMS staff access.');
     }
+
+    $identity = \App\Models\OAuthIdentity::where('provider', 'google')
+        ->where('provider_subject', $subject)->first();
+    if ($identity && (int) $identity->user_id !== (int) $user->id) {
+        abort(403, 'This Google identity is linked to another account.');
+    }
+    if (\App\Models\OAuthIdentity::where('provider', 'google')
+        ->where('user_id', $user->id)->where('provider_subject', '!=', $subject)->exists()) {
+        abort(403, 'A different Google identity is already linked to this staff account.');
+    }
+
+    // Existing staff OAuth login remains independent of applicant onboarding.
+    // Bind the verified Google subject so subsequent applicant login uses the same user.
+    \Illuminate\Support\Facades\DB::transaction(function () use ($user, $email, $subject) {
+        \App\Models\OAuthIdentity::firstOrCreate(
+            ['provider' => 'google', 'provider_subject' => $subject],
+            ['user_id' => $user->id, 'provider_email' => $email, 'email_verified' => true]
+        );
+    });
 
     Auth::login($user);
+    $request->session()->regenerate();
 
     return redirect(session('url.intended', RouteServiceProvider::HOME));
 });
 
 // root route
-Route::redirect('/', '/applications')->name('guest.index');
+Route::get('/', [GuestHome::class, 'index'])->name('guest.index');
 
 // not yet applied
 Route::get('/vacancies', [GuestVacancy::class, 'index'])->name('guest.vacancies.index');
 Route::get('/vacancies/{vacancy}', [GuestVacancy::class, 'show'])->name('guest.vacancies.show');
-Route::get('/vacancies/{vacancy}/apply', [GuestVacancy::class, 'apply'])->name('guest.vacancies.apply');
+Route::get('/vacancies/{vacancy}/apply', function (\Illuminate\Http\Request $request, \App\Models\Vacancy $vacancy) {
+    if ($request->user()) {
+        return redirect()->route('applicant.apply.review', $vacancy);
+    }
+    abort_unless($vacancy->isOpenForApplications(), 404);
+    // Guest selection is only a navigation hint, never proof of ownership.
+    $request->session()->put('applicant_guest_vacancy_id', $vacancy->id);
+    $request->session()->put('applicant_guest_vacancy_started_at', now()->timestamp);
+    return redirect()->route('applicant.login');
+})->name('guest.vacancies.apply');
 
 Route::get('/applications', [GuestApplication::class, 'index'])->name('guest.applications.index');
 
@@ -86,6 +118,8 @@ Route::get('/reports/{office}', [GuestApplicationReport::class, 'show'])->name('
 Route::get('/rqas', [GuestRQA::class, 'index'])->name('guest.rqas.index');
 Route::get('/rqas/{vacancy}', [GuestRQA::class, 'show'])->name('guest.rqas.show');
 
+// Applicant-specific access requires an authenticated account.
+Route::middleware('auth')->group(function () {
 // already applied
 Route::post('/applications/{vacancy}/apply', [GuestApplication::class, 'store'])->name('guest.applications.store');
 
@@ -123,6 +157,8 @@ Route::post('/skills/attempts/{attempt}/event', [GuestSkillTestAttempt::class, '
 Route::post('/skills/attempts/{attempt}/submit', [GuestSkillTestAttempt::class, 'submit'])
     ->middleware('throttle:skill-submit')->name('guest.skills.attempts.submit');
 
+
+});
 
 // auth routes
 Auth::routes(['register' => false]);
@@ -367,4 +403,43 @@ Route::group(['middleware' => ['admin']], function () {
     Route::get('/admin/discrepancies/{assessment}', [AdminDiscrepancy::class, 'modify'])->name('admin.discrepancies.modify');
     Route::put('/admin/discrepancies/{assessment}', [AdminDiscrepancy::class, 'update'])->name('admin.discrepancies.update');
 
+});
+
+
+/*
+|--------------------------------------------------------------------------
+| Applicant portal (separate from the existing staff Google callback)
+|--------------------------------------------------------------------------
+*/
+Route::get('/applicant/login', [\App\Http\Controllers\Applicant\PortalController::class, 'login'])
+    ->name('applicant.login');
+Route::get('/auth/applicant/google', [\App\Http\Controllers\Applicant\GoogleAuthController::class, 'redirect'])
+    ->name('applicant.google');
+Route::get('/auth/applicant/google/callback', [\App\Http\Controllers\Applicant\GoogleAuthController::class, 'callback'])
+    ->name('applicant.google.callback');
+
+Route::middleware(['auth', 'active'])->group(function () {
+    Route::get('/auth/staff/link-google', [\App\Http\Controllers\Applicant\GoogleAuthController::class, 'linkStaff'])
+        ->name('applicant.staff.google.link');
+    Route::get('/auth/staff/link-google/callback', [\App\Http\Controllers\Applicant\GoogleAuthController::class, 'completeStaffLink'])
+        ->name('applicant.staff.google.callback');
+});
+
+Route::middleware('auth')->prefix('applicant')->name('applicant.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\Applicant\PortalController::class, 'dashboard'])->name('dashboard');
+    Route::get('/profile', [\App\Http\Controllers\Applicant\PortalController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile/options', [\App\Http\Controllers\Applicant\PortalController::class, 'options'])->middleware('throttle:30,1')->name('profile.options');
+    Route::put('/profile', [\App\Http\Controllers\Applicant\PortalController::class, 'update'])->name('profile.update');
+    Route::get('/vacancies/{vacancy}/apply', [\App\Http\Controllers\Applicant\SubmissionController::class, 'review'])->name('apply.review');
+    Route::post('/vacancies/{vacancy}/apply', [\App\Http\Controllers\Applicant\SubmissionController::class, 'store'])->name('apply.store');
+    Route::post('/claims', [\App\Http\Controllers\Applicant\PortalController::class, 'claim'])
+        ->middleware('throttle:5,1')->name('claims.store');
+});
+
+Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/applicant-claims', [\App\Http\Controllers\Admin\ApplicantClaimReviewController::class, 'index'])->name('applicant_claims.index');
+    Route::post('/applicant-claims/{claim}/clarification', [\App\Http\Controllers\Admin\ApplicantClaimReviewController::class, 'clarification'])->name('applicant_claims.clarification');
+    Route::post('/applicant-claims/{claim}/approve', [\App\Http\Controllers\Admin\ApplicantClaimReviewController::class, 'approve'])->name('applicant_claims.approve');
+    Route::post('/applicant-claims/{claim}/reject', [\App\Http\Controllers\Admin\ApplicantClaimReviewController::class, 'reject'])->name('applicant_claims.reject');
+    Route::post('/applicant-claims/{claim}/cancel-approval', [\App\Http\Controllers\Admin\ApplicantClaimReviewController::class, 'cancelApproval'])->name('applicant_claims.cancel_approval');
 });

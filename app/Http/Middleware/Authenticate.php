@@ -12,6 +12,29 @@ class Authenticate extends Middleware
      */
     protected function redirectTo(Request $request): ?string
     {
-        return $request->expectsJson() ? null : route('login');
+        if ($request->expectsJson()) {
+            // AJAX requests must receive 401 JSON, never staff-login HTML.
+            return null;
+        }
+
+        // Staff identity linking requires a staff session. If it expires,
+        // return to the staff sign-in, not applicant onboarding.
+        if ($request->routeIs('applicant.staff.google.*')) {
+            return route('login');
+        }
+
+        // The shared legacy auth guard also protects applicant application
+        // detail and assessment routes. Distinguish them by trusted route
+        // names, not URL referers, supplied query parameters or session state.
+        if ($request->routeIs(
+            'applicant.*',
+            'guest.applications.*',
+            'guest.assessments.*',
+            'guest.skills.*'
+        )) {
+            return route('applicant.login');
+        }
+
+        return route('login');
     }
 }

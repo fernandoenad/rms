@@ -35,7 +35,7 @@ class SkillTestAttemptController extends Controller
 
     protected function authorizeAccess(Request $request, Application $application, SkillTest $test): void
     {
-        if ($request->session()->get('guest_email') !== $application->email) abort(401);
+        app(\App\Services\Applicant\ApplicationOwnershipService::class)->authorize($request, $application);
         if ($application->assessment === null) abort(403, 'Only taken-in applicants may take assessments.');
         if ((int)$test->vacancy_id !== (int)$application->vacancy_id || (int)$test->status !== 1) abort(403);
 
@@ -170,8 +170,10 @@ class SkillTestAttemptController extends Controller
 
     protected function ownedAttempt(Request $request, SkillTestAttempt $attempt): SkillTestAttempt
     {
-        $attempt->load('application','skillTest.rubricCriteria','submissions');
-        $this->authorizeAccess($request,$attempt->application,$attempt->skillTest);
+        // Authorize ownership and assessment eligibility before loading responses or rubrics.
+        $attempt->load('application', 'skillTest');
+        $this->authorizeAccess($request, $attempt->application, $attempt->skillTest);
+        $attempt->load('skillTest.rubricCriteria', 'submissions');
         return $attempt;
     }
 

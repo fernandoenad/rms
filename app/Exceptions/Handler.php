@@ -30,6 +30,13 @@ class Handler extends ExceptionHandler
 
     function render($request, Throwable $exception)
     {
+        // Preserve Laravel's JSON error contract for fetch/AJAX requests.
+        // Legacy HTML error templates would otherwise be returned for
+        // abort(401), breaking client-side session-expiry recovery.
+        if ($request->expectsJson()) {
+            return parent::render($request, $exception);
+        }
+
         if ($this->isHttpException($exception)) {
             if ($exception->getStatusCode() == 401) {
                 return response()->view('errors.401', [], 401);

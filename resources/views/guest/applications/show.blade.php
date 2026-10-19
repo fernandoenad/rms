@@ -9,25 +9,27 @@
 @endsection
 
 @section('main')
-    <section class="content-header">
-        <div class="container">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0">Application Details</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="{{route('guest.index')}}">Home</a></li>
-                        <li class="breadcrumb-item"><a href="{{route('guest.applications.my')}}">My Applications</a></li>
-                        <li class="breadcrumb-item active">Details</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="content">
-        <div class="container">
+    <section class="content rms-application-detail">
+        <div class="container py-4 py-lg-5">
+            <header class="rms-app-detail-hero" aria-labelledby="rmsApplicationDetailTitle">
+                <div class="rms-app-detail-eyebrow">DepEd Bohol | Recruitment Management System</div>
+                <h1 id="rmsApplicationDetailTitle">Application Details</h1>
+                <p>{{ $application->vacancy->position_title }} &middot; Application {{ $application->application_code }}</p>
+                <nav class="rms-app-detail-actions" aria-label="Application details navigation">
+                    <a class="btn btn-light font-weight-bold" href="{{ route('applicant.dashboard') }}">
+                        <i class="fas fa-arrow-left mr-2" aria-hidden="true"></i>Back to Dashboard
+                    </a>
+                    <a class="btn btn-outline-light" href="{{ route('applicant.dashboard') }}#applicationsTitle">
+                        <i class="fas fa-clipboard-list mr-2" aria-hidden="true"></i>My Applications
+                    </a>
+                    <a class="btn btn-outline-light" href="{{ route('guest.vacancies.index') }}">
+                        <i class="fas fa-briefcase mr-2" aria-hidden="true"></i>Browse Vacancies
+                    </a>
+                    <a class="btn btn-outline-light" href="{{ route('applicant.profile.edit') }}">
+                        <i class="fas fa-user-edit mr-2" aria-hidden="true"></i>My Profile
+                    </a>
+                </nav>
+            </header>
             @if (session('status_inquiry'))
                 <div class="alert alert-success alert-dismissible auto-close">
                     <button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button>
@@ -62,7 +64,7 @@
             <div class="row">
                 <div class="col-md-4">
                     <!-- Profile Image -->
-                    <div class="card card-primary card-outline">
+                    <div class="card card-primary card-outline rms-app-summary-card">
                         <div class="card-body box-profile">
                             <div class="text-center">
                                 <img class="profile-user-img img-fluid img-circle"
@@ -71,7 +73,7 @@
                             </div>
                             <h3 class="profile-username text-center">{{$application->getFullname()}}</h3>
                             <p class="text-muted text-center">{{$application->vacancy->position_title}}<br>
-                            @php  $station = App\Models\Station::find($application->station_id); @endphp
+                            @php $station = $application->station_id ? App\Models\Station::find($application->station_id) : null; @endphp
                             {{ isset($station) ? $station->name : ($application->station_id == 0 ? 'Division' : 'Untagged') }}
                             </p>
                         </div>
@@ -79,7 +81,7 @@
                     </div>
                     <!-- /.card -->
                     <!-- About Me Box -->
-                    <div class="card card-primary">
+                    <div class="card card-primary rms-app-summary-card">
                         <div class="card-header">
                             <h3 class="card-title">About</h3>
                         </div>
@@ -104,7 +106,7 @@
                 </div>
                 <!-- /.col -->
                 <div class="col-md-8">
-                    <div class="card">
+                    <div class="card rms-app-detail-tabs-card">
                         <div class="card-header">
                             <h3 class="card-title">
                                 <i class="fas fa-user mr-1"></i>
@@ -860,6 +862,110 @@
 
 @section('css')
 <style>
+    /* Page-local styling: mirrors the applicant dashboard without restoring
+       the removed shared navigation strip or modifying assessment logic. */
+    .rms-application-detail .rms-app-detail-hero {
+        background: linear-gradient(118deg,#193e68,#286991);
+        color: #fff;
+        border-radius: 16px;
+        padding: 30px 32px;
+        margin-bottom: 24px;
+        box-shadow: 0 10px 24px rgba(22,58,92,.14);
+    }
+    .rms-application-detail .rms-app-detail-eyebrow {
+        text-transform: uppercase;
+        letter-spacing: .13em;
+        font-size: .72rem;
+        font-weight: 700;
+        color: #c9e1f3;
+    }
+    .rms-application-detail .rms-app-detail-hero h1 {
+        font-size: 1.7rem;
+        font-weight: 700;
+        margin: 6px 0 8px;
+    }
+    .rms-application-detail .rms-app-detail-hero p {
+        color: #e3eff7;
+        margin: 0;
+        overflow-wrap: anywhere;
+    }
+    .rms-application-detail .rms-app-detail-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+        margin-top: 22px;
+    }
+    .rms-application-detail .rms-app-detail-actions .btn {
+        border-radius: 7px;
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .rms-application-detail .rms-app-detail-actions .btn-outline-light {
+        border-color: #c7dbeb;
+    }
+    .rms-application-detail .rms-app-summary-card,
+    .rms-application-detail .rms-app-detail-tabs-card {
+        border: 1px solid #e3eaf1;
+        border-radius: 13px;
+        overflow: hidden;
+        box-shadow: 0 3px 15px rgba(24,53,83,.06);
+        margin-bottom: 20px;
+    }
+    .rms-application-detail .rms-app-summary-card.card-outline {
+        border-top: 3px solid #286991;
+    }
+    .rms-application-detail .rms-app-summary-card .card-header {
+        background: #286991;
+        border-bottom: 0;
+        color: white;
+    }
+    .rms-application-detail .rms-app-detail-tabs-card > .card-header {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 14px 20px;
+        border-bottom: 1px solid #e7edf3;
+        background: #fff;
+    }
+    .rms-application-detail .rms-app-detail-tabs-card > .card-header > .card-title {
+        font-weight: 700;
+        margin: 0;
+        flex-shrink: 0;
+    }
+    .rms-application-detail .rms-app-detail-tabs-card > .card-header > .card-tools {
+        float: none;
+        margin: 0 0 0 auto;
+        max-width: 100%;
+    }
+    .rms-application-detail .rms-app-detail-tabs-card > .card-header .nav-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    .rms-application-detail .rms-app-detail-tabs-card > .card-header .nav-link {
+        border-radius: 7px;
+        font-size: .87rem;
+        white-space: nowrap;
+    }
+    .rms-application-detail .rms-app-detail-tabs-card > .card-header .nav-link.active {
+        background: #286991;
+    }
+    @media (max-width: 767px) {
+        .rms-application-detail .rms-app-detail-hero { padding: 24px 19px; }
+        .rms-application-detail .rms-app-detail-hero h1 { font-size: 1.45rem; }
+        .rms-application-detail .rms-app-detail-actions .btn { flex: 1 1 145px; }
+        .rms-application-detail .rms-app-detail-tabs-card > .card-header > .card-tools {
+            width: 100%;
+            margin-left: 0;
+        }
+        .rms-application-detail .rms-app-detail-tabs-card > .card-header .nav-pills {
+            margin-left: 0 !important;
+        }
+    }
+
     .assessment-start-modal {
         --rms-modal-height: 100vh;
         position: fixed !important;
