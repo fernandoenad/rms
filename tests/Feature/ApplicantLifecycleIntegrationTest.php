@@ -469,6 +469,9 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $this->actingAs($profile->user)->get(route('applicant.apply.review', $vacancy))
             ->assertOk()
             ->assertSee('Review Application')
+            ->assertSee('Back to Vacancy')
+            ->assertSee('href="'.route('guest.vacancies.show', $vacancy).'"', false)
+            ->assertSee('href="'.route('applicant.dashboard').'"', false)
             ->assertSee('submitApplicationForm')
             ->assertSee('submitNotice');
 
@@ -488,6 +491,24 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         ])->assertUnprocessable()->assertJsonValidationErrors('application');
         $this->assertDatabaseCount('applications', 1);
         $this->assertDatabaseCount('applicant_application_links', 1);
+    }
+
+    public function test_owned_application_detail_has_safe_dashboard_and_profile_navigation(): void
+    {
+        $profile = $this->profile();
+        $vacancy = $this->vacancy();
+        $this->actingAs($profile->user)
+            ->post(route('applicant.apply.store', $vacancy), ['confirm' => 1])
+            ->assertRedirect(route('applicant.dashboard'));
+
+        $application = Application::where('vacancy_id', $vacancy->id)->sole();
+        $this->actingAs($profile->user)
+            ->get(route('guest.applications.show', $application))
+            ->assertOk()
+            ->assertSee('Applicant Dashboard')
+            ->assertSee('My Profile')
+            ->assertSee('Back to Dashboard')
+            ->assertSee('href="'.route('applicant.dashboard').'"', false);
     }
 
     public function test_profile_based_submission_creates_legacy_application_and_owner_link(): void
