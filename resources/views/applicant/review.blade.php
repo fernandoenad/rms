@@ -132,6 +132,7 @@
             method: 'POST', body: new FormData(form), credentials: 'same-origin',
             headers: {'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}
         }).then(function(response) {
+            window.RMSApplicantSession.check(response);
             return response.json().then(function(data) {
                 if (!response.ok) {
                     var error = new Error(data.message || 'Application could not be submitted.');
@@ -150,9 +151,16 @@
             notice.textContent = data.message || 'Application submitted successfully.';
             notice.className = 'alert alert-success';
         }).catch(function(error) {
+            if (window.RMSApplicantSession.expired || error.status === 401 || error.status === 419) {
+                window.RMSApplicantSession.show();
+                notice.textContent = 'Your session expired. Sign in again to check your application status before submitting anything again.';
+                notice.className = 'alert alert-warning';
+                button.disabled = true; // The outcome of the request may be unknown.
+                button.textContent = 'Sign in again to continue';
+                return;
+            }
             var message = (error.fields && (error.fields.application || error.fields.profile || error.fields.confirm));
             notice.textContent = message && message[0] ? message[0] :
-                error.status === 419 ? 'Session expired. Refresh and try again.' :
                 error.status === 403 ? 'This vacancy is no longer accepting applications.' :
                 (error.message || 'Unable to submit. Please try again.');
             notice.className = 'alert alert-danger';
