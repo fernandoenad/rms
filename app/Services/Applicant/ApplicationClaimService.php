@@ -8,6 +8,7 @@ use App\Models\Application;
 use App\Models\ApplicationClaimRequest;
 use Illuminate\Support\Facades\DB;
 use App\Models\ApplicantAuditLog;
+use App\Models\ApplicantNotification;
 use Illuminate\Validation\ValidationException;
 
 class ApplicationClaimService
@@ -70,6 +71,7 @@ class ApplicationClaimService
                 'reviewed_at' => now(),
                 'review_notes' => $reason,
             ]);
+            $this->notifyClaim($claim, 'clarification', 'HR requests clarification', 'Please contact HR about your historical application claim.');
             ApplicantAuditLog::create([
                 'actor_user_id' => $reviewerUserId,
                 'applicant_profile_id' => $claim->applicant_profile_id,
@@ -135,6 +137,7 @@ class ApplicationClaimService
                     'reviewed_at' => now(),
                     'review_notes' => 'This application was linked to another verified claimant. Contact HR if you dispute the decision.',
                 ]);
+                $this->notifyClaim($other, 'rejected', 'Historical claim closed', 'Another claimant was verified for this application. Contact HR if you dispute the decision.');
                 ApplicantAuditLog::create([
                     'actor_user_id' => $reviewerUserId,
                     'applicant_profile_id' => $other->applicant_profile_id,
@@ -150,6 +153,7 @@ class ApplicationClaimService
                 'reviewed_at' => now(),
                 'review_notes' => $reason,
             ]);
+            $this->notifyClaim($claim, 'approved', 'Historical claim approved', 'Your historical application claim was approved.');
         });
     }
 
@@ -200,6 +204,7 @@ class ApplicationClaimService
                 'cancelled_at' => now(),
                 'cancellation_reason' => $reason,
             ]);
+            $this->notifyClaim($claim, 'cancelled', 'Claim access revoked', 'HR cancelled the approval of your historical application claim.');
             ApplicantAuditLog::create([
                 'actor_user_id' => $reviewerUserId,
                 'applicant_profile_id' => $claim->applicant_profile_id,
@@ -238,6 +243,17 @@ class ApplicationClaimService
                 'reviewed_at' => now(),
                 'review_notes' => $reason,
             ]);
+            $this->notifyClaim($claim, 'rejected', 'Historical claim rejected', 'HR did not approve your historical application claim.');
         });
     }
+    private function notifyClaim(ApplicationClaimRequest $claim, string $type, string $title, string $message): void
+    {
+        // Deterministic keys make retried/replayed decision transactions idempotent.
+        ApplicantNotification::query()->firstOrCreate(
+            ['event_key' => 'claim:'.$claim->id.':'.$type.':'.($claim->reviewed_at?->format('U.u') ?? $claim->updated_at?->format('U.u') ?? now()->format('U.u'))],
+            ['applicant_profile_id' => $claim->applicant_profile_id, 'type' => $type,
+             'title' => $title, 'message' => $claim->claimed_application_code.' — '.$message]
+        );
+    }
+
 }
