@@ -74,13 +74,13 @@ A preferred district is profile reference data only; selecting it **does not ass
 From the **Applicant Dashboard**, confirm each outgoing screen provides a visible, keyboard-accessible way back without browser-history dependency:
 
 - [ ] **Edit Master Profile:** top and bottom **Back to Dashboard** links, with **Browse Vacancies** also available.
-- [ ] **Browse Vacancies:** a persistent quick bar to **Dashboard**, **Vacancies**, and **My Profile**; the **Back to Dashboard** link works.
-- [ ] **Vacancy Details:** **Back to Vacancies** is contextual and the dashboard remains one click away.
-- [ ] **Review Application:** **Back to Vacancy** and **Dashboard** are both available, without accidentally submitting a form.
-- [ ] **Application Details:** the breadcrumb and quick bar link to the applicant dashboard.
-- [ ] **Written/skills assessment pages:** quick links to the applicant dashboard and relevant application; an explicit warning says that leaving may not submit an ongoing assessment. Verify assessment timers, submission, and integrity rules remain unaffected.
-- [ ] Navigation is responsive on a narrow/mobile viewport and does **not** appear for unauthenticated public visitors.
-- [ ] All Back links use named internal routes; no arbitrary return URL or HTTP Referer is trusted.
+- [ ] **Browse Vacancies:** the existing Applicant Portal link in the header remains available to authenticated applicants; the removed extra quick-navigation strip does not appear.
+- [ ] **Vacancy Details:** the existing **Back to Vacancies** link remains available.
+- [ ] **Review Application:** **Back to Vacancy** and **Dashboard** remain available, without accidentally submitting a form.
+- [ ] **Application Details:** breadcrumbs lead to the applicant dashboard.
+- [ ] **Written/skills assessment pages:** no extra strip overlays the assessment interface; existing submission and timer safeguards continue working.
+- [ ] No redundant quick-navigation strip appears at desktop or mobile widths, for authenticated or public visitors.
+- [ ] Back links continue using named internal routes; no arbitrary return URL or HTTP Referer is trusted.
 
 ## 4. Applicant application journey
 
