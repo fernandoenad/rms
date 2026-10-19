@@ -52,6 +52,8 @@ class PublicNavigationTest extends TestCase
             ->assertSee('href="'.route('applicant.login').'"', false)
             ->assertDontSee('Previously applied?')
             ->assertDontSee('Open Application Lookup')
+            ->assertSee('Staff Login')
+            ->assertSee('href="'.route('login').'"', false)
             ->assertDontSee('Staff Sign In')
             ->assertDontSee('CAR-RQAs')
             ->assertDontSee('href="'.route('guest.rqas.index').'"', false)
@@ -66,6 +68,7 @@ class PublicNavigationTest extends TestCase
             ->assertSee('No recruitment vacancies are currently open')
             ->assertDontSee('Previously applied?')
             ->assertDontSee('Open Application Lookup')
+            ->assertSee('Staff Login')
             ->assertDontSee('Staff Sign In')
             ->assertDontSee('CAR-RQAs');
         // Only links are hidden; existing external bookmarks and routes remain.
