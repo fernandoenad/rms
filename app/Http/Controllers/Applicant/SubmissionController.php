@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Applicant;
 use App\Http\Controllers\Controller;
 use App\Models\ApplicantProfile;
 use App\Models\ApplicantApplicationLink;
+use App\Models\ApplicantNotification;
 use App\Models\Application;
 use App\Models\Vacancy;
 use App\Services\Applicant\ApplicantProfileToApplicationMapper;
@@ -74,6 +75,12 @@ class SubmissionController extends Controller
                 'link_method' => 'new_submission',
                 'verified_at' => now(),
             ]);
+            ApplicantNotification::firstOrCreate(
+                ['event_key' => 'application:'.$application->id.':submitted'],
+                ['applicant_profile_id' => $profile->id, 'type' => 'application_submitted',
+                 'title' => 'Application received',
+                 'message' => 'Application '.$application->application_code.' has been submitted.']
+            );
             return $application;
         });
 

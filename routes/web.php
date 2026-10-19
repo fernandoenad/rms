@@ -427,6 +427,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
 Route::middleware('auth')->prefix('applicant')->name('applicant.')->group(function () {
     Route::get('/dashboard', [\App\Http\Controllers\Applicant\PortalController::class, 'dashboard'])->name('dashboard');
+    Route::post('/notification-preferences', [\App\Http\Controllers\Applicant\NotificationPreferenceController::class, 'update'])->name('notification_preferences.update');
     Route::post('/notifications/{notification}/read', [\App\Http\Controllers\Applicant\NotificationController::class, 'read'])->name('notifications.read');
     Route::get('/profile', [\App\Http\Controllers\Applicant\PortalController::class, 'edit'])->name('profile.edit');
     Route::get('/profile/options', [\App\Http\Controllers\Applicant\PortalController::class, 'options'])->middleware('throttle:30,1')->name('profile.options');
