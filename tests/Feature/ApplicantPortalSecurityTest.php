@@ -32,12 +32,12 @@ class ApplicantPortalSecurityTest extends TestCase
             ->assertOk()
             ->assertSee('Back to Dashboard')
             ->assertSee('Browse Vacancies')
-            ->assertSee('My Profile')
+            ->assertDontSee('aria-label="Applicant page navigation"', false)
             ->assertSee('href="'.route('applicant.dashboard').'"', false)
             ->assertSee('href="'.route('guest.vacancies.index').'"', false);
     }
 
-    public function test_vacancy_list_has_applicant_navigation_only_for_authenticated_users(): void
+    public function test_vacancy_list_does_not_show_the_removed_quick_navigation_strip(): void
     {
         $this->get(route('guest.vacancies.index'))
             ->assertOk()
@@ -46,9 +46,9 @@ class ApplicantPortalSecurityTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user)->get(route('guest.vacancies.index'))
             ->assertOk()
-            ->assertSee('Back to Dashboard')
-            ->assertSee('My Profile')
-            ->assertSee('applicant-quick-nav-inner', false);
+            ->assertSee('Applicant Portal')
+            ->assertSee('href="'.route('applicant.dashboard').'"', false)
+            ->assertDontSee('aria-label="Applicant page navigation"', false);
     }
 
     public function test_new_profile_form_uses_birthdate_and_dynamic_selects(): void
