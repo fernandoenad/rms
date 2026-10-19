@@ -36,6 +36,12 @@
 .app-claim-note{font-size:.83rem;color:#66788b}
 .app-empty{background:#f4f7fa;padding:17px;border-radius:9px;color:#62768a;font-size:.88rem}
 .app-login-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.app-update-type{width:33px;height:33px;display:grid;place-items:center;border-radius:9px;background:#eef3f8;color:#325b79;flex-shrink:0}
+.app-update-type.action{background:#fff1d6;color:#885814}
+.app-update-type.success{background:#e4f5e9;color:#14713f}
+.app-update-type.warning{background:#faebeb;color:#9e3434}
+.app-update-row{display:flex;align-items:flex-start;gap:11px;padding:13px 0;border-bottom:1px solid #edf1f4}
+.app-update-row:last-child{border-bottom:0}
 @media(max-width:650px){.app-hero{padding:24px 19px}.app-stats{grid-template-columns:1fr}.app-stat{display:flex;align-items:center;justify-content:space-between}.app-panel-heading,.app-panel-content{padding:16px}.app-entry{flex-direction:column}.app-login-actions{margin-top:12px}}
 </style>
 @endsection
@@ -130,6 +136,44 @@
         </div>
 
         <div class="col-lg-5">
+            <section class="app-panel" aria-labelledby="updatesTitle">
+                <div class="app-panel-heading">
+                    <div class="app-panel-icon"><i class="far fa-bell" aria-hidden="true"></i></div>
+                    <div><h2 id="updatesTitle">Updates &amp; Actions @if($unreadCount > 0)<span class="badge badge-primary" aria-label="{{ $unreadCount }} unread notifications">{{ $unreadCount }}</span>@endif</h2><p>Your latest profile and historical claim updates.</p></div>
+                </div>
+                <div class="app-panel-content" aria-live="polite">
+                    @foreach($notifications as $notification)
+                        <div class="app-update-row">
+                            <div class="app-update-type {{ $notification->read_at ? 'info' : 'action' }}" aria-hidden="true"><i class="far fa-bell"></i></div>
+                            <div>
+                                <strong>{{ $notification->title }}</strong>
+                                @if(!$notification->read_at)<span class="badge badge-primary ml-1">New</span>@endif
+                                <p class="app-muted mb-1">{{ $notification->message }}</p>
+                                <small class="app-muted">{{ $notification->created_at->format('M j, Y') }}</small>
+                                @if(!$notification->read_at)
+                                    <form action="{{ route('applicant.notifications.read', $notification) }}" method="POST" class="mt-1">@csrf
+                                        <button type="submit" class="btn btn-link btn-sm p-0">Mark as read</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                    @forelse($updates as $update)
+                        <div class="app-update-row">
+                            <div class="app-update-type {{ $update['type'] }}" aria-hidden="true"><i class="fas {{ $update['type'] === 'success' ? 'fa-check' : ($update['type'] === 'action' ? 'fa-exclamation' : 'fa-info') }}"></i></div>
+                            <div>
+                                <strong>{{ $update['title'] }}</strong>
+                                <p class="app-muted mb-1">{{ $update['message'] }}</p>
+                                <a href="{{ $update['url'] }}">View details <span aria-hidden="true">&rarr;</span></a>
+                                @if($update['date'])<div class="app-muted mt-1"><small>{{ $update['date']->format('M j, Y') }}</small></div>@endif
+                            </div>
+                        </div>
+                    @empty
+                        <div class="app-empty">No updates require your attention.</div>
+                    @endforelse
+                    <p class="app-claim-note mt-2 mb-0">This feed reflects current records. It is not an official email or SMS notification service.</p>
+                </div>
+            </section>
             <section class="app-panel" aria-labelledby="profileTitle">
                 <div class="app-panel-heading">
                     <div class="app-panel-icon"><i class="far fa-address-card"></i></div>
