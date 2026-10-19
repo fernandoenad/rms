@@ -417,6 +417,7 @@ return [
         ],
         [
             'text' => 'Historical Claims',
+            'key'  => 'historical-claims',
             'can'  => 'review-applicant-claims',
             'url'  => 'admin/applicant-claims',
             'icon' => 'fas fa-fw fa-user-check',
@@ -536,6 +537,7 @@ return [
 
     'filters' => [
         JeroenNoten\LaravelAdminLte\Menu\Filters\GateFilter::class,
+        App\Menu\Filters\HistoricalClaimsCountFilter::class,
         JeroenNoten\LaravelAdminLte\Menu\Filters\HrefFilter::class,
         JeroenNoten\LaravelAdminLte\Menu\Filters\SearchFilter::class,
         JeroenNoten\LaravelAdminLte\Menu\Filters\ActiveFilter::class,
