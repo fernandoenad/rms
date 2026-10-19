@@ -87,7 +87,7 @@ class PublicNavigationTest extends TestCase
             ->assertSee('method="POST" action="'.route('logout').'"', false)
             ->assertSee('Sign Out')
             ->assertDontSee('rms-nav-sign-in', false)
-            ->assertDontSee('>Staff Portal</a>', false);
+            ->assertDontSee('href="'.route('admin.index').'"', false);
 
         $this->actingAs($user)->post(route('logout'))->assertRedirect('/');
         $this->assertGuest();
@@ -102,12 +102,12 @@ class PublicNavigationTest extends TestCase
         $this->actingAs($staff)->get(route('guest.index'))
             ->assertOk()
             ->assertSee('Division Reviewer')
-            ->assertSee('>Staff Portal</a>', false)
+            ->assertSee('Staff Portal')
             ->assertSee('href="'.route('admin.index').'"', false);
 
         $staff->role->update(['status' => 0]);
         $this->actingAs($staff)->get(route('guest.index'))
-            ->assertOk()->assertDontSee('>Staff Portal</a>', false);
+            ->assertOk()->assertDontSee('href="'.route('admin.index').'"', false);
     }
 
     public function test_missing_account_name_falls_back_to_email_local_part(): void
