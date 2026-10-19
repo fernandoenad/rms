@@ -139,9 +139,25 @@
             <section class="app-panel" aria-labelledby="updatesTitle">
                 <div class="app-panel-heading">
                     <div class="app-panel-icon"><i class="far fa-bell" aria-hidden="true"></i></div>
-                    <div><h2 id="updatesTitle">Updates &amp; Actions</h2><p>Your latest profile and historical claim updates.</p></div>
+                    <div><h2 id="updatesTitle">Updates &amp; Actions @if($unreadCount > 0)<span class="badge badge-primary" aria-label="{{ $unreadCount }} unread notifications">{{ $unreadCount }}</span>@endif</h2><p>Your latest profile and historical claim updates.</p></div>
                 </div>
                 <div class="app-panel-content" aria-live="polite">
+                    @foreach($notifications as $notification)
+                        <div class="app-update-row">
+                            <div class="app-update-type {{ $notification->read_at ? 'info' : 'action' }}" aria-hidden="true"><i class="far fa-bell"></i></div>
+                            <div>
+                                <strong>{{ $notification->title }}</strong>
+                                @if(!$notification->read_at)<span class="badge badge-primary ml-1">New</span>@endif
+                                <p class="app-muted mb-1">{{ $notification->message }}</p>
+                                <small class="app-muted">{{ $notification->created_at->format('M j, Y') }}</small>
+                                @if(!$notification->read_at)
+                                    <form action="{{ route('applicant.notifications.read', $notification) }}" method="POST" class="mt-1">@csrf
+                                        <button type="submit" class="btn btn-link btn-sm p-0">Mark as read</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
                     @forelse($updates as $update)
                         <div class="app-update-row">
                             <div class="app-update-type {{ $update['type'] }}" aria-hidden="true"><i class="fas {{ $update['type'] === 'success' ? 'fa-check' : ($update['type'] === 'action' ? 'fa-exclamation' : 'fa-info') }}"></i></div>
