@@ -508,9 +508,17 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $this->actingAs($profile->user)
             ->get(route('guest.applications.show', $application))
             ->assertOk()
-            ->assertSee('Applicant Dashboard')
+            ->assertSee('Application Details')
+            ->assertSee('aria-label="Application details navigation"', false)
+            ->assertSee('Back to Dashboard')
             ->assertSee('My Applications')
+            ->assertSee('Browse Vacancies')
+            ->assertSee('My Profile')
             ->assertSee('href="'.route('applicant.dashboard').'"', false)
+            ->assertSee('href="'.route('applicant.dashboard').'#applicationsTitle"', false)
+            ->assertSee('href="'.route('guest.vacancies.index').'"', false)
+            ->assertSee('href="'.route('applicant.profile.edit').'"', false)
+            ->assertSee('id="my-assessments"', false)
             ->assertDontSee('aria-label="Applicant page navigation"', false);
     }
 
