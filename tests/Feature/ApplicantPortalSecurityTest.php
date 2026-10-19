@@ -457,6 +457,6 @@ class ApplicantPortalSecurityTest extends TestCase
 
     public function test_guest_cannot_read_a_legacy_application_record(): void
     {
-        $this->get('/applications/999999')->assertRedirect('/login');
+        $this->get('/applications/999999')->assertRedirect(route('applicant.login'));
     }
 }
