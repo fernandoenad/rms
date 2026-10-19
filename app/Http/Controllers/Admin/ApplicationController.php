@@ -425,6 +425,11 @@ class ApplicationController extends Controller
         $data['status'] = 0;
 
         $inquiry = Inquiry::create($data);
+        try {
+            app(\App\Services\Applicant\HrApplicationStatusNotifier::class)->changed($application, $inquiry->id, 'qualified');
+        } catch (\Throwable $e) {
+            report($e); // Preserve authoritative HR decision even if notification storage fails.
+        }
 
         return redirect(route('admin.applications.edit', $application))->with('status', $data['message']);
     }
@@ -439,6 +444,11 @@ class ApplicationController extends Controller
         $data['status'] = 0;
 
         $inquiry = Inquiry::create($data);
+        try {
+            app(\App\Services\Applicant\HrApplicationStatusNotifier::class)->changed($application, $inquiry->id, 'disqualified');
+        } catch (\Throwable $e) {
+            report($e); // Preserve authoritative HR decision even if notification storage fails.
+        }
 
         return redirect(route('admin.applications.edit', $application))->with('status', $data['message']);
     }
