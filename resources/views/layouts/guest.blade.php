@@ -26,6 +26,18 @@
         img, video, canvas { max-width: 100%; height: auto; }
         .table-responsive { -webkit-overflow-scrolling: touch; }
         input, select, textarea, button { max-width: 100%; }
+        .applicant-quick-nav { background: #f7fafc; border-bottom: 1px solid #e1e9f1; padding: 12px 0; }
+        .applicant-quick-nav-inner { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+        .applicant-quick-nav-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+        .applicant-quick-nav .btn { border-radius: 7px; font-weight: 600; }
+        .applicant-quick-current { color: #536779; font-size: .82rem; font-weight: 600; }
+        .applicant-quick-assessment-notice { color: #7a5517; font-size: .8rem; padding-top: 9px; }
+        @media (max-width: 576px) {
+            .applicant-quick-nav-inner { align-items: flex-start; }
+            .applicant-quick-nav-links { width: 100%; gap: 6px; }
+            .applicant-quick-nav-links .btn { flex: 1 1 auto; }
+            .applicant-quick-current { display: none; }
+        }
         @media (max-width: 576px) {
             body { font-size: 16px; }
             .content-wrapper { padding-top: .25rem; }
@@ -86,6 +98,7 @@
         </nav>
 
         <div class="content-wrapper">
+            @include('applicant.partials.navigation')
             @yield('main')
         </div>
 
