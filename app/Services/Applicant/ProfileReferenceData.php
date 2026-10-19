@@ -15,7 +15,7 @@ class ProfileReferenceData
     public function all(): array
     {
         return [
-            'municipalities' => Town::query()->orderBy('name')->pluck('name')->filter()->unique()->values()->all(),
+            'municipalities' => Town::query()->orderBy('name')->pluck('name')->push('Tagbilaran City')->filter()->unique()->values()->all(),
             'genders' => Dropdown::query()->where('type', 'sex')
                 ->orderBy('details')->pluck('details')->filter()->unique()->values()->all(),
             'civil_statuses' => Dropdown::query()->where('type', 'civilstatus')
