@@ -11,6 +11,7 @@
         <a class="btn btn-sm {{ $status === 'open' ? 'btn-primary' : 'btn-outline-primary' }}" href="{{ route('admin.applicant_claims.index', ['status' => 'open']) }}">Pending / Clarification</a>
         <a class="btn btn-sm {{ $status === 'approved' ? 'btn-primary' : 'btn-outline-primary' }}" href="{{ route('admin.applicant_claims.index', ['status' => 'approved']) }}">Approved history</a>
         <a class="btn btn-sm {{ $status === 'rejected' ? 'btn-primary' : 'btn-outline-primary' }}" href="{{ route('admin.applicant_claims.index', ['status' => 'rejected']) }}">Rejected history</a>
+        <a class="btn btn-sm {{ $status === 'cancelled' ? 'btn-primary' : 'btn-outline-primary' }}" href="{{ route('admin.applicant_claims.index', ['status' => 'cancelled']) }}">Cancelled history</a>
     </div>
 </nav>
 @if(session('status'))<div class="alert alert-success">{{ session('status') }}</div>@endif
@@ -26,6 +27,40 @@
 @if($status !== 'open')
 <p>Reviewed: {{ $claim->reviewed_at?->format('M j, Y g:i A') ?? 'Not recorded' }} · Reviewer user #{{ $claim->reviewed_by ?? 'Not recorded' }}</p>
 <p><strong>Review notes:</strong> {{ $claim->review_notes ?: 'Not recorded' }}</p>
+@if($claim->status === 'approved')
+    @php
+        $ownerLink = $claim->ownershipLink;
+        $canCancel = $ownerLink
+            && $ownerLink->link_method === 'hr_approved_claim'
+            && (int) $ownerLink->applicant_profile_id === (int) $claim->applicant_profile_id
+            && (int) $ownerLink->verified_by === (int) $claim->reviewed_by
+            && (int) $claim->profile?->user_id !== (int) auth()->id();
+    @endphp
+    @if($canCancel)
+    <details class="mt-3 border rounded p-3" aria-label="Cancel approved claim {{ $claim->id }}">
+        <summary class="text-danger font-weight-bold" style="cursor:pointer">Cancel Approval</summary>
+        <p class="mt-3 text-muted mb-2">This permanently records a cancellation and immediately removes the ownership access granted by this HR-approved claim. The historical application and original review notes remain unchanged.</p>
+        <form method="POST" action="{{ route('admin.applicant_claims.cancel_approval', $claim) }}">
+            @csrf
+            <label for="cancel-reason-{{ $claim->id }}">Reason for cancellation (required)</label>
+            <textarea id="cancel-reason-{{ $claim->id }}" name="cancellation_reason" class="form-control mb-2" required minlength="15" maxlength="2000" rows="3" placeholder="Document the verified reason for revoking this approval.">{{ old('cancellation_reason') }}</textarea>
+            <label class="d-block mb-3">
+                <input type="checkbox" name="confirm_revoke" value="1" required>
+                I understand this revokes the applicant's access to this historical application and does not delete the application record.
+            </label>
+            <button type="submit" class="btn btn-danger">Confirm Cancellation &amp; Revoke Access</button>
+        </form>
+    </details>
+    @else
+    <p class="text-muted small">Cancellation is available only when this claim has an active matching HR-approved ownership link and the reviewer is not the claimant.</p>
+    @endif
+@elseif($claim->status === 'cancelled')
+    <div class="alert alert-warning mt-3 mb-0">
+        <strong>Approval cancelled.</strong> HR-approved ownership access was revoked.
+        <p class="mb-1 mt-2">Cancelled: {{ $claim->cancelled_at?->format('M j, Y g:i A') ?? 'Not recorded' }} · Reviewer user #{{ $claim->cancelled_by ?? 'Not recorded' }}</p>
+        <p class="mb-0"><strong>Reason:</strong> {{ $claim->cancellation_reason ?: 'Not recorded' }}</p>
+    </div>
+@endif
 @else
 @if((int) $claim->profile?->user_id === (int) auth()->id())
 <div class="alert alert-warning">You cannot review your own claim. Ask another authorized administrator to review it.</div>
