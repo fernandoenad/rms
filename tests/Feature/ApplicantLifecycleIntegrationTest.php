@@ -241,6 +241,145 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $this->assertSame('Old', $application->fresh()->first_name);
     }
 
+    public function test_hr_can_cancel_an_approved_claim_and_revoke_only_that_ownership_link(): void
+    {
+        $profile = $this->profile('current@example.test');
+        $application = $this->historical($this->vacancy(), 'previous@example.test');
+        $admin = User::factory()->create(['email' => 'revoker@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $admin->id, 'level' => 1, 'status' => 1]);
+        $claim = app(ApplicationClaimService::class)->request($profile, $application->application_code, 'previous@example.test');
+        app(ApplicationClaimService::class)->approve(
+            $claim, $admin->id, 'Original application and independent identity evidence verified.'
+        );
+
+        $this->actingAs($profile->user)->get(route('guest.applications.show', $application))->assertOk();
+        $this->actingAs($admin)->get(route('admin.applicant_claims.index', ['status' => 'approved']))
+            ->assertOk()->assertSee('Cancel Approval')
+            ->assertSee(route('admin.applicant_claims.cancel_approval', $claim));
+
+        $this->actingAs($admin)->post(route('admin.applicant_claims.cancel_approval', $claim), [
+            'cancellation_reason' => 'Identity evidence was later proven to belong to a different applicant.',
+            'confirm_revoke' => '1',
+        ])->assertRedirect(route('admin.applicant_claims.index', ['status' => 'cancelled']));
+
+        $this->assertDatabaseMissing('applicant_application_links', [
+            'application_id' => $application->id,
+            'applicant_profile_id' => $profile->id,
+        ]);
+        $this->assertDatabaseHas('application_claim_requests', [
+            'id' => $claim->id, 'status' => 'cancelled',
+            'reviewed_by' => $admin->id, 'cancelled_by' => $admin->id,
+            'cancellation_reason' => 'Identity evidence was later proven to belong to a different applicant.',
+            'review_notes' => 'Original application and independent identity evidence verified.',
+        ]);
+        $this->assertNotNull($claim->fresh()->cancelled_at);
+        $this->assertDatabaseHas('applicant_audit_logs', [
+            'applicant_profile_id' => $profile->id,
+            'application_id' => $application->id,
+            'actor_user_id' => $admin->id,
+            'event_type' => 'historical_claim_approval_cancelled',
+        ]);
+        $this->actingAs($profile->user)->get(route('guest.applications.show', $application))->assertForbidden();
+        $this->actingAs($profile->user)->get(route('applicant.dashboard'))
+            ->assertOk()->assertSee('Cancelled')->assertSee('revoked application access');
+        $this->actingAs($admin)->get(route('admin.applicant_claims.index', ['status' => 'cancelled']))
+            ->assertOk()->assertSee('Approval cancelled')->assertSee('Identity evidence was later proven')
+            ->assertDontSee('Confirm Cancellation');
+        $this->assertSame('Old', $application->fresh()->first_name);
+        $this->assertSame('previous@example.test', $application->fresh()->email);
+    }
+
+    public function test_approval_cancellation_requires_reason_confirmation_and_is_not_repeatable(): void
+    {
+        $profile = $this->profile();
+        $application = $this->historical($this->vacancy(), 'old@example.test');
+        $admin = User::factory()->create(['email' => 'revoke.checks@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $admin->id, 'level' => 1, 'status' => 1]);
+        $claim = app(ApplicationClaimService::class)->request($profile, $application->application_code, 'old@example.test');
+        $route = route('admin.applicant_claims.cancel_approval', $claim);
+        $this->actingAs($admin)->post($route, [
+            'cancellation_reason' => 'Unverified evidence is not enough.', 'confirm_revoke' => '1',
+        ])->assertSessionHasErrors('claim');
+        app(ApplicationClaimService::class)->approve($claim, $admin->id, 'Official identity record was checked and accepted.');
+        $this->actingAs($admin)->post($route, [
+            'cancellation_reason' => 'Too short', 'confirm_revoke' => '1',
+        ])->assertSessionHasErrors('cancellation_reason');
+        $this->actingAs($admin)->post($route, [
+            'cancellation_reason' => 'Identity discrepancy in official documents.',
+        ])->assertSessionHasErrors('confirm_revoke');
+        $this->assertDatabaseHas('applicant_application_links', ['application_id' => $application->id]);
+
+        $this->actingAs($admin)->post($route, [
+            'cancellation_reason' => 'Identity discrepancy in official documents.', 'confirm_revoke' => '1',
+        ])->assertRedirect();
+        $this->actingAs($admin)->post($route, [
+            'cancellation_reason' => 'Another attempt after final cancellation.', 'confirm_revoke' => '1',
+        ])->assertSessionHasErrors('claim');
+        $this->assertDatabaseCount('applicant_application_links', 0);
+        $this->assertSame(1, \App\Models\ApplicantAuditLog::where(
+            'event_type', 'historical_claim_approval_cancelled'
+        )->count());
+    }
+
+    public function test_google_linked_approved_claim_cannot_be_cancelled_using_hr_revocation(): void
+    {
+        $profile = $this->profile();
+        $application = $this->historical($this->vacancy(), 'old@example.test');
+        $admin = User::factory()->create(['email' => 'reviewer@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $admin->id, 'level' => 1, 'status' => 1]);
+        $claim = \App\Models\ApplicationClaimRequest::create([
+            'applicant_profile_id' => $profile->id,
+            'application_id' => $application->id,
+            'claimed_application_code' => $application->application_code,
+            'claimed_email' => 'old@example.test',
+            'status' => 'approved', 'reviewed_by' => $admin->id,
+            'reviewed_at' => now(), 'review_notes' => 'Resolved through Google identity.',
+        ]);
+        \App\Models\ApplicantApplicationLink::create([
+            'applicant_profile_id' => $profile->id,
+            'application_id' => $application->id,
+            'link_method' => 'google_email_match',
+            'verified_at' => now(),
+        ]);
+
+        $this->actingAs($admin)->get(route('admin.applicant_claims.index', ['status' => 'approved']))
+            ->assertOk()->assertDontSee('Confirm Cancellation');
+        $this->actingAs($admin)->post(route('admin.applicant_claims.cancel_approval', $claim), [
+            'cancellation_reason' => 'Revoke an unrelated Google-linked record.', 'confirm_revoke' => '1',
+        ])->assertSessionHasErrors('claim');
+        $this->assertDatabaseHas('applicant_application_links', [
+            'application_id' => $application->id, 'link_method' => 'google_email_match',
+        ]);
+        $this->assertSame('approved', $claim->fresh()->status);
+        $this->assertDatabaseMissing('applicant_audit_logs', [
+            'event_type' => 'historical_claim_approval_cancelled',
+        ]);
+    }
+
+    public function test_claimant_and_lower_level_staff_cannot_cancel_approved_claims(): void
+    {
+        $profile = $this->profile();
+        $application = $this->historical($this->vacancy(), 'old@example.test');
+        $admin = User::factory()->create(['email' => 'approval.authority@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $admin->id, 'level' => 1, 'status' => 1]);
+        $claim = app(ApplicationClaimService::class)->request($profile, $application->application_code, 'old@example.test');
+        app(ApplicationClaimService::class)->approve($claim, $admin->id, 'Government ID independently reviewed for ownership.');
+        $route = route('admin.applicant_claims.cancel_approval', $claim);
+        $fields = [
+            'cancellation_reason' => 'An unauthorized actor attempts to revoke this access.',
+            'confirm_revoke' => '1',
+        ];
+        $this->actingAs($profile->user)->post($route, $fields)->assertRedirect();
+        $staff = User::factory()->create(['email' => 'staff.reviewer@deped.gov.ph']);
+        \App\Models\Role::create(['user_id' => $staff->id, 'level' => 2, 'status' => 1]);
+        $this->actingAs($staff)->post($route, $fields)->assertStatus(401);
+
+        $this->assertDatabaseHas('applicant_application_links', [
+            'application_id' => $application->id, 'link_method' => 'hr_approved_claim',
+        ]);
+        $this->assertSame('approved', $claim->fresh()->status);
+    }
+
     public function test_hr_approval_requires_explicit_identity_verification(): void
     {
         $profile = $this->profile('current@example.test');
