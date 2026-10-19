@@ -153,6 +153,67 @@ class ApplicationClaimService
         });
     }
 
+    /**
+     * Revoke an HR-approved historical claim without deleting the underlying
+     * legacy application or destroying the original approval evidence.
+     *
+     * Only the exact HR claim ownership link may be removed. Google-matched
+     * and newly submitted applications cannot be affected by this action.
+     */
+    public function cancelApproval(ApplicationClaimRequest $claim, int $reviewerUserId, string $reason): void
+    {
+        DB::transaction(function () use ($claim, $reviewerUserId, $reason) {
+            $claim = ApplicationClaimRequest::query()->lockForUpdate()->findOrFail($claim->id);
+
+            if ($claim->status !== 'approved') {
+                throw ValidationException::withMessages(['claim' => 'Only an approved claim can be cancelled.']);
+            }
+            if (!$claim->application_id || !$claim->reviewed_by) {
+                throw ValidationException::withMessages(['claim' => 'This approval cannot be safely revoked. Contact the system administrator.']);
+            }
+
+            $profile = ApplicantProfile::findOrFail($claim->applicant_profile_id);
+            if ((int) $profile->user_id === $reviewerUserId) {
+                throw ValidationException::withMessages(['claim' => 'You cannot cancel approval of your own claim.']);
+            }
+
+            $link = ApplicantApplicationLink::query()
+                ->where('application_id', $claim->application_id)
+                ->lockForUpdate()->first();
+
+            // Google-linked approvals and new submissions remain immutable
+            // through this workflow. Match the reviewer and claimant as well
+            // as the HR link method to avoid revoking unrelated ownership.
+            if (!$link || $link->link_method !== 'hr_approved_claim'
+                || (int) $link->applicant_profile_id !== (int) $claim->applicant_profile_id
+                || (int) $link->verified_by !== (int) $claim->reviewed_by) {
+                throw ValidationException::withMessages([
+                    'claim' => 'The matching HR-approved ownership link was not found. No access was changed.',
+                ]);
+            }
+
+            $linkId = $link->id;
+            $link->delete();
+            $claim->update([
+                'status' => 'cancelled',
+                'cancelled_by' => $reviewerUserId,
+                'cancelled_at' => now(),
+                'cancellation_reason' => $reason,
+            ]);
+            ApplicantAuditLog::create([
+                'actor_user_id' => $reviewerUserId,
+                'applicant_profile_id' => $claim->applicant_profile_id,
+                'application_id' => $claim->application_id,
+                'event_type' => 'historical_claim_approval_cancelled',
+                'metadata' => [
+                    'claim_request_id' => $claim->id,
+                    'revoked_link_id' => $linkId,
+                    'approved_by' => $claim->reviewed_by,
+                ],
+            ]);
+        });
+    }
+
     public function reject(ApplicationClaimRequest $claim, int $reviewerUserId, string $reason): void
     {
         DB::transaction(function () use ($claim, $reviewerUserId, $reason) {
