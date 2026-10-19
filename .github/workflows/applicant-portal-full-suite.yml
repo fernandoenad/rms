@@ -8,6 +8,9 @@ on:
       - 'database/**'
       - 'resources/views/**'
       - 'public/js/applicant-session.js'
+      - 'scripts/applicant_uat_gate.py'
+      - 'scripts/tests/**'
+      - 'docs/applicant-portal-uat-results.md'
       - 'tests/**'
       - '.github/workflows/applicant-portal-full-suite.yml'
       - 'phpunit.xml'
@@ -16,6 +19,24 @@ on:
   workflow_dispatch:
 
 jobs:
+  uat-gate-selftest:
+    name: Applicant UAT evidence gate checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate release gate parsing and fail-closed behavior
+        run: python3 -m unittest discover -s scripts/tests -p 'test_applicant_uat_gate.py' -v
+      - name: Verify incomplete manual UAT does not report release-ready
+        run: |
+          if python3 scripts/applicant_uat_gate.py --worksheet docs/applicant-portal-uat-results.md; then
+            echo "ERROR: The UAT template must not be accepted as release evidence."
+            exit 1
+          fi
+          echo "Expected: manual release acceptance is blocked pending signed staging evidence."
+
   session-recovery-js:
     name: Session recovery JavaScript
     runs-on: ubuntu-latest
