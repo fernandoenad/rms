@@ -441,4 +441,5 @@ Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')-
     Route::post('/applicant-claims/{claim}/clarification', [\App\Http\Controllers\Admin\ApplicantClaimReviewController::class, 'clarification'])->name('applicant_claims.clarification');
     Route::post('/applicant-claims/{claim}/approve', [\App\Http\Controllers\Admin\ApplicantClaimReviewController::class, 'approve'])->name('applicant_claims.approve');
     Route::post('/applicant-claims/{claim}/reject', [\App\Http\Controllers\Admin\ApplicantClaimReviewController::class, 'reject'])->name('applicant_claims.reject');
+    Route::post('/applicant-claims/{claim}/cancel-approval', [\App\Http\Controllers\Admin\ApplicantClaimReviewController::class, 'cancelApproval'])->name('applicant_claims.cancel_approval');
 });
