@@ -44,6 +44,31 @@ Substitute the actual public origin for `{APP_URL}`. Google redirect URIs must m
 - Try a disabled or unauthorized staff fixture and confirm staff access is refused. Do not remove valid authorizations or test with production accounts.
 - Verify staff login is not linked on public applicant login and the public footer does not advertise Administration.
 
+### New profile form and secondary HRMIS reference data
+
+After pulling the latest branch, back up staging and apply the **additive applicant profile migration** before UAT:
+
+```bash
+php artisan migrate:status
+php artisan migrate
+php artisan optimize:clear
+php artisan rms:applicant-readiness --strict
+```
+
+The migration adds nullable `date_of_birth` and `district_id` columns **only** to `applicant_profiles`. It does not modify the legacy `applications` schema. Existing profiles without a birthdate will be prompted to supply one when they next edit the profile.
+
+Verify that the master profile loads **municipalities from `mysql_2.towns`**, **gender and civil status from `mysql_2.dropdowns`**, and **optional preferred districts from `mysql_2.offices`**. The form fetches choices via an authenticated, throttled AJAX endpoint and does not substitute made-up options when the reference database is unavailable. The preflight now checks all four secondary reference tables, including `stations`.
+
+- [ ] Test the form layout and section headings on desktop and mobile.
+- [ ] Select municipality, gender, civil status, and optionally a district; confirm the chosen values persist.
+- [ ] Enter date of birth and confirm displayed age calculates automatically, including a birthday today/yesterday edge case. The age field must be read-only and **not submitted by the browser**.
+- [ ] Submit the form through AJAX; verify inline validation errors for missing/invalid fields, saved confirmation and return to the applicant dashboard or pending vacancy review.
+- [ ] Confirm the server rejects invented dropdown values or an implausible age, even when a direct HTTP request supplies `age` manually.
+- [ ] Disable/interrupt `mysql_2` **only in isolated staging** and confirm dropdown loading fails visibly rather than allowing arbitrary values.
+- [ ] Confirm a profile with an older stored birthdate yields an up-to-date age in a new legacy application snapshot, without changing historical application snapshots.
+
+A preferred district is profile reference data only; selecting it **does not assign the application to a station or change assessment routing**.
+
 ## 4. Applicant application journey
 
 - From public Vacancies, choose an open synthetic vacancy, authenticate, and complete the master profile.
