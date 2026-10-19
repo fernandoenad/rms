@@ -98,11 +98,13 @@ The public Vacancies pages now match the dashboard design while retaining the ex
 
 The RMS root URL (`/`) is now a **public recruitment landing page**, not the old `/applications` redirect. The existing application lookup remains at `/applications`.
 
-- [ ] As a **visitor**, Home shows up to three recently posted **currently open** vacancies, links to View All Vacancies, and a clear **Sign In** header button that leads to Applicant Google sign-in. Do not show the removed utility footer links (Previously applied, Open Application Lookup, Staff Sign In, or CAR-RQAs).
+- [ ] As a **visitor**, Home shows up to three recently posted **currently open** vacancies, links to View All Vacancies, and a clear **Sign In** header button that leads to Applicant Google sign-in. The footer contains **Staff Login** only. The previously removed links (Previously applied, Open Application Lookup, and CAR-RQAs) remain hidden.
 - [ ] Header menu is simple: **Home**, **Vacancies**, **Sign In**. **CAR-RQAs** is hidden from the header; its existing route remains accessible by direct URL. Closed and scheduled vacancies are not advertised. When no vacancy is open, Home displays an appropriate empty state.
 - [ ] As an **authenticated applicant**, the Sign In button becomes a **name dropdown** with Dashboard, My Profile, My Applications, and **Sign Out**. Confirm My Applications opens the application's section of the dashboard.
 - [ ] As **authorized active staff**, that same dropdown additionally includes **Staff Portal**. Staff Portal must not be visible to inactive or ordinary applicant accounts.
 - [ ] Sign Out uses a **POST** form with CSRF protection and returns the interface to guest navigation.
+- [ ] Let an applicant session expire and open the **dashboard**, **profile**, **application details**, **written assessment**, and **skills assessment** routes. Each HTML request redirects to **Applicant Sign In**, never `/login` (the staff login). Authenticated staff-link and staff-only routes continue to require the staff login. Expired AJAX requests return HTTP **401** instead of a staff login HTML page.
+- [ ] Confirm the **Staff Login** footer link opens the unchanged staff login and does not appear alongside retired utility links.
 - [ ] Check keyboard access, focus states, dropdown operation, responsive navbar collapse, and long display-name handling on desktop and mobile.
 - [ ] The redundant extra navigation strip that was previously removed must **not** reappear on any page.
 
