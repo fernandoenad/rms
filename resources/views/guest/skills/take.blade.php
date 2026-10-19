@@ -88,7 +88,7 @@
     }
 
     async function syncAuthoritativeTime(showError=false){
-        if(timeSyncInFlight) return null;
+        if(timeSyncInFlight || window.RMSApplicantSession.expired) return null;
         timeSyncInFlight=true;
 
         try{
@@ -96,6 +96,10 @@
                 headers:{'Accept':'application/json','Cache-Control':'no-cache'},
                 cache:'no-store'
             });
+            if(window.RMSApplicantSession.check(response)){
+                if(state){ state.textContent='Session expired. Sign in again; unsaved work stays on this device.'; state.className='float-right small text-danger'; }
+                return null;
+            }
             const data=await response.json().catch(()=>({}));
 
             if(response.status===409 || data.expired || data.submitted){
@@ -142,7 +146,7 @@
 
         if(!result){
             finishing=false;
-            setTimeout(finalizeAtTimeout,2500);
+            if(!window.RMSApplicantSession.expired) setTimeout(finalizeAtTimeout,2500);
         }
     }
 
@@ -163,6 +167,10 @@
     async function persistInline(value){
         pendingValue=value;
         storageSet(pendingKey,value);
+        if(window.RMSApplicantSession.expired){
+            if(state){ state.textContent='Session expired. Sign in again to continue.'; state.className='float-right small text-danger'; }
+            return;
+        }
 
         if(saving) {
             if(state){
@@ -175,7 +183,7 @@
         saving=true;
 
         try {
-            while(pendingValue !== null){
+            while(pendingValue !== null && !window.RMSApplicantSession.expired){
                 const current=pendingValue;
                 pendingValue=null;
 
@@ -194,6 +202,10 @@
                     body:JSON.stringify({inline_response:current})
                 });
 
+                if(window.RMSApplicantSession.check(response)){
+                    if(state){ state.textContent='Session expired. Sign in again; the response was not confirmed.'; state.className='float-right small text-danger'; }
+                    return; // No automatic retries with an expired session.
+                }
                 if(response.status===409){
                     location.reload();
                     return;
@@ -219,7 +231,7 @@
         } finally {
             saving=false;
 
-            if(pendingValue !== null){
+            if(pendingValue !== null && !window.RMSApplicantSession.expired){
                 setTimeout(()=>persistInline(pendingValue),800);
             }
         }
@@ -227,7 +239,7 @@
 
     async function logEvent(type){
         try {
-            await fetch(eventUrl,{
+            const response=await fetch(eventUrl,{
                 method:'POST',
                 headers:{
                     'Content-Type':'application/json',
@@ -236,6 +248,7 @@
                 },
                 body:JSON.stringify({event_type:type})
             });
+            window.RMSApplicantSession.check(response);
         } catch(e) {
             // Audit events must never block the assessment UI.
         }
