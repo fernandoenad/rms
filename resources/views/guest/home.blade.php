@@ -27,7 +27,6 @@
 .rms-home-step .step-number{background:#eaf3fa;border-radius:10px;color:#275c89;width:41px;height:41px;display:grid;place-items:center;font-size:1.08rem;font-weight:700;margin-bottom:13px}
 .rms-home-step h3{font-size:1rem;color:#30495e;font-weight:700;margin-bottom:6px}
 .rms-home-step p{color:#66798b;font-size:.87rem;margin:0;line-height:1.5}
-.rms-home-footer-links{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:20px 0 28px;font-size:.87rem}
 @media(max-width:767px){.rms-home-hero{padding:27px 21px}.rms-home-hero h1{font-size:1.5rem}.rms-home-panel-head,.rms-home-panel-body{padding:17px}.rms-home-open-list,.rms-home-steps{grid-template-columns:1fr}.rms-home-actions .btn{flex:1 1 auto;justify-content:center}}
 </style>
 @endsection
@@ -89,9 +88,5 @@
             </div>
         </div>
     </section>
-    <div class="rms-home-footer-links">
-        <span>Previously applied? <a href="{{ route('guest.applications.index') }}">Open Application Lookup</a></span>
-        <span>DepEd Bohol staff? <a href="{{ route('login') }}">Staff Sign In</a> · <a href="{{ route('guest.rqas.index') }}">CAR-RQAs</a></span>
-    </div>
 </div>
 @endsection
