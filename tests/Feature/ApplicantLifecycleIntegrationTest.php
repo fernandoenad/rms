@@ -416,6 +416,24 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $service->approve($claim, $reviewer->id, 'Attempt to reverse finalized decision without review.');
     }
 
+    public function test_submission_recomputes_age_from_birthdate_in_legacy_snapshot(): void
+    {
+        $profile = $this->profile();
+        $profile->update([
+            'date_of_birth' => now()->subYears(26)->toDateString(),
+            'age' => 65, // Stale cached value must never enter a new submission.
+        ]);
+        $vacancy = $this->vacancy();
+
+        $this->actingAs($profile->user)->post(route('applicant.apply.store', $vacancy), [
+            'confirm' => 1,
+        ])->assertRedirect(route('applicant.dashboard'));
+
+        $application = Application::where('vacancy_id', $vacancy->id)->sole();
+        $this->assertSame(26, (int) $application->age);
+        $this->assertSame(65, (int) $profile->fresh()->age);
+    }
+
     public function test_profile_based_submission_creates_legacy_application_and_owner_link(): void
     {
         $profile = $this->profile();
