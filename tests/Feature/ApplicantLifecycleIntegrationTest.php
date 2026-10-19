@@ -434,6 +434,62 @@ class ApplicantLifecycleIntegrationTest extends TestCase
         $this->assertSame(65, (int) $profile->fresh()->age);
     }
 
+    public function test_ajax_claim_returns_pending_status_without_granting_ownership(): void
+    {
+        $profile = $this->profile();
+        $application = $this->historical($this->vacancy(), 'previous@example.test');
+
+        $this->actingAs($profile->user)->postJson(route('applicant.claims.store'), [
+            'application_code' => $application->application_code,
+            'email' => 'previous@example.test',
+        ])->assertOk()
+            ->assertJsonPath('application_code', $application->application_code)
+            ->assertJsonPath('status', 'pending');
+
+        $this->actingAs($profile->user)->get(route('applicant.dashboard'))
+            ->assertOk()
+            ->assertSee('Claim Requests')
+            ->assertSee($application->application_code)
+            ->assertSee('Pending')
+            ->assertSee('Request HR review');
+        $this->assertDatabaseCount('application_claim_requests', 1);
+        $this->assertDatabaseCount('applicant_application_links', 0);
+
+        $this->actingAs($profile->user)->postJson(route('applicant.claims.store'), [
+            'application_code' => $application->application_code,
+            'email' => 'PREVIOUS@example.test',
+        ])->assertOk()->assertJsonPath('status', 'pending');
+        $this->assertDatabaseCount('application_claim_requests', 1);
+    }
+
+    public function test_ajax_application_review_and_submission_returns_details_without_duplicates(): void
+    {
+        $profile = $this->profile();
+        $vacancy = $this->vacancy();
+        $this->actingAs($profile->user)->get(route('applicant.apply.review', $vacancy))
+            ->assertOk()
+            ->assertSee('Review Application')
+            ->assertSee('submitApplicationForm')
+            ->assertSee('submitNotice');
+
+        $this->actingAs($profile->user)->postJson(route('applicant.apply.store', $vacancy), [
+            'confirm' => 1,
+        ])->assertCreated()
+            ->assertJsonPath('message', 'Application submitted successfully.');
+
+        $application = Application::where('vacancy_id', $vacancy->id)->sole();
+        $this->actingAs($profile->user)->get(route('applicant.dashboard'))
+            ->assertOk()->assertSee($application->application_code);
+        $this->assertDatabaseHas('applicant_application_links', [
+            'application_id' => $application->id, 'applicant_profile_id' => $profile->id,
+        ]);
+        $this->actingAs($profile->user)->postJson(route('applicant.apply.store', $vacancy), [
+            'confirm' => 1,
+        ])->assertUnprocessable()->assertJsonValidationErrors('application');
+        $this->assertDatabaseCount('applications', 1);
+        $this->assertDatabaseCount('applicant_application_links', 1);
+    }
+
     public function test_profile_based_submission_creates_legacy_application_and_owner_link(): void
     {
         $profile = $this->profile();
