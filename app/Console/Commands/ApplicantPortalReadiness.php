@@ -43,6 +43,7 @@ class ApplicantPortalReadiness extends Command
             'applicant.staff.google.link',
             'applicant.staff.google.callback',
             'applicant.dashboard',
+            'applicant.profile.options',
             'applicant.apply.store',
             'admin.applicant_claims.index',
             'admin.applicant_claims.approve',
@@ -67,6 +68,7 @@ class ApplicantPortalReadiness extends Command
         $routeGuards = [
             'applicant.dashboard' => ['auth'],
             'applicant.profile.update' => ['auth'],
+            'applicant.profile.options' => ['auth', 'throttle:30,1'],
             'applicant.apply.store' => ['auth'],
             'applicant.claims.store' => ['auth', 'throttle:5,1'],
             'applicant.staff.google.link' => ['auth', 'active'],
@@ -142,6 +144,20 @@ class ApplicantPortalReadiness extends Command
                 'Portal tables',
                 $missingTables ? 'Missing tables: '.implode(', ', $missingTables) : 'Legacy and new portal tables exist.'
             );
+
+            if (!in_array('applicant_profiles', $missingTables, true)) {
+                $profileFields = ['date_of_birth', 'district_id'];
+                $missingProfileFields = array_values(array_diff(
+                    $profileFields, Schema::getColumnListing('applicant_profiles')
+                ));
+                $record(
+                    $missingProfileFields ? 'FAIL' : 'PASS',
+                    'New profile fields',
+                    $missingProfileFields
+                        ? 'Missing profile columns: '.implode(', ', $missingProfileFields).'. Run pending migrations.'
+                        : 'Birthdate and preferred-district columns are available.'
+                );
+            }
 
             if (!in_array('applications', $missingTables, true)) {
                 $legacyFields = [
