@@ -7,6 +7,7 @@ on:
       - 'routes/**'
       - 'database/**'
       - 'resources/views/**'
+      - 'public/js/applicant-session.js'
       - 'tests/**'
       - '.github/workflows/applicant-portal-full-suite.yml'
       - 'phpunit.xml'
@@ -15,6 +16,19 @@ on:
   workflow_dispatch:
 
 jobs:
+  session-recovery-js:
+    name: Session recovery JavaScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check session recovery script syntax
+        run: node --check public/js/applicant-session.js
+      - name: Test safe session recovery
+        run: node --test tests/js/applicant-session.test.cjs
+
   laravel-suite:
     name: Full PHPUnit (PHP ${{ matrix.php }})
     runs-on: ubuntu-latest
