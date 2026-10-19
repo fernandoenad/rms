@@ -509,9 +509,9 @@ class ApplicantLifecycleIntegrationTest extends TestCase
             ->get(route('guest.applications.show', $application))
             ->assertOk()
             ->assertSee('Applicant Dashboard')
-            ->assertSee('My Profile')
-            ->assertSee('Back to Dashboard')
-            ->assertSee('href="'.route('applicant.dashboard').'"', false);
+            ->assertSee('My Applications')
+            ->assertSee('href="'.route('applicant.dashboard').'"', false)
+            ->assertDontSee('aria-label="Applicant page navigation"', false);
     }
 
     public function test_profile_based_submission_creates_legacy_application_and_owner_link(): void
