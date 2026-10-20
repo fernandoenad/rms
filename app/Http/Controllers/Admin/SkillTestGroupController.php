@@ -7,6 +7,8 @@ use App\Models\SkillTest;
 use App\Jobs\GenerateSkillTestSetTask;
 use App\Models\SkillTestGroup;
 use App\Models\SkillTestAttempt;
+use App\Models\SkillTestAttemptEvent;
+use App\Support\AssessmentHiddenDuration;
 use App\Models\Vacancy;
 use App\Services\AssessmentGovernanceService;
 use App\Services\AssessmentScoreSyncService;
@@ -459,6 +461,9 @@ class SkillTestGroupController extends Controller
                 'Total Points',
                 'Human Final Percentage',
                 'Tab/App Switch Count',
+                'Total Hidden Duration (HH:MM:SS)',
+                'Total Hidden Duration (Seconds)',
+                'Unpaired Hidden Intervals',
                 'Evaluated At',
                 'Void Reason',
             ]);
@@ -476,7 +481,18 @@ class SkillTestGroupController extends Controller
                 ->whereNotNull('started_at')
                 ->orderBy('id')
                 ->chunkById(500, function ($attempts) use ($handle) {
+                    $visibilityEvents = SkillTestAttemptEvent::query()
+                        ->whereIn('skill_test_attempt_id', $attempts->pluck('id'))
+                        ->whereIn('event_type', ['tab_hidden', 'tab_visible'])
+                        ->orderBy('event_at')
+                        ->orderBy('id')
+                        ->get(['id', 'skill_test_attempt_id', 'event_type', 'event_at'])
+                        ->groupBy('skill_test_attempt_id');
+
                     foreach ($attempts as $attempt) {
+                        $hiddenDuration = AssessmentHiddenDuration::summarize(
+                            $visibilityEvents->get($attempt->id, [])
+                        );
                         $totalPoints = (float) ($attempt->skillTest?->rubricCriteria?->sum('max_points') ?? 0);
 
                         fputcsv($handle, [
@@ -503,6 +519,9 @@ class SkillTestGroupController extends Controller
                                 ).'%'
                                 : null,
                             (int) ($attempt->tab_app_switch_count ?? 0),
+                            $hiddenDuration['formatted'],
+                            $hiddenDuration['seconds'],
+                            $hiddenDuration['unpaired_hidden_intervals'],
                             $attempt->evaluated_at?->toIso8601String(),
                             $attempt->void_reason,
                         ]);
