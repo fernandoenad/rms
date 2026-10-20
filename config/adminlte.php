@@ -559,6 +559,16 @@ return [
     */
 
     'plugins' => [
+        'HistoricalClaimsLiveBadge' => [
+            'active' => true,
+            'files' => [
+                [
+                    'type' => 'js',
+                    'asset' => true,
+                    'location' => 'js/historical-claims-live-badge.js',
+                ],
+            ],
+        ],
         'Datatables' => [
             'active' => true,
             'files' => [
