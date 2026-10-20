@@ -441,6 +441,7 @@ Route::middleware('auth')->prefix('applicant')->name('applicant.')->group(functi
 
 Route::middleware(['auth', 'active', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/applicant-claims', [\App\Http\Controllers\Admin\ApplicantClaimReviewController::class, 'index'])->name('applicant_claims.index');
+    Route::get('/applicant-claims/pending-count', [\App\Http\Controllers\Admin\ApplicantClaimReviewController::class, 'pendingCount'])->name('applicant_claims.pending_count');
     Route::post('/applicant-claims/{claim}/clarification', [\App\Http\Controllers\Admin\ApplicantClaimReviewController::class, 'clarification'])->name('applicant_claims.clarification');
     Route::post('/applicant-claims/{claim}/approve', [\App\Http\Controllers\Admin\ApplicantClaimReviewController::class, 'approve'])->name('applicant_claims.approve');
     Route::post('/applicant-claims/{claim}/reject', [\App\Http\Controllers\Admin\ApplicantClaimReviewController::class, 'reject'])->name('applicant_claims.reject');
