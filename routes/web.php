@@ -311,6 +311,7 @@ Route::group(['middleware' => ['active']], function () {
     Route::post('/admin/skill-groups/{skillTestGroup}/equivalent-set', [AdminSkillTestGroup::class, 'addEquivalentSet'])->middleware('assessment.capability:author')->name('admin.skill_groups.equivalent_set');
     Route::post('/admin/skill-groups/{skillTestGroup}/generate-all-sets', [AdminSkillTestGroup::class, 'generateAllSets'])->middleware('assessment.capability:author')->name('admin.skill_groups.generate_all_sets');
     Route::get('/admin/skill-groups/{skillTestGroup}/results', [AdminSkillTestGroup::class, 'results'])->name('admin.skill_groups.results');
+    Route::get('/admin/skill-groups/{skillTestGroup}/analytics', [AdminSkillTestGroup::class, 'analytics'])->name('admin.skill_groups.analytics');
     Route::get('/admin/skill-groups/{skillTestGroup}/export', [AdminSkillTestGroup::class, 'exportCsv'])->name('admin.skill_groups.export');
     Route::post('/admin/skill-groups/{skillTestGroup}/release-scores', [AdminSkillTestGroup::class, 'releaseScores'])->middleware('assessment.capability:release')->name('admin.skill_groups.release_scores');
     Route::post('/admin/skill-groups/{skillTestGroup}/hide-scores', [AdminSkillTestGroup::class, 'hideScores'])->middleware('assessment.capability:release')->name('admin.skill_groups.hide_scores');
