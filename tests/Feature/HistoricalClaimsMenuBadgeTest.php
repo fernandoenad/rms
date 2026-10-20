@@ -123,7 +123,7 @@ class HistoricalClaimsMenuBadgeTest extends TestCase
         $this->actingAs($admin)->getJson(route('admin.applicant_claims.pending_count'))
             ->assertOk()
             ->assertExactJson(['count' => 2])
-            ->assertHeader('Cache-Control', 'private, no-store, no-cache, max-age=0');
+            ->assertHeader('Cache-Control', 'max-age=0, no-cache, no-store, private');
 
         $clarification->update(['status' => 'approved']);
 
@@ -154,8 +154,10 @@ class HistoricalClaimsMenuBadgeTest extends TestCase
             }
         });
 
+        // The pre-existing admin middleware returns 401 for non-HR staff
+        // before the claim-review gate or the database count can run.
         $this->getJson(route('admin.applicant_claims.pending_count'))
-            ->assertForbidden();
+            ->assertStatus(401);
         $this->assertSame([], $claimQueries);
     }
 
