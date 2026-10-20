@@ -440,6 +440,60 @@ class SkillTestGroupController extends Controller
         ));
     }
 
+    /**
+     * Descriptive statistics across the equivalent Skills Test sets.
+     * Human-final scores are never replaced by AI-proposed scores here.
+     */
+    public function analytics(SkillTestGroup $skillTestGroup)
+    {
+        $skillTestGroup->load([
+            'vacancy:id,position_title',
+            'skillTests' => fn ($query) => $query->with('rubricCriteria')->orderBy('set_code'),
+        ]);
+
+        $setSummary = $skillTestGroup->skillTests->map(function ($set) {
+            $stats = $set->attempts()
+                ->whereNotNull('started_at')
+                ->selectRaw('COUNT(*) as attempted')
+                ->selectRaw('SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as submitted')
+                ->selectRaw('SUM(CASE WHEN status = 2 AND final_score IS NOT NULL THEN 1 ELSE 0 END) as evaluated')
+                ->selectRaw('AVG(CASE WHEN status = 2 AND final_score IS NOT NULL THEN final_score END) as mean_final')
+                ->selectRaw('MIN(CASE WHEN status = 2 AND final_score IS NOT NULL THEN final_score END) as min_final')
+                ->selectRaw('MAX(CASE WHEN status = 2 AND final_score IS NOT NULL THEN final_score END) as max_final')
+                ->selectRaw('SUM(CASE WHEN status = 2 AND final_score IS NOT NULL AND ai_proposed_score IS NOT NULL THEN 1 ELSE 0 END) as ai_pairs')
+                ->selectRaw('AVG(CASE WHEN status = 2 AND final_score IS NOT NULL AND ai_proposed_score IS NOT NULL THEN ABS(final_score - ai_proposed_score) END) as mean_ai_gap')
+                ->first();
+
+            return [
+                'id' => $set->id,
+                'set_code' => $set->set_code,
+                'title' => $set->title,
+                'attempted' => (int) ($stats->attempted ?? 0),
+                'submitted' => (int) ($stats->submitted ?? 0),
+                'evaluated' => (int) ($stats->evaluated ?? 0),
+                'rubric_points' => (float) $set->rubricCriteria->sum('max_points'),
+                'mean_final' => $stats->mean_final !== null ? (float) $stats->mean_final : null,
+                'min_final' => $stats->min_final !== null ? (float) $stats->min_final : null,
+                'max_final' => $stats->max_final !== null ? (float) $stats->max_final : null,
+                'ai_pairs' => (int) ($stats->ai_pairs ?? 0),
+                'mean_ai_gap' => $stats->mean_ai_gap !== null ? (float) $stats->mean_ai_gap : null,
+            ];
+        });
+
+        $summary = [
+            'sets' => $setSummary->count(),
+            'attempted' => $setSummary->sum('attempted'),
+            'submitted' => $setSummary->sum('submitted'),
+            'evaluated' => $setSummary->sum('evaluated'),
+        ];
+
+        $summary['completion_rate'] = $summary['attempted'] > 0
+            ? round(($summary['submitted'] / $summary['attempted']) * 100, 1)
+            : 0;
+
+        return view('admin.skill_groups.analytics', compact('skillTestGroup', 'setSummary', 'summary'));
+    }
+
     public function exportCsv(SkillTestGroup $skillTestGroup)
     {
         $setIds = $skillTestGroup->skillTests()->pluck('id');
