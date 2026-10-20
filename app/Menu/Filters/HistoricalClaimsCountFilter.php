@@ -9,6 +9,17 @@ use JeroenNoten\LaravelAdminLte\Menu\Filters\FilterInterface;
 class HistoricalClaimsCountFilter implements FilterInterface
 {
     /**
+     * The sidebar and its live count endpoint must use exactly the same
+     * definition of claims needing an HR decision.
+     */
+    public static function actionableCount(): int
+    {
+        return ApplicationClaimRequest::query()
+            ->whereIn('status', ['pending', 'clarification'])
+            ->count();
+    }
+
+    /**
      * Show the number of claims needing HR action, never the total history.
      * GateFilter runs first, so no claim data is queried for hidden menu items.
      */
@@ -20,9 +31,7 @@ class HistoricalClaimsCountFilter implements FilterInterface
             return $item;
         }
 
-        $pending = ApplicationClaimRequest::query()
-            ->whereIn('status', ['pending', 'clarification'])
-            ->count();
+        $pending = self::actionableCount();
 
         // Leave the menu uncluttered when the actionable queue is empty.
         if ($pending > 0) {
