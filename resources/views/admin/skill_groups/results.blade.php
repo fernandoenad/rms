@@ -9,6 +9,7 @@
         <small class="text-muted">Live monitoring across all Skills Test sets · {{ optional($skillTestGroup->vacancy)->position_title }}</small>
     </div>
     <div class="mt-2 mt-md-0">
+        <a href="{{ route('admin.skill_groups.analytics',$skillTestGroup) }}" class="btn btn-outline-info mr-2"><i class="fas fa-chart-line"></i> Analytics</a>
         <a href="{{ route('admin.skill_groups.export',$skillTestGroup) }}" class="btn btn-outline-success mr-2">
             <i class="fas fa-file-csv"></i> Export All Sets CSV
         </a>

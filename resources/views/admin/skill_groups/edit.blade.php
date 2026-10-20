@@ -1,7 +1,7 @@
 @extends('adminlte::page')
 @section('title','Manage Skills Test Sets')
 @section('content_header')
-<div class="d-flex justify-content-between align-items-center">
+<div class="d-flex justify-content-between align-items-center flex-wrap">
 <div>
     <h1 class="mb-0">{{ $skillTestGroup->title }}</h1>
     <div class="small text-muted mb-1">
@@ -16,9 +16,10 @@
     <small class="text-muted">{{ optional($skillTestGroup->vacancy)->position_title }} · {{ $skillTestGroup->code }}</small>
 </div>
 <div class="mt-2 mt-md-0">
+    <a href="{{ route('admin.assessment_center.index') }}" class="btn btn-outline-secondary mr-2"><i class="fas fa-arrow-left"></i> Back</a>
     <a href="{{ route('admin.skill_groups.results',$skillTestGroup) }}" class="btn btn-outline-secondary mr-2"><i class="fas fa-chart-bar"></i> Live Results</a>
-    <a href="{{ route('admin.skill_groups.export',$skillTestGroup) }}" class="btn btn-outline-success mr-2"><i class="fas fa-file-csv"></i> Export All Sets CSV</a>
-    <a href="{{ route('admin.skill_groups.index') }}" class="btn btn-outline-secondary">Back to Groups</a>
+    <a href="{{ route('admin.skill_groups.analytics',$skillTestGroup) }}" class="btn btn-outline-info mr-2"><i class="fas fa-chart-line"></i> Analytics</a>
+    <a href="{{ route('admin.skill_groups.export',$skillTestGroup) }}" class="btn btn-outline-success"><i class="fas fa-file-csv"></i> Export CSV</a>
 </div>
 </div>
 @stop
