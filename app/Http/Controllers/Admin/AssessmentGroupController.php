@@ -19,6 +19,7 @@ use App\Jobs\GenerateWrittenExamItemsBatch;
 use App\Services\AssessmentAnalyticsService;
 use App\Services\AssessmentGovernanceService;
 use App\Services\AssessmentScoreSyncService;
+use App\Support\AssessmentHiddenDuration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -1121,6 +1122,9 @@ class AssessmentGroupController extends Controller
                 'Total Items',
                 'Percentage',
                 'Tab/App Switch Count',
+                'Total Hidden Duration (HH:MM:SS)',
+                'Total Hidden Duration (Seconds)',
+                'Unpaired Hidden Intervals',
                 'Void Reason',
             ]);
 
@@ -1134,7 +1138,19 @@ class AssessmentGroupController extends Controller
                 ->whereNotNull('started_at')
                 ->orderBy('id')
                 ->chunkById(500, function ($attempts) use ($handle) {
+                    $visibilityEvents = AssessmentAttemptEvent::query()
+                        ->whereIn('exam_attempt_id', $attempts->pluck('id'))
+                        ->whereIn('event_type', ['tab_hidden', 'tab_visible'])
+                        ->orderBy('event_at')
+                        ->orderBy('id')
+                        ->get(['id', 'exam_attempt_id', 'event_type', 'event_at'])
+                        ->groupBy('exam_attempt_id');
+
                     foreach ($attempts as $attempt) {
+                        $hiddenDuration = AssessmentHiddenDuration::summarize(
+                            $visibilityEvents->get($attempt->id, [])
+                        );
+
                         fputcsv($handle, [
                             optional($attempt->application)->application_code,
                             optional($attempt->application)->getFullname(),
@@ -1151,6 +1167,9 @@ class AssessmentGroupController extends Controller
                             $attempt->total_items,
                             $attempt->percentage,
                             (int) ($attempt->tab_app_switch_count ?? 0),
+                            $hiddenDuration['formatted'],
+                            $hiddenDuration['seconds'],
+                            $hiddenDuration['unpaired_hidden_intervals'],
                             $attempt->void_reason,
                         ]);
                     }

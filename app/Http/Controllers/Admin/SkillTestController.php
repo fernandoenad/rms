@@ -23,6 +23,7 @@ use App\Models\Vacancy;
 use App\Services\AssessmentAiService;
 use App\Services\AssessmentGovernanceService;
 use App\Services\AssessmentScoreSyncService;
+use App\Support\AssessmentHiddenDuration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -1940,6 +1941,9 @@ class SkillTestController extends Controller
                 'Total Points',
                 'Human Final Percentage',
                 'Tab/App Switch Count',
+                'Total Hidden Duration (HH:MM:SS)',
+                'Total Hidden Duration (Seconds)',
+                'Unpaired Hidden Intervals',
                 'Evaluated',
                 'Void Reason',
             ]);
@@ -1954,7 +1958,19 @@ class SkillTestController extends Controller
                 ->whereNotNull('started_at')
                 ->orderBy('id')
                 ->chunkById(500, function ($attempts) use ($handle, $criteria, $totalPoints) {
+                    $visibilityEvents = SkillTestAttemptEvent::query()
+                        ->whereIn('skill_test_attempt_id', $attempts->pluck('id'))
+                        ->whereIn('event_type', ['tab_hidden', 'tab_visible'])
+                        ->orderBy('event_at')
+                        ->orderBy('id')
+                        ->get(['id', 'skill_test_attempt_id', 'event_type', 'event_at'])
+                        ->groupBy('skill_test_attempt_id');
+
                     foreach ($attempts as $attempt) {
+                        $hiddenDuration = AssessmentHiddenDuration::summarize(
+                            $visibilityEvents->get($attempt->id, [])
+                        );
+
                         $row = [
                             optional($attempt->application)->application_code,
                             optional($attempt->application)->getFullname(),
@@ -1982,6 +1998,9 @@ class SkillTestController extends Controller
                             ? number_format(((float) $attempt->final_score / $totalPoints) * 100, 2, '.', '').'%'
                             : null;
                         $row[] = (int) ($attempt->tab_app_switch_count ?? 0);
+                        $row[] = $hiddenDuration['formatted'];
+                        $row[] = $hiddenDuration['seconds'];
+                        $row[] = $hiddenDuration['unpaired_hidden_intervals'];
                         $row[] = $attempt->evaluated_at?->toIso8601String();
                         $row[] = $attempt->void_reason;
 
