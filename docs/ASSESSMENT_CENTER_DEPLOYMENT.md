@@ -171,6 +171,8 @@ These are descriptive diagnostics and should be interpreted with adequate sample
 
 The official CSV export includes application code, applicant, set, start/submission timestamps, attempt status, raw score, total items, percentage, and void reason.
 
+Written Assessment and Skills Test CSV exports (individual and grouped) also include tab/app switch count, total paired hidden-state duration (HH:MM:SS and seconds), and an unpaired-hidden-interval indicator. The duration sums chronologically matched `tab_hidden`/`tab_visible` audit events; an unpaired interval is excluded from the total and flagged because its length cannot be verified. Event timestamps reflect server receipt and can be affected by browser/network delivery delays. Duration is an investigative signal, not proof of cheating.
+
 
 ## Skills-test governance parity
 
