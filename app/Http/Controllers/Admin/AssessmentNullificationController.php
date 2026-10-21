@@ -42,8 +42,7 @@ class AssessmentNullificationController extends Controller
             'writtenGroups' => AssessmentGroup::orderByDesc('id')->get(['id', 'vacancy_id', 'title', 'assessment_score_key']),
             'skillsGroups' => SkillTestGroup::orderByDesc('id')->get(['id', 'vacancy_id', 'title', 'assessment_score_key']),
             'batches' => AssessmentNullificationBatch::with(['vacancy:id,position_title'])
-                ->withCount(['items', 'items as applicant_count' => fn ($q) => $q->selectRaw('COUNT(DISTINCT application_id)')])
-                ->latest('id')->paginate(20),
+                ->withCount('items')->latest('id')->paginate(20),
             'vacancyId' => $vacancyId,
             'writtenId' => $writtenId,
             'skillsId' => $skillsId,
