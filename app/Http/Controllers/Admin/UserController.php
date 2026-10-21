@@ -23,9 +23,10 @@ class UserController extends Controller
         // The legacy all-user ->get() request loaded every staff user into
         // PHP memory and scaled with the entire applicant/staff account base.
         // Bound each web request to 25 staff profiles with their staff roles.
-        $search = trim((string) $request->validate([
+        $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:255'],
-        ])['q'] ?? '');
+        ]);
+        $search = trim((string) ($validated['q'] ?? ''));
 
         $users = User::query()
             ->select(['id', 'email', 'name'])
