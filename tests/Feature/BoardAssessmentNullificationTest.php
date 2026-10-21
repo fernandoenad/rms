@@ -145,7 +145,6 @@ class BoardAssessmentNullificationTest extends TestCase
         $batch = AssessmentNullificationBatch::firstOrFail();
         $this->assertSame('active', $batch->status);
         $this->assertCount(2, $batch->items);
-        $this->assertSame(63.0, (float) 63);
         $scores = json_decode($f['assessment']->fresh()->assessment, true);
         $this->assertSame(0.0, (float) $scores['Written_Examination']);
         $this->assertSame(0.0, (float) $scores['Skills_Test']);
@@ -198,10 +197,10 @@ class BoardAssessmentNullificationTest extends TestCase
     {
         $f = $this->fixture();
         $this->actingAs($this->staff(2));
-        $this->getJson(route('admin.assessment_nullifications.index'))->assertStatus(401);
+        $this->getJson(route('admin.assessment_nullifications.index'))->assertForbidden();
         $this->postJson(route('admin.assessment_nullifications.store'), [
             'vacancy_id' => $f['vacancy']->id,
-        ])->assertStatus(401);
+        ])->assertForbidden();
     }
 
     public function test_duplicate_action_and_stale_preview_fail_closed(): void
