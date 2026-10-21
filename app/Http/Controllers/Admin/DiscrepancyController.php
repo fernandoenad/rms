@@ -109,7 +109,8 @@ class DiscrepancyController extends Controller
 
         $filteredFormData = array_intersect_key($formData, array_flip($keys));
 
-        $assessment->update(['assessment' => json_encode($filteredFormData), 'score' => $totalPoints]); 
+        app(\App\Services\AssessmentNullificationService::class)
+            ->updateManualAssessment($assessment, $filteredFormData);
 
         return view('admin.discrepancies.edit_scores',['assessment' => $assessment]);
     }
