@@ -333,6 +333,11 @@ class ExamAttemptController extends Controller
             return back()->with('status_assessment', 'Attempt already completed.');
         }
 
+        // Claim before mutating/starting this attempt. A second authenticated
+        // device is blocked even when POSTing Start instead of opening /take.
+        app(\App\Services\AssessmentDeviceSessionService::class)
+            ->claim($request, 'written', (int) $attempt->id);
+
         if ((int) $attempt->status === 0) {
             DB::transaction(function () use ($request, $attempt, $exam, $extraMinutes) {
                 $locked = ExamAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
