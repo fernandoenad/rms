@@ -220,6 +220,18 @@ Route::group(['middleware' => ['active']], function () {
 
     Route::get('/admin/assessment-center', [AdminAssessmentCenter::class, 'index'])->name('admin.assessment_center.index');
     Route::get('/admin/assessment-center/integrity', [AdminAssessmentIntegrity::class, 'index'])->name('admin.assessment_center.integrity');
+    Route::get('/admin/assessment-center/integrity-flags', [\App\Http\Controllers\Admin\ApplicantIntegrityFlagController::class, 'index'])
+        ->name('admin.integrity_flags.index');
+    Route::post('/admin/assessment-center/integrity-flags/rules', [\App\Http\Controllers\Admin\ApplicantIntegrityFlagController::class, 'rules'])
+        ->name('admin.integrity_flags.rules');
+    Route::post('/admin/assessment-center/integrity-flags/scan', [\App\Http\Controllers\Admin\ApplicantIntegrityFlagController::class, 'scan'])
+        ->name('admin.integrity_flags.scan');
+    Route::post('/admin/assessment-center/integrity-flags/manual', [\App\Http\Controllers\Admin\ApplicantIntegrityFlagController::class, 'manual'])
+        ->name('admin.integrity_flags.manual');
+    Route::post('/admin/assessment-center/integrity-flags/{flag}/decide', [\App\Http\Controllers\Admin\ApplicantIntegrityFlagController::class, 'decide'])
+        ->name('admin.integrity_flags.decide');
+    Route::get('/admin/assessment-center/integrity-flags/export', [\App\Http\Controllers\Admin\ApplicantIntegrityFlagController::class, 'export'])
+        ->name('admin.integrity_flags.export');
     Route::get('/admin/assessment-center/nullifications', [\App\Http\Controllers\Admin\AssessmentNullificationController::class, 'index'])
         ->name('admin.assessment_nullifications.index');
     Route::post('/admin/assessment-center/nullifications', [\App\Http\Controllers\Admin\AssessmentNullificationController::class, 'store'])
