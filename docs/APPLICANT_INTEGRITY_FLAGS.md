@@ -1,6 +1,6 @@
 # RMS applicant integrity flags (draft release)
 
-This feature is under development in draft PR #57. **Do not merge or deploy until all CAR-RQA templates have been updated and regression-tested.**
+This feature is developed in PR #57. Review successful CI and deployment prerequisites before applying to live recruitment records.
 
 ## Policy and scope
 An authorized active Level 1 HR administrator selects a vacancy in Assessment Center → Administration → Applicant Integrity Flags. New threshold settings create a versioned rule set scoped to that vacancy and documented by an HRMPSB authority reference. Recommended initial review criteria are 5+ visibility interruptions, >60s total paired hidden time, >30s average per completed hidden interval, or >120s longest paired hidden interval. Unpaired hidden events trigger a separate technical-data-quality review. Thresholds are **screening heuristics**, not proof of cheating; only review data appropriately governed and explained in the applicable recruitment process.
@@ -24,8 +24,8 @@ The public guest CAR-RQA view is deliberately left unchanged. For internal repor
 Browser visibility does not identify which other app or page, if any, was used. Connectivity and event-delivery delay can affect timing.
 
 ## Release gates still outstanding
-- Integrate confirmed-only remarks formatting across **all 11** internal CAR-RQA templates and their variants. Four are integrated in this draft; seven remain.
-- Decide if signed/issued RQA documents need an explicit immutable flag snapshot before future reviews or flag changes.
+- Confirmed-only remarks formatting is applied to **all 11** internal CAR-RQA template variants. The public guest view is not flagged.
+- **Operational limitation:** printed/signed RQA documents are not frozen automatically. Archive the issued/signed report outside RMS, with its issuance date and approved review decisions; future flag changes affect newly rendered reports. Explicit immutable in-app signed-report snapshots require a separate enhancement.
 - Complete GitHub Actions regression and MySQL integration checks on the final head.
 - Carry out staff-only acceptance testing with synthetic applicants for pending, confirmed, cleared, manual referral and public-page isolation.
 - Validate that employment and eligibility decisions remain governed by the Board, not by the numeric flagging thresholds.
