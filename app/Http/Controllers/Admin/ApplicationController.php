@@ -16,6 +16,8 @@ use Auth;
 use Mail;
 use App\Mail\UpdateMail;
 use App\Models\Exam;
+use App\Services\Applicant\SafeApplicationDeletionService;
+use Illuminate\Database\QueryException;
 use Yajra\DataTables\Facades\DataTables;
 
 class ApplicationController extends Controller
@@ -157,25 +159,37 @@ class ApplicationController extends Controller
         ]);
     }
 
-    public function delete(Application $application)
+    public function delete(Application $application, SafeApplicationDeletionService $deletion)
     {
-        return view('admin.applications.delete',['application' => $application]);
+        return view('admin.applications.delete', [
+            'application' => $application,
+            'blockingReasons' => $deletion->blockingReasons($application),
+        ]);
     }
 
-    public function destroy(Application $application)
+    public function destroy(Application $application, SafeApplicationDeletionService $deletion)
     {
-        $data['name'] =  $application->first_name;
-        $data['subject'] =  $application->application_code;
-        $data['application'] = $application->application_code;
+        try {
+            $reasons = $deletion->deleteUnused($application, (int) auth()->id());
+        } catch (QueryException $e) {
+            // A concurrent record or a database dependency unknown to an
+            // older installation may still block DELETE. Preserve all rows
+            // transactionally and display a safe message instead of HTTP 500.
+            if (!$deletion->isForeignKeyFailure($e)) {
+                throw $e;
+            }
+            report($e);
+            return redirect()->route('admin.applications.delete', $application)
+                ->withErrors(['deletion' => 'Deletion was blocked by existing linked records. No application data was removed. Contact the RMS administrator for review.']);
+        }
 
-        $application->inquiries()->delete(); //deletes the inquries first
-        $application->delete();
+        if ($reasons !== []) {
+            return redirect()->route('admin.applications.delete', $application)
+                ->withErrors(['deletion' => 'Deletion is not permitted because this application has protected records: '.implode(', ', $reasons).'. No data was removed.']);
+        }
 
-        // email 
-        $data['message'] = 'Application was deleted by HR.';
-        //Mail::to($application->email)->queue(new UpdateMail($data));
-        
-        return redirect(route('admin.applications.index'))->with('status', 'Application was successfully deleted.');
+        return redirect()->route('admin.applications.index')
+            ->with('status', 'Unused application successfully deleted. An audit event was recorded.');
     }
 
     public function edit(Application $application)
