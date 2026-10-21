@@ -212,6 +212,18 @@ class AssessmentNullificationService
                 ]);
             }
 
+            app(AssessmentGovernanceService::class)->log('board_assessment_nullification', [
+                'assessment_group_id' => $writtenId,
+            ], [
+                'batch_id' => $batch->id,
+                'vacancy_id' => $vacancyId,
+                'written_group_id' => $writtenId,
+                'skills_group_id' => $skillsId,
+                'board_reference' => $input['board_reference'],
+                'affected_criteria' => $scope['criteria'],
+                'affected_applicants' => $scope['count'],
+            ]);
+
             return $batch;
         }, 3);
     }
@@ -258,6 +270,14 @@ class AssessmentNullificationService
                 'status' => 'restored', 'restored_by' => $actorId,
                 'restoration_reference' => $reference, 'restoration_reason' => $reason,
                 'restored_at' => now(),
+            ]);
+            app(AssessmentGovernanceService::class)->log('board_assessment_nullification_restored', [
+                'assessment_group_id' => $locked->written_group_id,
+            ], [
+                'batch_id' => $locked->id,
+                'original_board_reference' => $locked->board_reference,
+                'restoration_reference' => $reference,
+                'affected_applicants' => $items->count(),
             ]);
             // Synchronizers may resume after restoration, but paused groups are
             // not reopened automatically. HR must verify the Board authorization.
