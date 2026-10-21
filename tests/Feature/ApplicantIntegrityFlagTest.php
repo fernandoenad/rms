@@ -178,6 +178,23 @@ class ApplicantIntegrityFlagTest extends TestCase
         $this->get($url)->assertOk()->assertDontSee('Qualified *');
     }
 
+    public function test_all_internal_rqa_layouts_use_confirmed_only_marker(): void
+    {
+        $variants = [
+            'carview', 'carviewnt', 'carview2', 'carview2nt',
+            'carview3', 'carview3nt', 'carview4', 'carview4nt',
+            'carview5nt', 'careerview', 'careerviewb',
+        ];
+        foreach ($variants as $variant) {
+            $blade = file_get_contents(resource_path('views/admin/applications/list/'.$variant.'.blade.php'));
+            $this->assertStringContainsString('RqaIntegrityRemarks::format', $blade, $variant);
+            $this->assertStringContainsString('confirmedForVacancy', $blade, $variant);
+        }
+        $public = file_get_contents(resource_path('views/guest/rqas/carview.blade.php'));
+        $this->assertStringNotContainsString('RqaIntegrityRemarks::format', $public);
+        $this->assertStringNotContainsString('confirmedForVacancy', $public);
+    }
+
     public function test_non_hr_staff_cannot_read_or_change_private_flags(): void
     {
         $f = $this->makeApplication();
