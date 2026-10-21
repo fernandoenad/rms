@@ -196,6 +196,7 @@
                                     </div>
                                 </div>
                                 <div class="chart tab-pane" id="scores">
+                                    @php $boardNullifiedCriteria = app(\App\Services\AssessmentNullificationService::class)->lockedCriteria((int) $application->id); @endphp
                                     <div class="card-body table-responsive p-0">
                                         <table class="table table-hover text-nowrap table-borderless">
                                             <tbody>
@@ -208,7 +209,7 @@
 
                                                     @foreach($assessment_scores as $key => $value)
                                                         <tr>
-                                                            <th>{{ $key }}</th>
+                                                            <th>{{ $key }} @if(in_array($key, $boardNullifiedCriteria, true))<span class="badge badge-warning">Nullified by Board</span>@endif</th>
                                                             <td>
                                                                 {{ $application->assessment->status == 3 ? $value : '-' }}
                                                             </td>
