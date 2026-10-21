@@ -13,7 +13,9 @@ class UserController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        // Staff account management includes password resets and role changes.
+        // Only HR administrators may access these endpoints.
+        $this->middleware(['auth', 'admin']);
     }
 
     public function index()
