@@ -80,6 +80,7 @@
             <tbody>
                 @php $i=1; @endphp 
 
+                @php $rqaFlaggedApplicationIds = app(\App\Services\ApplicantIntegrityFlagService::class)->confirmedForVacancy((int)$vacancy->id); @endphp
                 @foreach($assessments as $assessment)
                     @php 
                         $assessment_details = json_decode($assessment->assessment, true); 
@@ -94,7 +95,7 @@
                                 @php $total_points += is_numeric($value) ? $value : 0; @endphp
                                 <td align="right">{{ is_numeric($value) ? number_format($value,2) : number_format($total_points,2) }}</td>
                         @endforeach
-                        <td align="left">{{ $assessment->status == 2 ? 'Initial only. / ' . end($assessment_details) :  end($assessment_details) }}</td>
+                        <td align="left">{{ \App\Support\RqaIntegrityRemarks::format($assessment->status == 2 ? 'Initial only. / ' . end($assessment_details) : end($assessment_details), isset($rqaFlaggedApplicationIds[$application->id])) }}</td>
                         @php $school = optional($application)->station; @endphp
                         <td><small>{{ $school?->code }}-{{ substr($school?->name, 0, 20) }}</small></td>
                         <td></td>
@@ -114,5 +115,8 @@
     </small>
     </div>
     <script src="{{ asset('js/app.js') }}" type="text/js"></script>
+@if($rqaFlaggedApplicationIds)
+<p style="font-size:10px;">* For confidential administrative verification only. Not a finding of cheating.</p>
+@endif
 </body>
 </html>
