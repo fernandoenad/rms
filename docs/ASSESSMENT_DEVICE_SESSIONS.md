@@ -11,7 +11,7 @@ To switch devices, the applicant signs out on device A before opening the assess
 If device A is unavailable, HR may go to **Assessment Center → Administration → Device Sessions** and release that applicant's device lock(s), entering an auditable reason of at least 20 characters. Releasing only clears the lock, not an attempt's score, submission status, available attempts or expiry. The old browser may subsequently be blocked by the new browser's lock; the candidate should not keep both browsers active.
 
 ## Implementation
-- `assessment_device_sessions` has a unique index on assessment kind and attempt ID, a user ID, HMAC hash of Laravel session identifier, released_at, timestamps.
+- `assessment_device_sessions` has a unique index on assessment kind and attempt ID, a user ID, HMAC hash of a server-held per-browser session secret that survives Laravel session-ID rotation, released_at, timestamps.
 - On claim, an SQL transaction locks the **user row** before the attempt row, serializing concurrent start requests even across different assessment kinds.
 - Only the same browser session can reclaim its active lock. A different authenticated session for the same applicant with any unreleased attempt lock receives HTTP 409. Ownership checks run before claim on every route.
 - The standard Laravel logout and explicit Google-account switching release only locks matching that authenticated browser session.
