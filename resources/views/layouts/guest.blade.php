@@ -131,12 +131,14 @@
                                         </a>
                                     @endif
                                     <div class="dropdown-divider"></div>
+                                    @if(!session('rms_impersonation_admin_id'))
                                     <form class="rms-logout-form" method="POST" action="{{ route('logout') }}">
                                         @csrf
                                         <button type="submit" class="dropdown-item text-danger">
                                             <i class="fas fa-sign-out-alt mr-2" aria-hidden="true"></i>Sign Out
                                         </button>
                                     </form>
+                                    @endif
                                 </div>
                             </li>
                         @endguest
@@ -145,6 +147,16 @@
             </div>
         </nav>
 
+        @if(session('rms_impersonation_admin_id'))
+        <div class="alert alert-warning rounded-0 mb-0 py-2 d-flex justify-content-between align-items-center flex-wrap" role="status">
+            <strong><i class="fas fa-user-secret mr-2" aria-hidden="true"></i>TEST IMPERSONATION — READ ONLY</strong>
+            <span class="mx-2">Viewing applicant account #{{ auth()->id() }}. Application changes, assessments and submissions are blocked.</span>
+            <form method="POST" action="{{ route('admin.applicant_accounts.impersonation.stop') }}" class="mb-0">
+                @csrf
+                <button type="submit" class="btn btn-dark btn-sm">Return to Administrator</button>
+            </form>
+        </div>
+        @endif
         <div class="content-wrapper">
             @yield('main')
         </div>
