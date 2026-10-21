@@ -6,7 +6,7 @@ use App\Models\Assessment;
 use App\Models\Template;
 use App\Models\Vacancy;
 use App\Support\RqaScoreEligibility;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class RqaScoreEligibilityTest extends TestCase
 {
