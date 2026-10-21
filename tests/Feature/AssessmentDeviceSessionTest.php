@@ -116,6 +116,18 @@ class AssessmentDeviceSessionTest extends TestCase
         $this->assertDatabaseCount('assessment_device_sessions', 2);
     }
 
+    public function test_cross_assessment_device_lock_blocks_skills_when_written_open_elsewhere(): void
+    {
+        [$user, $written, $skills] = $this->attempts();
+        $service = app(AssessmentDeviceSessionService::class);
+        $first = $this->requestFor($user, '1111111111111111111111111111111111111111');
+        $second = $this->requestFor($user, '2222222222222222222222222222222222222222');
+        $service->claim($first, 'written', $written->id);
+
+        $this->expectException(ConflictHttpException::class);
+        $service->claim($second, 'skills', $skills->id);
+    }
+
     public function test_session_hashes_are_not_raw_browser_session_identifiers(): void
     {
         [$user, $written] = $this->attempts();
