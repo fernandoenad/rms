@@ -121,7 +121,7 @@ class ApplicantIntegrityFlagTest extends TestCase
         $this->assertSame(0, $result['already_recorded']);
         $flag = ApplicantIntegrityFlag::firstOrFail();
         $this->assertSame('pending', $flag->status);
-        $this->assertContains('prolonged_single_hidden_interval', $flag->signals);
+        $this->assertContains('extended_average_hidden_time', $flag->signals);
         $this->assertSame([], $service->confirmedForVacancy($f['vacancy']->id));
         $this->assertSame(81.0, (float) $f['assessment']->fresh()->score);
         $this->assertSame('Qualified', json_decode((string) $f['assessment']->fresh()->assessment,true)['Remarks']);
