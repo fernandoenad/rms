@@ -159,6 +159,24 @@ class ApplicantIntegrityFlagTest extends TestCase
         $this->assertSame(81.0, (float) $f['assessment']->fresh()->score);
     }
 
+    public function test_private_car_rqa_shows_marker_only_after_hr_confirmation(): void
+    {
+        $f = $this->makeApplication();
+        $hr = $this->hr();
+        $this->actingAs($hr);
+        $service = app(ApplicantIntegrityFlagService::class);
+        $flag = $service->addManual($f['app'], $hr->id, 'Proctor requests a documented technical review.');
+
+        $url = route('admin.applications.vacancy.show.carview', $f['vacancy']);
+        $this->get($url)->assertOk()->assertDontSee('Qualified *');
+
+        $service->review($flag, 'confirmed', 'This application requires confidential HRMPSB verification.', $hr->id);
+        $this->get($url)->assertOk()->assertSee('Qualified *');
+
+        $service->review($flag, 'cleared', 'Documentation confirms there was no actionable concern.', $hr->id);
+        $this->get($url)->assertOk()->assertDontSee('Qualified *');
+    }
+
     public function test_non_hr_staff_cannot_read_or_change_private_flags(): void
     {
         $f = $this->makeApplication();
