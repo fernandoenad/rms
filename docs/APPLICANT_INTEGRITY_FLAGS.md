@@ -15,7 +15,7 @@ An authorized HR administrator can confirm or clear a case with a written ration
 The public guest CAR-RQA view is deliberately left unchanged. For internal reporting, an asterisk means **For confidential administrative verification only**, not proven cheating. Do not circulate the confidential review queue or exported audit CSV publicly.
 
 ## Metric interpretation
-- Switch count: number of `tab_hidden` events (including repeated events); duplicate hidden events are not counted twice as duration intervals.
+- Switch count: number of distinct transitions into hidden state; duplicate `tab_hidden` events while already hidden do not inflate frequency.
 - Total hidden seconds: sum of paired `tab_hidden` → `tab_visible` elapsed intervals, based on server event reception timestamps.
 - Average hidden seconds: total paired seconds divided by completed intervals. Undefined if no completed pairs.
 - Longest hidden interval: maximum of completed paired intervals.
