@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\ApplicantApplicationLink;
 use App\Models\ApplicantProfile;
+use App\Models\Assessment;
 use App\Models\Application;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
@@ -179,6 +180,27 @@ class AssessmentDeviceSessionTest extends TestCase
         app(AssessmentDeviceSessionService::class)->claim($req, 'written', $written->id);
         app(AssessmentDeviceSessionService::class)->claim($req, 'skills', $skills->id);
         $this->assertDatabaseCount('assessment_device_sessions', 0);
+    }
+
+    public function test_real_logout_releases_current_authenticated_browser_locks(): void
+    {
+        [$user, $written, $skills] = $this->attempts();
+        Assessment::create([
+            'application_id' => $written->application_id,
+            'template_id' => $written->exam->vacancy->template_id,
+            'assessment' => json_encode(['Written_Examination' => 0]),
+            'status' => 2,
+        ]);
+
+        $this->actingAs($user)->get(route('guest.assessments.attempts.time_status', $written))
+            ->assertOk();
+        $this->assertDatabaseHas('assessment_device_sessions', [
+            'kind' => 'written', 'attempt_id' => $written->id, 'released_at' => null,
+        ]);
+        $this->post(route('logout'))->assertRedirect('/');
+        $this->assertDatabaseMissing('assessment_device_sessions', [
+            'kind' => 'written', 'attempt_id' => $written->id, 'released_at' => null,
+        ]);
     }
 
     public function test_attempt_routes_check_both_ownership_and_session_before_controller(): void
