@@ -220,6 +220,14 @@ Route::group(['middleware' => ['active']], function () {
 
     Route::get('/admin/assessment-center', [AdminAssessmentCenter::class, 'index'])->name('admin.assessment_center.index');
     Route::get('/admin/assessment-center/integrity', [AdminAssessmentIntegrity::class, 'index'])->name('admin.assessment_center.integrity');
+    Route::get('/admin/assessment-center/nullifications', [\App\Http\Controllers\Admin\AssessmentNullificationController::class, 'index'])
+        ->name('admin.assessment_nullifications.index');
+    Route::post('/admin/assessment-center/nullifications', [\App\Http\Controllers\Admin\AssessmentNullificationController::class, 'store'])
+        ->name('admin.assessment_nullifications.store');
+    Route::post('/admin/assessment-center/nullifications/{batch}/restore', [\App\Http\Controllers\Admin\AssessmentNullificationController::class, 'restore'])
+        ->name('admin.assessment_nullifications.restore');
+    Route::get('/admin/assessment-center/nullifications/{batch}/export', [\App\Http\Controllers\Admin\AssessmentNullificationController::class, 'export'])
+        ->name('admin.assessment_nullifications.export');
     Route::post('/admin/assessment-center/integrity/repair', [AdminAssessmentIntegrity::class, 'repair'])
         ->middleware('assessment.capability:release')
         ->name('admin.assessment_center.integrity.repair');
