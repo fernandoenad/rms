@@ -131,7 +131,7 @@ class ApplicantIntegrityFlagController extends Controller
             fputcsv($h, ['Flag ID','Application Code','Source','Attempt ID','Rule Version',
                 'Status','Signals','Metrics JSON','Review Reason','Reviewer User ID','Reviewed At','Created At']);
             ApplicantIntegrityFlag::where('vacancy_id', $vacancyId)
-                ->with('application:id,application_code','ruleSet:id,version')
+                ->with(['application:id,application_code','ruleSet:id,version'])
                 ->orderBy('id')->chunkById(200, function ($rows) use ($h, $safe) {
                     foreach ($rows as $flag) {
                         fputcsv($h, array_map($safe, [
