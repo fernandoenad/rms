@@ -8,6 +8,9 @@
 @stop
 @section('content')
 @if(session('status'))<div class="alert alert-success">{{session('status')}}</div>@endif
+@if(auth()->user() && app(\App\Support\ApplicantImpersonationPolicy::class)->isProvisioningAdmin(auth()->user()))
+<div class="mb-3"><a class="btn btn-outline-primary" href="{{ route('admin.support_access.index') }}">Manage Support Impersonation Rights</a></div>
+@endif
 <div class="alert alert-info">
   An application's email address and its account ownership are separate records.
   Changing the application email does not change an existing ownership link.
@@ -23,7 +26,7 @@
    </div>
    <div class="col-md-2 mb-2"><button class="btn btn-primary btn-block" type="submit">Search</button></div>
   </form>
-  <p class="small text-muted mb-0">{{ $impersonationEnabled ? 'Read-only test impersonation enabled for this non-production environment.' : 'Impersonation disabled. Enable explicitly in local/staging only.' }}</p>
+  <p class="small text-muted mb-0">{{ $impersonationEnabled ? 'Read-only applicant support access is available for your account.' : 'Read-only support requires explicit administrative authorization and server configuration.' }}</p>
  </div>
  <div class="table-responsive">
   <table class="table table-hover mb-0">
