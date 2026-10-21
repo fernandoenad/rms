@@ -247,6 +247,7 @@ class ApplicantAccountManagementTest extends TestCase
             ->assertSee('PRODUCTION SUPPORT MODE')
             ->assertSee('Return to Administrator')
             ->assertHeader('Cache-Control', 'no-store, private');
+        $this->assertDatabaseCount('applicant_notification_preferences', 0);
         $this->post(route('logout'))->assertForbidden();
         $this->put(route('applicant.profile.update'), [])->assertForbidden();
         $this->get(route('applicant.apply.review', ['vacancy' => 1]))->assertForbidden();
@@ -285,6 +286,23 @@ class ApplicantAccountManagementTest extends TestCase
             'rms_support_pending_profile_id' => $profile->id,
             'rms_support_pending_reason' => 'This request must never accept a different Google identity.',
             'rms_support_pending_started_at' => now()->timestamp,
+        ])->get(route('admin.applicant_accounts.impersonation.stepup'))->assertForbidden();
+        $this->assertAuthenticatedAs($admin);
+        $this->assertDatabaseCount('applicant_audit_logs', 0);
+    }
+
+    public function test_expired_google_stepup_is_rejected_before_a_google_exchange(): void
+    {
+        config()->set('app.applicant_impersonation_enabled', false);
+        config()->set('app.support_impersonation_enabled', true);
+        $admin = $this->admin();
+        $profile = $this->account('viewonly@example.test');
+        config()->set('app.support_impersonation_admin_ids', (string) $admin->id);
+        $this->actingAs($admin)->withSession([
+            'rms_support_pending_admin_id' => $admin->id,
+            'rms_support_pending_profile_id' => $profile->id,
+            'rms_support_pending_reason' => 'Expired identity challenge must not create a support session.',
+            'rms_support_pending_started_at' => now()->subMinutes(6)->timestamp,
         ])->get(route('admin.applicant_accounts.impersonation.stepup'))->assertForbidden();
         $this->assertAuthenticatedAs($admin);
         $this->assertDatabaseCount('applicant_audit_logs', 0);
