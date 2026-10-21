@@ -193,4 +193,5 @@
   </div>
   <div class="card-footer">{{$flags->links()}}</div>
 </div>
+@endif {{-- End vacancy-scoped integrity review content. --}}
 @stop
