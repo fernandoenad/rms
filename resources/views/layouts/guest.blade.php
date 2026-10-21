@@ -170,8 +170,8 @@
         <div class="content-wrapper">
         @if(session('rms_impersonation_admin_id'))
         <div class="rms-impersonation-banner alert alert-warning rounded-0 mb-0 py-2 d-flex justify-content-between align-items-center flex-wrap" role="status">
-            <strong><i class="fas fa-user-secret mr-2" aria-hidden="true"></i>TEST IMPERSONATION — READ ONLY</strong>
-            <span class="mx-2">Viewing applicant account #{{ auth()->id() }}. Application changes, assessments and submissions are blocked.</span>
+            <strong><i class="fas fa-user-secret mr-2" aria-hidden="true"></i>{{ session('rms_impersonation_mode') === 'support' ? 'PRODUCTION SUPPORT MODE — READ ONLY' : 'TEST IMPERSONATION — READ ONLY' }}</strong>
+            <span class="mx-2">Viewing applicant account #{{ auth()->id() }} until {{ \Carbon\Carbon::createFromTimestamp((int) session('rms_impersonation_expires_at'))->format('H:i:s') }}. All changes and assessments are blocked.</span>
             <form method="POST" action="{{ route('admin.applicant_accounts.impersonation.stop') }}" class="mb-0">
                 @csrf
                 <button type="submit" class="btn btn-dark btn-sm">Return to Administrator</button>
