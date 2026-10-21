@@ -16,7 +16,7 @@
 .rms-home-panel-head h2{color:#283f54;font-size:1.15rem;font-weight:700;margin:0}
 .rms-home-panel-head p{color:#65788b;font-size:.86rem;margin:5px 0 0}
 .rms-home-panel-body{padding:19px 23px}
-.rms-home-open-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.rms-home-open-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:15px}
 .rms-home-open-card{border:1px solid #dfe8f0;border-radius:10px;padding:19px;min-width:0;display:flex;flex-direction:column}
 .rms-home-open-card h3{font-size:1.05rem;font-weight:700;color:#2c4961;line-height:1.4;margin:7px 0}
 .rms-home-open-card .meta{color:#63778c;font-size:.83rem;line-height:1.75;margin-bottom:17px}
@@ -29,6 +29,7 @@
 .rms-home-step p{color:#66798b;font-size:.87rem;margin:0;line-height:1.5}
 .rms-home-staff-footer{display:flex;justify-content:flex-end;gap:7px;align-items:center;flex-wrap:wrap;padding:16px 3px 12px;font-size:.9rem;color:#64788a}
 .rms-home-staff-footer a{font-weight:600}
+@media(min-width:768px) and (max-width:1100px){.rms-home-open-list{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:767px){.rms-home-hero{padding:27px 21px}.rms-home-hero h1{font-size:1.5rem}.rms-home-panel-head,.rms-home-panel-body{padding:17px}.rms-home-open-list,.rms-home-steps{grid-template-columns:1fr}.rms-home-actions .btn{flex:1 1 auto;justify-content:center}}
 </style>
 @endsection
