@@ -6,7 +6,7 @@
         || request()->routeIs('admin.assessments.*')
         || request()->routeIs('admin.skills.*');
     $qualityActive = request()->routeIs('admin.assessment_bank.*');
-    $adminActive = request()->routeIs('admin.assessment_snapshots.*')
+    $adminActive = request()->routeIs('admin.integrity_flags.*') || request()->routeIs('admin.assessment_snapshots.*')
         || request()->routeIs('admin.assessment_permissions.*')
         || request()->routeIs('admin.assessment_nullifications.*');
 @endphp
@@ -45,6 +45,9 @@
                             <i class="fas fa-camera mr-2 text-muted"></i> Snapshots
                         </a>
                         @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1)
+                        <a class="dropdown-item" href="{{ route('admin.integrity_flags.index') }}">
+                            <i class="fas fa-flag mr-2 text-muted"></i> Applicant Integrity Flags
+                        </a>
                         <a class="dropdown-item" href="{{ route('admin.assessment_nullifications.index') }}">
                             <i class="fas fa-gavel mr-2 text-muted"></i> Board Nullifications
                         </a>
