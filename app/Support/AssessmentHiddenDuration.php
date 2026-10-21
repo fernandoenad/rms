@@ -30,9 +30,12 @@ final class AssessmentHiddenDuration
             }
 
             if ($event->event_type === 'tab_hidden') {
-                $hiddenEventCount++;
-                // Duplicate hidden events do not start overlapping intervals.
-                $hiddenAt ??= $eventAt->getTimestamp();
+                // Count only transitions into hidden state: duplicated browser
+                // events must not inflate suspicion frequency.
+                if ($hiddenAt === null) {
+                    $hiddenEventCount++;
+                    $hiddenAt = $eventAt->getTimestamp();
+                }
             } elseif ($event->event_type === 'tab_visible' && $hiddenAt !== null) {
                 $duration = max(0, $eventAt->getTimestamp() - $hiddenAt);
                 $totalSeconds += $duration;
