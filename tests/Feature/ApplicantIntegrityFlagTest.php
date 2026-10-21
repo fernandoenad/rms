@@ -195,6 +195,23 @@ class ApplicantIntegrityFlagTest extends TestCase
         $this->assertStringNotContainsString('confirmedForVacancy', $public);
     }
 
+    public function test_hr_integrity_flags_page_renders_with_and_without_selected_vacancy(): void
+    {
+        $f = $this->makeApplication();
+        $this->actingAs($this->hr());
+
+        $this->get(route('admin.integrity_flags.index'))
+            ->assertOk()
+            ->assertSee('Applicant Integrity Flags')
+            ->assertSee('Select recruitment position');
+
+        $this->get(route('admin.integrity_flags.index', ['vacancy_id' => $f['vacancy']->id]))
+            ->assertOk()
+            ->assertSee('Screening policy')
+            ->assertSee('Manual applicant referral')
+            ->assertSee('Applicant review cases');
+    }
+
     public function test_non_hr_staff_cannot_read_or_change_private_flags(): void
     {
         $f = $this->makeApplication();
