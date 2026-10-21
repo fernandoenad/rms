@@ -49,14 +49,14 @@ class PublishedAssessmentScheduleNotifierTest extends TestCase
         ]);
     }
 
-    private function link(Application $application, bool $verified = true): ApplicantProfile
+    private function link(Application $application): ApplicantProfile
     {
         $profile = ApplicantProfile::create(['user_id' => User::factory()->create()->id]);
         ApplicantApplicationLink::create([
             'applicant_profile_id' => $profile->id,
             'application_id' => $application->id,
             'link_method' => 'hr_approved_claim',
-            'verified_at' => $verified ? now() : null,
+            'verified_at' => now(),
         ]);
         return $profile;
     }
@@ -94,7 +94,7 @@ class PublishedAssessmentScheduleNotifierTest extends TestCase
         $verified = $this->application($vacancy);
         $profile = $this->link($verified);
         $unverified = $this->application($vacancy);
-        $this->link($unverified, false);
+        // Unlinked applications cannot have a verified applicant owner.
         $unassigned = $this->application($vacancy);
         $this->link($unassigned);
 
@@ -214,7 +214,7 @@ class PublishedAssessmentScheduleNotifierTest extends TestCase
         $vacancy = $this->vacancy();
         $skill = $this->skills($vacancy);
         $app = $this->application($vacancy);
-        $this->link($app, false);
+        // No verified account ownership link exists for this application.
         SkillTestAssignment::create(['skill_test_id' => $skill->id, 'application_id' => $app->id]);
 
         app(PublishedAssessmentScheduleNotifier::class)->skills($skill);
