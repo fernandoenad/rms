@@ -3,6 +3,8 @@
 namespace App\Support;
 
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ApplicantImpersonationPolicy
 {
@@ -18,6 +20,17 @@ class ApplicantImpersonationPolicy
             && (bool) config('app.applicant_impersonation_enabled', false);
     }
 
+    public function isProvisioningAdmin(User $admin): bool
+    {
+        if (!$this->isHr($admin)) return false;
+
+        $ids = array_filter(array_map('trim', explode(',',
+            (string) config('app.support_impersonation_admin_ids', '')
+        )), fn ($id) => ctype_digit($id) && (int) $id > 0);
+
+        return in_array((string) $admin->id, $ids, true);
+    }
+
     public function productionSupportEnabled(User $admin): bool
     {
         // Production is always opt-in, limited to specific HR user IDs. Do not
@@ -29,11 +42,13 @@ class ApplicantImpersonationPolicy
             return false;
         }
 
-        $ids = array_filter(array_map(
-            'trim', explode(',', (string) config('app.support_impersonation_admin_ids', ''))
-        ), fn ($id) => ctype_digit($id) && (int) $id > 0);
+        if ($this->isProvisioningAdmin($admin)) return true;
 
-        return in_array((string) $admin->id, $ids, true);
+        // Grants may be delegated only by a bootstrap owner using the audited
+        // management page. Deployed code remains safe before migration runs.
+        return Schema::hasTable('applicant_support_access_grants')
+            && DB::table('applicant_support_access_grants')
+                ->where('user_id', $admin->id)->whereNull('revoked_at')->exists();
     }
 
     public function mayStart(User $admin): bool
