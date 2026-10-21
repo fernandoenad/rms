@@ -147,7 +147,7 @@ class ApplicantAccountController extends Controller
 
             return Socialite::driver('google')
                 ->redirectUrl(route('admin.applicant_accounts.impersonation.stepup'))
-                ->with(['prompt' => 'login', 'max_age' => 0])
+                ->with(['prompt' => 'select_account', 'max_age' => 0])
                 ->redirect();
         }
 
