@@ -15,12 +15,8 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class LimitApplicantImpersonation
 {
-    public function handle(
-        Request $request,
-        Closure $next,
-        // Dependencies are resolved via app() below because middleware's third
-        // parameter is reserved for route middleware arguments in Laravel.
-    ): Response {
+    public function handle(Request $request, Closure $next): Response
+    {
         if (!$request->session()->has('rms_impersonation_admin_id')) {
             return $next($request);
         }
