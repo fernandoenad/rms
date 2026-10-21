@@ -180,6 +180,13 @@ Route::group(['middleware' => ['active']], function () {
     Route::get('/admin/change_password', [AdminHome::class, 'change_password'])->name('admin.change_password');
     Route::put('/admin/change_password', [AdminHome::class, 'change_password_ok'])->name('admin.change_password_ok');
 
+    Route::get('/admin/support-impersonation-access', [\App\Http\Controllers\Admin\ApplicantSupportAccessController::class, 'index'])
+        ->name('admin.support_access.index');
+    Route::post('/admin/support-impersonation-access/{user}/grant', [\App\Http\Controllers\Admin\ApplicantSupportAccessController::class, 'grant'])
+        ->name('admin.support_access.grant');
+    Route::post('/admin/support-impersonation-access/{user}/revoke', [\App\Http\Controllers\Admin\ApplicantSupportAccessController::class, 'revoke'])
+        ->name('admin.support_access.revoke');
+
     Route::get('/admin/applicant-accounts', [\App\Http\Controllers\Admin\ApplicantAccountController::class, 'index'])
         ->name('admin.applicant_accounts.index');
     Route::get('/admin/applicant-accounts/{profile}', [\App\Http\Controllers\Admin\ApplicantAccountController::class, 'show'])
