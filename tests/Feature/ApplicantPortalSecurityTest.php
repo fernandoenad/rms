@@ -311,6 +311,8 @@ class ApplicantPortalSecurityTest extends TestCase
         $this->actingAs($user)->get(route('applicant.dashboard'))
             ->assertOk()
             ->assertSee('Switch to Staff Portal')
+            ->assertSee('aria-label="Switch back to Staff Portal"', false)
+            ->assertDontSee('aria-label="Return to Administrator and end impersonation"', false)
             ->assertSee(route('admin.index'));
 
         $this->assertDatabaseHas('applicant_profiles', ['user_id' => $user->id]);
