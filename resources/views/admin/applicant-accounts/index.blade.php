@@ -26,7 +26,7 @@
    </div>
    <div class="col-md-2 mb-2"><button class="btn btn-primary btn-block" type="submit">Search</button></div>
   </form>
-  <p class="small text-muted mb-0">{{ $impersonationEnabled ? 'Read-only test impersonation enabled for this non-production environment.' : 'Impersonation disabled. Enable explicitly in local/staging only.' }}</p>
+  <p class="small text-muted mb-0">{{ $impersonationEnabled ? 'Read-only applicant support access is available for your account.' : 'Read-only support requires explicit administrative authorization and server configuration.' }}</p>
  </div>
  <div class="table-responsive">
   <table class="table table-hover mb-0">
