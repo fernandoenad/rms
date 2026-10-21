@@ -16,11 +16,19 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
  */
 class AssessmentDeviceSessionService
 {
-    private function hash(Request $request): string
+    private function hash(Request $request, bool $create = true): ?string
     {
-        $id = $request->session()->getId();
-        abort_if($id === '', 403, 'An authenticated browser session is required.');
-        return hash_hmac('sha256', $id, (string) config('app.key'));
+        // Laravel legitimately regenerates session IDs on authentication and
+        // logout. Use a server-held per-session secret which survives those
+        // rotations, rather than locking to a transient session ID.
+        $secret = $request->session()->get('rms_assessment_device_secret');
+        if ((!is_string($secret) || strlen($secret) < 32) && $create) {
+            $secret = bin2hex(random_bytes(32));
+            $request->session()->put('rms_assessment_device_secret', $secret);
+        }
+        return is_string($secret) && strlen($secret) >= 32
+            ? hash_hmac('sha256', $secret, (string) config('app.key'))
+            : null;
     }
 
     public function claim(Request $request, string $kind, int $attemptId): void
@@ -84,11 +92,15 @@ class AssessmentDeviceSessionService
         if (!$request->hasSession() || !$request->user()) return 0;
         if (!Schema::hasTable('assessment_device_sessions')) return 0;
 
-        return DB::table('assessment_device_sessions')
+        $hash = $this->hash($request, false);
+        if ($hash === null) return 0;
+        $count = DB::table('assessment_device_sessions')
             ->where('user_id', $request->user()->id)
-            ->where('session_hash', $this->hash($request))
+            ->where('session_hash', $hash)
             ->whereNull('released_at')
             ->update(['released_at' => now(), 'updated_at' => now()]);
+        $request->session()->forget('rms_assessment_device_secret');
+        return $count;
     }
 
     /** Admin recovery only; does not modify attempt answers, scores or expiry. */
