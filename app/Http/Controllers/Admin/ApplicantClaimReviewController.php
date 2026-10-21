@@ -3,11 +3,26 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ApplicationClaimRequest;
+use App\Menu\Filters\HistoricalClaimsCountFilter;
+use Illuminate\Support\Facades\Gate;
 use App\Services\Applicant\ApplicationClaimService;
 use Illuminate\Http\Request;
 
 class ApplicantClaimReviewController extends Controller
 {
+    /**
+     * Small, authorization-gated endpoint for the live HR sidebar badge.
+     * No claimant details are returned and responses must not be cached.
+     */
+    public function pendingCount()
+    {
+        Gate::authorize('review-applicant-claims');
+
+        return response()->json([
+            'count' => HistoricalClaimsCountFilter::actionableCount(),
+        ])->header('Cache-Control', 'private, no-store, no-cache, max-age=0');
+    }
+
     public function index(Request $request)
     {
         $status = $request->query('status', 'open');
