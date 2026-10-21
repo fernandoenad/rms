@@ -250,7 +250,7 @@ class ApplicantAccountManagementTest extends TestCase
         $this->assertDatabaseCount('applicant_notification_preferences', 0);
         $this->post(route('logout'))->assertForbidden();
         $this->put(route('applicant.profile.update'), [])->assertForbidden();
-        $this->get(route('applicant.apply.review', ['vacancy' => 1]))->assertForbidden();
+        $this->get(route('applicant.google'))->assertForbidden();
 
         $this->post(route('admin.applicant_accounts.impersonation.stop'))
             ->assertRedirect(route('admin.applicant_accounts.index'));
