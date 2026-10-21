@@ -4,7 +4,14 @@
 <section class="content bg-light min-vh-100 {{ !empty($largeText) ? 'assessment-large-text' : '' }}"><div class="container py-3">
 <div class="sticky-top bg-white border rounded p-2 mb-3 d-flex justify-content-between align-items-center">
 <div><strong>{{ $attempt->skillTest->title }}</strong><div class="small text-muted">Skills Test</div></div>
+<div class="d-flex align-items-center" style="gap:.5rem">
 <span id="skillTimer" class="badge badge-info p-2">--:--</span>
+<form method="POST" action="{{route('logout')}}" class="m-0"
+      onsubmit="return confirm('Sign out of this device to continue on another? Your Skills Test timer will NOT pause. Please ensure your response has saved.');">
+  @csrf
+  <button class="btn btn-sm btn-outline-secondary" type="submit">Sign Out</button>
+</form>
+</div>
 </div>
 @if(session('status_assessment'))<div class="alert alert-info">{{ session('status_assessment') }}</div>@endif
 <div class="card"><div class="card-body">
