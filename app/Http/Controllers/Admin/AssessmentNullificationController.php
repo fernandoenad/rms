@@ -91,24 +91,31 @@ class AssessmentNullificationController extends Controller
         $filename = 'board-nullification-'.$batch->id.'-audit.csv';
         return response()->streamDownload(function () use ($batch) {
             $handle = fopen('php://output', 'w');
+            // Spreadsheet applications may interpret a leading =, +, -, or @
+            // as a formula. Protect free-text values in downloaded audit CSVs.
+            $safe = static function ($value) {
+                return is_string($value) && preg_match('/^[\\x00-\\x20]*[=+\\-@]/', $value)
+                    ? "'".$value
+                    : $value;
+            };
             fputcsv($handle, [
                 'Batch', 'Board Reference', 'Status', 'Application Code', 'Criterion',
                 'Original Value (JSON)', 'Originally Present', 'Current Official Value', 'Nullified At',
             ]);
 
             $batch->items()->with('application:id,application_code')->orderBy('id')
-                ->chunkById(250, function ($items) use ($handle, $batch) {
+                ->chunkById(250, function ($items) use ($handle, $batch, $safe) {
                     foreach ($items as $item) {
                         $assessment = \App\Models\Assessment::where('application_id', $item->application_id)->first();
                         $values = json_decode((string) $assessment?->assessment, true);
-                        fputcsv($handle, [
+                        fputcsv($handle, array_map($safe, [
                             $batch->id, $batch->board_reference, $batch->status,
                             $item->application?->application_code,
                             $item->criterion_key, $item->previous_value_json,
                             $item->previously_present ? 'Yes' : 'No',
                             is_array($values) ? ($values[$item->criterion_key] ?? '') : '',
                             $batch->created_at?->toIso8601String(),
-                        ]);
+                        ]));
                     }
                 });
             fclose($handle);
