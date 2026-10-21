@@ -8,7 +8,8 @@
     $qualityActive = request()->routeIs('admin.assessment_bank.*');
     $adminActive = request()->routeIs('admin.integrity_flags.*') || request()->routeIs('admin.assessment_snapshots.*')
         || request()->routeIs('admin.assessment_permissions.*')
-        || request()->routeIs('admin.assessment_nullifications.*');
+        || request()->routeIs('admin.assessment_nullifications.*')
+        || request()->routeIs('admin.assessment_device_sessions.*');
 @endphp
 
 <div class="card card-outline card-light mb-3 assessment-center-nav">
@@ -50,6 +51,9 @@
                         </a>
                         <a class="dropdown-item" href="{{ route('admin.assessment_nullifications.index') }}">
                             <i class="fas fa-gavel mr-2 text-muted"></i> Board Nullifications
+                        </a>
+                        <a class="dropdown-item" href="{{ route('admin.assessment_device_sessions.index') }}">
+                            <i class="fas fa-laptop mr-2 text-muted"></i> Device Sessions
                         </a>
                         <a class="dropdown-item" href="{{ route('admin.assessment_permissions.index') }}">
                             <i class="fas fa-user-shield mr-2 text-muted"></i> Access Roles

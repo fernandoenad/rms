@@ -13,7 +13,14 @@
                     <strong>{{ $exam->title }}</strong>
                     <div class="small text-muted"><span id="questionCounter"></span></div>
                 </div>
-                <span class="badge badge-info p-2" id="countdown">--:--</span>
+                <div class="d-flex align-items-center" style="gap:.5rem">
+                    <span class="badge badge-info p-2" id="countdown">--:--</span>
+                    <form method="POST" action="{{route('logout')}}" class="m-0"
+                          onsubmit="return confirm('Sign out of this device to continue on another? The exam timer will NOT pause. Please check that all answers are saved.');">
+                        @csrf
+                        <button class="btn btn-sm btn-outline-secondary" type="submit">Sign Out</button>
+                    </form>
+                </div>
             </div>
             <div class="small mt-1" id="saveState" aria-live="polite">
                 <span class="text-muted">Select an answer to save it automatically.</span>

@@ -125,6 +125,9 @@ class GoogleAuthController extends Controller
             'applicant_pending_vacancy_started_at',
             'staff_google_link_user_id',
         ]);
+        // An explicit Google-account switch invalidates the previous
+        // browser identity: release only that session's assessment locks.
+        app(\App\Services\AssessmentDeviceSessionService::class)->releaseForSession($request);
         Auth::login($user);
         $request->session()->regenerate();
         $profile = ApplicantProfile::where('user_id', $user->id)->firstOrFail();

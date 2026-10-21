@@ -68,5 +68,6 @@ class Kernel extends HttpKernel
         'admin' => \App\Http\Middleware\IsAdmin::class,
         'active' => \App\Http\Middleware\IsActive::class,
         'assessment.capability' => \App\Http\Middleware\AssessmentCapability::class,
+        'assessment.device-session' => \App\Http\Middleware\RequireAssessmentDeviceSession::class,
     ];
 }

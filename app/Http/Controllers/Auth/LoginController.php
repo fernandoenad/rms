@@ -19,7 +19,19 @@ class LoginController extends Controller
     |
     */
 
-    use AuthenticatesUsers;
+    use AuthenticatesUsers {
+        logout as protected frameworkLogout;
+    }
+
+    public function logout(\Illuminate\Http\Request $request)
+    {
+        // Release only locks owned by this exact authenticated browser session,
+        // not another device signed in as the same user.
+        app(\App\Services\AssessmentDeviceSessionService::class)
+            ->releaseForSession($request);
+
+        return $this->frameworkLogout($request);
+    }
 
     /**
      * Where to redirect users after login.
