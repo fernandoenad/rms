@@ -246,7 +246,7 @@ class ApplicantAccountManagementTest extends TestCase
         $this->get(route('applicant.dashboard'))->assertOk()
             ->assertSee('PRODUCTION SUPPORT MODE')
             ->assertSee('Return to Administrator')
-            ->assertHeader('Cache-Control', 'private, no-store');
+            ->assertHeader('Cache-Control', 'no-store, private');
         $this->post(route('logout'))->assertForbidden();
         $this->put(route('applicant.profile.update'), [])->assertForbidden();
         $this->get(route('applicant.apply.review', ['vacancy' => 1]))->assertForbidden();
