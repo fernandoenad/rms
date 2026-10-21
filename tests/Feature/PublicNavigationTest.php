@@ -62,6 +62,45 @@ class PublicNavigationTest extends TestCase
             ->assertDontSee('rms-nav-sign-out', false);
     }
 
+    public function test_public_home_shows_at_most_four_newest_open_vacancy_cards(): void
+    {
+        $titles = [
+            'Oldest Open Position',
+            'Second Open Position',
+            'Third Open Position',
+            'Fourth Open Position',
+            'Newest Open Position',
+        ];
+
+        foreach ($titles as $title) {
+            $this->vacancy($title);
+        }
+
+        // Ineligible postings must not use any of the four featured slots.
+        $this->vacancy('Already Closed Position', ['posting_end_at' => now()->subMinute()]);
+        $this->vacancy('Not Yet Open Position', ['posting_start_at' => now()->addDay()]);
+
+        $response = $this->get(route('guest.index'))->assertOk()
+            ->assertSee('View All Vacancies')
+            ->assertSee('Newest Open Position')
+            ->assertSee('Fourth Open Position')
+            ->assertSee('Third Open Position')
+            ->assertSee('Second Open Position')
+            ->assertDontSee('Oldest Open Position')
+            ->assertDontSee('Already Closed Position')
+            ->assertDontSee('Not Yet Open Position');
+
+        $this->assertSame(4, substr_count($response->getContent(), '<article class="rms-home-open-card">'));
+
+        // Only the public landing page is capped; the vacancy browser still
+        // displays all currently eligible positions.
+        $this->get(route('guest.vacancies.index'))->assertOk()
+            ->assertSee('Oldest Open Position')
+            ->assertSee('Newest Open Position')
+            ->assertDontSee('Already Closed Position')
+            ->assertDontSee('Not Yet Open Position');
+    }
+
     public function test_public_home_omits_utility_links_but_legacy_lookup_route_remains_accessible(): void
     {
         $this->get('/')->assertOk()
