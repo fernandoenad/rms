@@ -64,20 +64,20 @@
  </div>
 </div>
 <div class="card card-outline card-warning">
- <div class="card-header"><strong>Testing impersonation — read only</strong></div>
+ <div class="card-header"><strong>{{ app(\App\Support\ApplicantImpersonationPolicy::class)->productionSupportEnabled(auth()->user()) ? 'Production Support Mode' : 'Testing impersonation' }} — read only</strong></div>
  <div class="card-body">
-  <p>This mode is restricted to local/staging environments with explicit configuration. It permits viewing the applicant dashboard, application details, profile, and vacancies, but blocks submissions, exams, account changes, and other write actions. Every start/stop action is audited.</p>
+  <p>Read-only support allows viewing the applicant dashboard, linked application details, profile and public vacancies. It blocks submissions, exams, account changes and all write actions. Sessions last at most <strong>10 minutes</strong> and start/stop events are audited. Production additionally requires a designated administrator and fresh Google authentication.</p>
   @if($impersonationEnabled && !$profile->user?->role)
   <form method="POST" action="{{route('admin.applicant_accounts.impersonation.start',$profile)}}">
     @csrf
     <label for="impersonateReason">Testing reason (required)</label>
     <textarea id="impersonateReason" class="form-control mb-2" name="reason" rows="2" required minlength="20" maxlength="1000" placeholder="State which applicant-facing behavior you need to verify"></textarea>
-    <button class="btn btn-warning" type="submit">Enter Read-only Applicant View</button>
+    <button class="btn btn-warning" type="submit">{{ app(\App\Support\ApplicantImpersonationPolicy::class)->productionSupportEnabled(auth()->user()) ? 'Verify Google Identity & Start Support View' : 'Enter Read-only Applicant View' }}</button>
   </form>
   @elseif($profile->user?->role)
   <p class="text-muted mb-0">Staff accounts cannot be impersonated.</p>
   @else
-  <p class="text-muted mb-0">This action is disabled. To test locally set APP_ENV=local and RMS_APPLICANT_IMPERSONATION_ENABLED=true, then clear the configuration cache.</p>
+  <p class="text-muted mb-0">Support access is disabled for your account. Administrators can enable it explicitly through approved configuration and designated staff IDs. Local testing uses RMS_APPLICANT_IMPERSONATION_ENABLED=true.</p>
   @endif
  </div>
 </div>

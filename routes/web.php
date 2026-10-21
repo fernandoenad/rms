@@ -163,6 +163,12 @@ Route::post('/skills/attempts/{attempt}/submit', [GuestSkillTestAttempt::class, 
 // auth routes
 Auth::routes(['register' => false]);
 
+// Google OAuth step-up returns while the ORIGINAL staff user remains authenticated.
+Route::get('/auth/admin/support-impersonation/callback',
+    [\App\Http\Controllers\Admin\ApplicantAccountController::class, 'completeSupportStepUp'])
+    ->middleware(['auth','active'])
+    ->name('admin.applicant_accounts.impersonation.stepup');
+
 // Return from impersonation without depending on an admin role in the target account.
 Route::post('/applicant/impersonation/stop', [\App\Http\Controllers\Admin\ApplicantAccountController::class, 'stopImpersonation'])
     ->middleware('auth')->name('admin.applicant_accounts.impersonation.stop');
