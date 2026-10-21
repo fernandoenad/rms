@@ -163,7 +163,15 @@ class ApplicantAccountManagementTest extends TestCase
         ])->assertRedirect(route('applicant.dashboard'));
         $this->assertAuthenticatedAs($profile->user);
         $this->get(route('applicant.dashboard'))->assertOk()
-            ->assertSee('TEST IMPERSONATION')->assertSee('Return to Administrator');
+            ->assertSee('TEST IMPERSONATION')
+            ->assertSee('Return to Administrator')
+            ->assertSee('aria-label="Return to Administrator and end impersonation"', false)
+            ->assertDontSee('aria-label="Switch back to Staff Portal"', false)
+            ->assertSeeInOrder([
+                '<div class="content-wrapper">',
+                'rms-impersonation-banner',
+                'TEST IMPERSONATION — READ ONLY',
+            ], false);
         $this->get(route('applicant.profile.edit'))->assertOk();
         $this->get(route('admin.applicant_accounts.index'))->assertForbidden();
         $this->post(route('logout'))->assertForbidden();

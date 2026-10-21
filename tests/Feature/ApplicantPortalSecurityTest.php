@@ -311,6 +311,8 @@ class ApplicantPortalSecurityTest extends TestCase
         $this->actingAs($user)->get(route('applicant.dashboard'))
             ->assertOk()
             ->assertSee('Switch to Staff Portal')
+            ->assertSee('aria-label="Switch back to Staff Portal"', false)
+            ->assertDontSee('aria-label="Return to Administrator and end impersonation"', false)
             ->assertSee(route('admin.index'));
 
         $this->assertDatabaseHas('applicant_profiles', ['user_id' => $user->id]);
@@ -322,7 +324,9 @@ class ApplicantPortalSecurityTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user)->get(route('applicant.dashboard'))
             ->assertOk()
-            ->assertDontSee('Switch to Staff Portal');
+            ->assertDontSee('Switch to Staff Portal')
+            ->assertDontSee('aria-label="Switch back to Staff Portal"', false)
+            ->assertDontSee('aria-label="Return to Administrator and end impersonation"', false);
 
         // Legacy active middleware redirects non-staff users rather than returning 403.
         $this->actingAs($user)->get(route('admin.index'))->assertRedirect();

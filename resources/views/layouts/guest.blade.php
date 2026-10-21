@@ -105,6 +105,26 @@
                                     $rmsNavName = \Illuminate\Support\Str::before((string) $rmsNavUser->email, '@');
                                 }
                             @endphp
+                            {{-- A visible and identity-aware return action:
+                                 a support/test impersonation session must POST to
+                                 restore its administrator, whereas ordinary staff
+                                 switching to their own applicant portal can use a link. --}}
+                            @if(session('rms_impersonation_admin_id'))
+                                <li class="nav-item ml-md-2">
+                                    <form method="POST" action="{{ route('admin.applicant_accounts.impersonation.stop') }}" class="mb-0">
+                                        @csrf
+                                        <button type="submit" class="btn btn-warning rms-nav-sign-in" aria-label="Return to Administrator and end impersonation">
+                                            <i class="fas fa-user-shield mr-1" aria-hidden="true"></i>Return to Administrator
+                                        </button>
+                                    </form>
+                                </li>
+                            @elseif($rmsNavUser->role?->status == 1)
+                                <li class="nav-item ml-md-2">
+                                    <a class="btn btn-outline-primary rms-nav-sign-in" href="{{ route('admin.index') }}" aria-label="Switch back to Staff Portal">
+                                        <i class="fas fa-exchange-alt mr-1" aria-hidden="true"></i>Staff Portal
+                                    </a>
+                                </li>
+                            @endif
                             <li class="nav-item dropdown ml-md-2">
                                 <a id="rmsUserMenu" class="nav-link dropdown-toggle rms-user-trigger"
                                    href="#" role="button" data-toggle="dropdown" aria-haspopup="true"
@@ -147,8 +167,9 @@
             </div>
         </nav>
 
+        <div class="content-wrapper">
         @if(session('rms_impersonation_admin_id'))
-        <div class="alert alert-warning rounded-0 mb-0 py-2 d-flex justify-content-between align-items-center flex-wrap" role="status">
+        <div class="rms-impersonation-banner alert alert-warning rounded-0 mb-0 py-2 d-flex justify-content-between align-items-center flex-wrap" role="status">
             <strong><i class="fas fa-user-secret mr-2" aria-hidden="true"></i>{{ session('rms_impersonation_mode') === 'support' ? 'PRODUCTION SUPPORT MODE — READ ONLY' : 'TEST IMPERSONATION — READ ONLY' }}</strong>
             <span class="mx-2">Viewing applicant account #{{ auth()->id() }} until {{ \Carbon\Carbon::createFromTimestamp((int) session('rms_impersonation_expires_at'))->format('H:i:s') }}. All changes and assessments are blocked.</span>
             <form method="POST" action="{{ route('admin.applicant_accounts.impersonation.stop') }}" class="mb-0">
@@ -157,7 +178,6 @@
             </form>
         </div>
         @endif
-        <div class="content-wrapper">
             @yield('main')
         </div>
 
