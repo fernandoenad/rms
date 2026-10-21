@@ -154,6 +154,11 @@ class SkillTestAttemptController extends Controller
             return back()->with('status_assessment','This skills-test attempt was voided. Use the specifically authorized retake task.');
         }
 
+        // First device to start this attempt holds its browser-session lock
+        // until logout; other devices may not claim it while active.
+        app(\App\Services\AssessmentDeviceSessionService::class)
+            ->claim($request, 'skills', (int) $attempt->id);
+
         if ((int)$attempt->status === 0) {
             $started = now();
             $attempt->update([
