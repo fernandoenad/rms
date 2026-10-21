@@ -69,7 +69,11 @@ class PortalController extends Controller
             ->latest()->limit(15)->get();
         $unreadCount = ApplicantNotification::where('applicant_profile_id', $profile->id)
             ->whereNull('read_at')->count();
-        $notificationPreferences = ApplicantNotificationPreference::firstOrCreate(['applicant_profile_id' => $profile->id]);
+        // Viewing an applicant during support must never initialize a new
+        // preference row; use a transient model when it does not yet exist.
+        $notificationPreferences = $request->session()->has('rms_impersonation_admin_id')
+            ? ApplicantNotificationPreference::firstOrNew(['applicant_profile_id' => $profile->id])
+            : ApplicantNotificationPreference::firstOrCreate(['applicant_profile_id' => $profile->id]);
         return view('applicant.dashboard', compact('profile', 'links', 'claims', 'updates', 'notifications', 'unreadCount', 'notificationPreferences'));
     }
 
