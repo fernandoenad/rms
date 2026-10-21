@@ -229,7 +229,7 @@ class ApplicantAccountManagementTest extends TestCase
         $driver->shouldReceive('redirectUrl')->twice()
             ->with(route('admin.applicant_accounts.impersonation.stepup'))->andReturnSelf();
         $driver->shouldReceive('with')->once()
-            ->with(['prompt' => 'login', 'max_age' => 0])->andReturnSelf();
+            ->with(['prompt' => 'select_account', 'max_age' => 0])->andReturnSelf();
         $driver->shouldReceive('redirect')->once()
             ->andReturn(redirect('/synthetic-google-reauthentication'));
         $driver->shouldReceive('user')->once()->andReturn($google);
