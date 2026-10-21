@@ -34,9 +34,13 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">List</h3>
+                        <h3 class="card-title">Staff Accounts</h3>
                         <a type="button" class="btn btn-sm btn-primary float-right" href="{{route('admin.users.create')}}">
-                            <i class="fas fa-plus"></i> New user
+                            <i class="fas fa-plus"></i> New staff user
+                        </a>
+                        <a class="btn btn-sm btn-outline-secondary float-right mr-2"
+                           href="{{ route('admin.applicant_accounts.index') }}">
+                            <i class="fas fa-address-card mr-1" aria-hidden="true"></i>Applicant Management
                         </a>
                     </div>
                     <div class="card-body">
@@ -58,8 +62,8 @@
                                             <td>{{$user->id}}</td>
                                             <td>{{$user->email}}</td>
                                             <td>{{$user->name}}</td>
-                                            <td>{{$user->role->level == 1 ? 'Administrator':'Staff'}}</td>
-                                            <td>{{$user->role->status == 1 ? 'Active':'Inactive'}}</td>
+                                            <td>{{ $user->role?->level == 1 ? 'Administrator' : 'Staff' }}</td>
+                                            <td>{{ $user->role?->status == 1 ? 'Active' : 'Inactive' }}</td>
                                             <td>
                                                 <a href="{{route('admin.users.reset', ['user' => $user])}}" class="btn btn-sm btn-primary" title="Reset password">
                                                     <span class="fas fa-fw fa-key"></span>
@@ -76,7 +80,7 @@
                                     @endforeach
                                 @else
                                     <tr>
-                                        <td colspan="5">0 users found.</td>
+                                        <td colspan="6">No staff users found. Applicant-only accounts are managed separately.</td>
                                     </tr>
                                 @endif
                             </tbody>

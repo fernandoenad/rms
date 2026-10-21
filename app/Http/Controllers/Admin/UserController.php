@@ -13,14 +13,30 @@ class UserController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        // Staff account management includes password resets and role changes.
+        // Only HR administrators may access these endpoints.
+        $this->middleware(['auth', 'admin']);
     }
 
     public function index()
     {
-        $users = User::with('role')->get();
+        // Applicant Google accounts legitimately have no staff role. Showing
+        // them here caused the staff table to dereference a missing role and
+        // emit HTTP 500. They belong in the separate Applicant Management UI.
+        $users = User::query()
+            ->whereHas('role')
+            ->with('role')
+            ->orderBy('name')
+            ->get();
 
-        return view('admin.users.index',['users' => $users]);
+        return view('admin.users.index', ['users' => $users]);
+    }
+
+    private function requireStaffAccount(User $user): void
+    {
+        // Guard direct URL access to edit/reset/delete staff-only endpoints:
+        // never treat an applicant-only account as a staff account.
+        abort_unless($user->role()->exists(), 404, 'Staff user not found.');
     }
 
     public function create()
@@ -54,11 +70,13 @@ class UserController extends Controller
 
     public function edit(User $user)
     {
+        $this->requireStaffAccount($user);
         return view('admin.users.edit', ['user' => $user]);
     }
 
     public function update (User $user, Request $request)
     {
+        $this->requireStaffAccount($user);
         //dd($request);
         $data = $request->validate([
             'name' => 'required|string|max:255',
@@ -82,11 +100,13 @@ class UserController extends Controller
 
     public function reset (User $user)
     {
+        $this->requireStaffAccount($user);
         return view('admin.users.reset', ['user' => $user]);
     }
 
     public function resetOk (User $user, Request $request)
     {
+        $this->requireStaffAccount($user);
         //dd($request);   
         $user->update([
             'password' => Hash::make('password123'),
@@ -97,11 +117,13 @@ class UserController extends Controller
 
     public function delete(User $user)
     {
+        $this->requireStaffAccount($user);
         return view('admin.users.delete', ['user' => $user]);
     }
 
     public function destroy(User $user)
     {
+        $this->requireStaffAccount($user);
         $user->delete();
         
         return redirect(route('admin.users.index'))->with('status', 'User was successfully deleted.');
