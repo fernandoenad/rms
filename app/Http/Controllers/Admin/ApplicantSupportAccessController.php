@@ -53,7 +53,7 @@ class ApplicantSupportAccessController extends Controller
                 [
                     'reason' => $data['reason'], 'granted_by' => $request->user()->id,
                     'revoked_at' => null, 'revoked_by' => null, 'updated_at' => now(),
-                    'created_at' => DB::raw('COALESCE(created_at, CURRENT_TIMESTAMP)'),
+                    'created_at' => now(),
                 ]
             );
             ApplicantAuditLog::create([
