@@ -8,7 +8,6 @@ use App\Models\AssessmentGroup;
 use App\Models\AssessmentNullificationBatch;
 use App\Models\SkillTestGroup;
 use App\Models\Vacancy;
-use App\Services\AssessmentGovernanceService;
 use App\Services\AssessmentNullificationService;
 use Illuminate\Http\Request;
 
@@ -52,8 +51,7 @@ class AssessmentNullificationController extends Controller
 
     public function store(
         Request $request,
-        AssessmentNullificationService $service,
-        AssessmentGovernanceService $governance
+        AssessmentNullificationService $service
     ) {
         $this->authorizeHr();
         $data = $request->validate([
@@ -67,18 +65,6 @@ class AssessmentNullificationController extends Controller
             'confirmation' => 'required|in:NULLIFY',
         ]);
         $batch = $service->nullify($data, (int) auth()->id());
-        $governance->log('board_assessment_nullification', [
-            'assessment_group_id' => $batch->written_group_id,
-        ], [
-            'batch_id' => $batch->id,
-            'vacancy_id' => $batch->vacancy_id,
-            'written_group_id' => $batch->written_group_id,
-            'skills_group_id' => $batch->skills_group_id,
-            'board_reference' => $batch->board_reference,
-            'affected_criteria' => $batch->items()->distinct()->pluck('criterion_key')->all(),
-            'affected_applicants' => $batch->items()->distinct()->count('application_id'),
-        ]);
-
         return redirect()->route('admin.assessment_nullifications.index')
             ->with('status', 'Board-authorized nullification #'.$batch->id.' applied. Original assessment evidence is preserved.');
     }
@@ -86,8 +72,7 @@ class AssessmentNullificationController extends Controller
     public function restore(
         Request $request,
         AssessmentNullificationBatch $batch,
-        AssessmentNullificationService $service,
-        AssessmentGovernanceService $governance
+        AssessmentNullificationService $service
     ) {
         $this->authorizeHr();
         $data = $request->validate([
@@ -97,15 +82,6 @@ class AssessmentNullificationController extends Controller
         ]);
 
         $service->restore($batch, (int) auth()->id(), $data['restoration_reference'], $data['restoration_reason']);
-        $governance->log('board_assessment_nullification_restored', [
-            'assessment_group_id' => $batch->written_group_id,
-        ], [
-            'batch_id' => $batch->id,
-            'original_board_reference' => $batch->board_reference,
-            'restoration_reference' => $data['restoration_reference'],
-            'affected_applicants' => $batch->items()->distinct()->count('application_id'),
-        ]);
-
         return back()->with('status', 'Nullification #'.$batch->id.' reversed by authorized administrative action. Assessment groups remain paused.');
     }
 
