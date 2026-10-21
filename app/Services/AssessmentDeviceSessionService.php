@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ExamAttempt;
 use App\Models\SkillTestAttempt;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -30,11 +31,25 @@ class AssessmentDeviceSessionService
         $hash = $this->hash($request);
 
         DB::transaction(function () use ($kind, $attemptId, $user, $hash) {
+            // Serialize claims across BOTH assessment kinds for the same
+            // applicant, not just within one attempt. Different users do not
+            // block each other.
+            User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
             $model = $kind === 'written' ? ExamAttempt::class : SkillTestAttempt::class;
             $attempt = $model::query()->whereKey($attemptId)->lockForUpdate()->firstOrFail();
 
             // Completed/voided attempts no longer need a live device lock.
             if ((int) $attempt->status !== 1 && (int) $attempt->status !== 0) return;
+
+            $otherDevice = DB::table('assessment_device_sessions')
+                ->where('user_id', $user->id)
+                ->whereNull('released_at')
+                ->where('session_hash', '!=', $hash)->exists();
+            if ($otherDevice) {
+                throw new ConflictHttpException(
+                    'A Written or Skills assessment is active on another device. Sign out on the first device before using a different browser.'
+                );
+            }
 
             $lock = DB::table('assessment_device_sessions')
                 ->where('kind', $kind)->where('attempt_id', $attemptId)
