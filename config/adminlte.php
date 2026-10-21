@@ -416,6 +416,13 @@ return [
             'active' => ['admin/applications', 'admin/applications/create', 'regex:@^admin/applications/\d+/edit_scores+$@', 'regex:@^admin/applications/[0-9]+$@', 'regex:@^admin/applications/\d+/delete+$@', 'regex:@^admin/applications/\d+/edit+$@', 'regex:@^admin/applications/\d+/show+$@', 'regex:@^admin/applications/\d+/show/tagged+$@']
         ],
         [
+            'text' => 'Applicant Management',
+            'can' => 'review-applicant-claims',
+            'url' => 'admin/applicant-accounts',
+            'icon' => 'fas fa-fw fa-address-card',
+            'active' => ['admin/applicant-accounts', 'admin/applicant-accounts/*'],
+        ],
+        [
             'text' => 'Historical Claims',
             'key'  => 'historical-claims',
             'can'  => 'review-applicant-claims',
