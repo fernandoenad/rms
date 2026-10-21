@@ -52,6 +52,9 @@
                         <a class="dropdown-item" href="{{ route('admin.assessment_nullifications.index') }}">
                             <i class="fas fa-gavel mr-2 text-muted"></i> Board Nullifications
                         </a>
+                        <a class="dropdown-item" href="{{ route('admin.assessment_device_sessions.index') }}">
+                            <i class="fas fa-laptop mr-2 text-muted"></i> Device Sessions
+                        </a>
                         <a class="dropdown-item" href="{{ route('admin.assessment_permissions.index') }}">
                             <i class="fas fa-user-shield mr-2 text-muted"></i> Access Roles
                         </a>
