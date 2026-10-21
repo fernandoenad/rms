@@ -18,7 +18,7 @@ final class RqaScoreEligibility
         $normalized = trim(preg_replace('/\s+/', ' ', (string) $normalized));
         // Recognize template categories, not arbitrary position titles.
         // An ordinary classroom-teaching template must retain the cutoff.
-        return preg_match('/\bnon teaching\b|\bteaching related\b|\bteaching related admin\b|\bschool administrator\b|\bteaching related administrator\b/', $normalized) === 1;
+        return preg_match('/\\bnon teaching\\b|\\bnonteaching\\b|\\bteaching related\\b|\\bteachingrelated\\b|\\bschool administrator\\b|\\bsg\\b/', $normalized) === 1;
     }
 
     public static function apply(Builder $query, Vacancy $vacancy): Builder
