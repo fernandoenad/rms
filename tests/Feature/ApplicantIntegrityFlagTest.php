@@ -89,6 +89,7 @@ class ApplicantIntegrityFlagTest extends TestCase
         ];
         $m = AssessmentHiddenDuration::summarize([
             $event('tab_hidden','2026-10-21 09:00:00'),
+            $event('tab_hidden','2026-10-21 09:00:01'), // duplicate event is not a second switch
             $event('tab_visible','2026-10-21 09:00:08'),
             $event('tab_hidden','2026-10-21 09:01:00'),
             $event('tab_visible','2026-10-21 09:02:12'),
