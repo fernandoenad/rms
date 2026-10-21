@@ -69,7 +69,7 @@
                     ->whereIn('applications.station_id', $station_ids)
                     ->where('applications.vacancy_id', '=', $vacancy->id)
                     ->where('assessments.status', '=', 3)
-                    ->where('assessments.score', '>=', 50)
+                    ->when(!\App\Support\RqaScoreEligibility::includesBelowFifty($vacancy), fn ($query) => $query->where('assessments.score', '>=', 50))
                     ->orderBy('assessments.score', 'DESC')
                     ->get();
             @endphp
