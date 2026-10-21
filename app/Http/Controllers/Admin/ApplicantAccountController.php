@@ -9,6 +9,9 @@ use App\Models\Application;
 use App\Models\OAuthIdentity;
 use App\Models\User;
 use App\Services\Applicant\HistoricalApplicationLinkingService;
+use App\Services\Applicant\ApplicantImpersonationSession;
+use App\Support\ApplicantImpersonationPolicy;
+use Laravel\Socialite\Facades\Socialite;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -23,8 +26,8 @@ class ApplicantAccountController extends Controller
 
     private function impersonationEnabled(): bool
     {
-        return app()->environment(['local','testing','staging'])
-            && (bool) config('app.applicant_impersonation_enabled', false);
+        return auth()->user() && app(ApplicantImpersonationPolicy::class)
+            ->mayStart(auth()->user());
     }
 
     public function index(Request $request)
@@ -108,68 +111,95 @@ class ApplicantAccountController extends Controller
             ->with('status', "{$new} unowned matching historical application(s) linked. Existing owners were not changed.");
     }
 
-    public function impersonate(Request $request, ApplicantProfile $profile)
-    {
+    public function impersonate(
+        Request $request,
+        ApplicantProfile $profile,
+        ApplicantImpersonationPolicy $policy,
+        ApplicantImpersonationSession $session
+    ) {
         $this->authorizeHr();
-        abort_unless($this->impersonationEnabled(), 403, 'Impersonation is disabled outside explicitly configured non-production environments.');
-        abort_if($request->session()->has('rms_impersonation_admin_id'), 403, 'Nested impersonation is not allowed.');
+        abort_unless($policy->mayStart($request->user()), 403,
+            'Only explicitly authorized support administrators may access read-only applicant accounts.');
+        abort_if($request->session()->has('rms_impersonation_admin_id'), 403,
+            'Nested support sessions are not available.');
         $data = $request->validate(['reason' => 'required|string|min:20|max:1000']);
         $target = User::with('role')->findOrFail($profile->user_id);
-        // A staff account must never be impersonated through this feature,
-        // even if the staff member also has an applicant profile.
-        abort_if($target->role !== null, 403, 'Staff account impersonation is prohibited.');
-        abort_if((int) $target->id === (int) $request->user()->id, 403);
-        $adminId = (int) $request->user()->id;
+        abort_if($target->role !== null || $target->id === $request->user()->id, 403,
+            'Staff accounts cannot be impersonated.');
 
-        ApplicantAuditLog::create([
-            'actor_user_id' => $adminId,
-            'applicant_profile_id' => $profile->id,
-            'event_type' => 'test_impersonation_started',
-            'metadata' => [
-                'target_user_id' => $target->id,
-                'reason' => $data['reason'],
-                'read_only' => true,
-            ], 'created_at' => now(),
-        ]);
-        $request->session()->put('rms_impersonation_admin_id', $adminId);
-        $request->session()->put('rms_impersonation_target_id', $target->id);
-        $request->session()->put('rms_impersonation_profile_id', $profile->id);
-        Auth::login($target);
-        $request->session()->regenerate();
-        return redirect()->route('applicant.dashboard');
-    }
+        if ($policy->productionSupportEnabled($request->user())) {
+            // A new Google challenge is mandatory; email alone is insufficient.
+            // The existing pre-linked subject must be independently verified.
+            $admin = $request->user();
+            abort_unless(OAuthIdentity::where('user_id', $admin->id)
+                ->where('provider', 'google')->where('email_verified', true)
+                ->whereRaw('LOWER(TRIM(provider_email)) = ?', [
+                    mb_strtolower(trim((string) $admin->email)),
+                ])->exists(), 403,
+                'Link your own verified staff Google account before beginning a support session.');
 
-    public function stopImpersonation(Request $request)
-    {
-        $adminId = (int) $request->session()->get('rms_impersonation_admin_id');
-        $targetId = (int) $request->session()->get('rms_impersonation_target_id');
-        $profileId = (int) $request->session()->get('rms_impersonation_profile_id');
-        abort_unless($adminId > 0 && $targetId > 0
-            && (int) $request->user()?->id === $targetId, 403);
-
-        $admin = User::with('role')->findOrFail($adminId);
-        if (!$admin->role || (int) $admin->role->level !== 1 || (int) $admin->role->status !== 1) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-            return redirect()->route('login')->withErrors([
-                'access' => 'The administrator account is no longer authorized. Please sign in again.',
+            $request->session()->put([
+                'rms_support_pending_admin_id' => $admin->id,
+                'rms_support_pending_profile_id' => $profile->id,
+                'rms_support_pending_reason' => $data['reason'],
+                'rms_support_pending_started_at' => now()->timestamp,
             ]);
+
+            return Socialite::driver('google')
+                ->redirectUrl(route('admin.applicant_accounts.impersonation.stepup'))
+                ->with(['prompt' => 'select_account', 'max_age' => 0])
+                ->redirect();
         }
 
-        ApplicantAuditLog::create([
-            'actor_user_id' => $adminId,
-            'applicant_profile_id' => $profileId,
-            'event_type' => 'test_impersonation_ended',
-            'metadata' => ['target_user_id' => $targetId],
-            'created_at' => now(),
-        ]);
-        Auth::login($admin);
-        $request->session()->forget([
-            'rms_impersonation_admin_id','rms_impersonation_target_id','rms_impersonation_profile_id',
-        ]);
-        $request->session()->regenerate();
-        return redirect()->route('admin.applicant_accounts.index')
-            ->with('status','Returned to your administrator account. Test impersonation ended.');
+        return $session->start($request, $request->user(), $profile, 'test', $data['reason']);
+    }
+
+    /**
+     * Fresh Google authentication, matched against the already-bound staff
+     * OAuth subject. This never creates or rebinds an OAuth identity.
+     */
+    public function completeSupportStepUp(
+        Request $request,
+        ApplicantImpersonationPolicy $policy,
+        ApplicantImpersonationSession $session
+    ) {
+        $adminId = (int) $request->session()->pull('rms_support_pending_admin_id');
+        $profileId = (int) $request->session()->pull('rms_support_pending_profile_id');
+        $reason = (string) $request->session()->pull('rms_support_pending_reason');
+        $startedAt = (int) $request->session()->pull('rms_support_pending_started_at');
+        $admin = $request->user();
+
+        abort_unless($admin && $adminId > 0 && (int) $admin->id === $adminId
+            && $profileId > 0 && mb_strlen($reason) >= 20
+            && $startedAt > now()->subMinutes(5)->timestamp
+            && $startedAt <= now()->timestamp
+            && !$request->session()->has('rms_impersonation_admin_id')
+            && $policy->productionSupportEnabled($admin), 403,
+            'The support identity challenge expired, was already used, or is no longer authorized.');
+
+        $google = Socialite::driver('google')
+            ->redirectUrl(route('admin.applicant_accounts.impersonation.stepup'))->user();
+        $subject = (string) $google->getId();
+        $email = mb_strtolower(trim((string) $google->getEmail()));
+        $verified = filter_var(
+            data_get($google->user, 'email_verified', data_get($google->user, 'verified_email', false)),
+            FILTER_VALIDATE_BOOLEAN
+        );
+        abort_unless($subject !== '' && $verified && filter_var($email, FILTER_VALIDATE_EMAIL)
+            && hash_equals(mb_strtolower(trim((string) $admin->email)), $email)
+            && OAuthIdentity::where('user_id', $admin->id)
+                ->where('provider', 'google')->where('provider_subject', $subject)
+                ->where('email_verified', true)
+                ->whereRaw('LOWER(TRIM(provider_email)) = ?', [$email])->exists(),
+            403, 'Google reauthentication did not match your registered staff identity.');
+
+        return $session->start(
+            $request, $admin, ApplicantProfile::findOrFail($profileId), 'support', $reason
+        );
+    }
+
+    public function stopImpersonation(Request $request, ApplicantImpersonationSession $session)
+    {
+        return $session->stop($request);
     }
 }

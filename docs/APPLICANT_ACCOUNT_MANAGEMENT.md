@@ -42,3 +42,38 @@ php artisan test --filter=ApplicantPortalSecurityTest
 Check authorized HR listing and search, three-record ownership diagnostics, safe reconciliation, repeated reconciliation, blocked impersonation by ordinary staff, blocked writes while impersonating, persistent read-only banner, and restored administrator identity after the stop action.
 
 No new migration is required; the feature uses the existing applicant profile/link/OAuth and applicant audit tables. Before production deployment, leave `RMS_APPLICANT_IMPERSONATION_ENABLED` **unset/false**, and ensure `APP_ENV=production`.
+
+## Production Support Mode — separate, restricted gate
+
+Production use requires a separate explicit organizational authorization. This is a **support-only, read-only** workflow, not a way to act on behalf of an applicant. An administrator can inspect only the applicant dashboard, read-only profile page, already-owned application details and public vacancy pages. All writes and assessment routes are blocked in central middleware. Test against synthetic data in staging first.
+
+The system remains disabled by default in production. Configure only with an approved list of *existing active Level 1 HR administrator user IDs*:
+
+```env
+APP_ENV=production
+APP_DEBUG=false
+RMS_APPLICANT_IMPERSONATION_ENABLED=false
+RMS_SUPPORT_IMPERSONATION_ENABLED=true
+RMS_SUPPORT_IMPERSONATION_ADMIN_IDS=123
+```
+
+Replace `123` with a genuine approved administrator *user ID*, not the role ID. Keep the allowed list as small as possible. Set `RMS_SUPPORT_IMPERSONATION_ENABLED=false` for an emergency kill switch, then `php artisan config:cache`; any active support session returns to its origin administrator on the next HTTP request. The kill switch is deployment-wide; it is not a browser toggle.
+
+Production support requires the administrator to already have a verified Google identity linked to their RMS staff account. If absent, use the existing authorized **Link Staff Google Identity** flow first. Starting a session launches a **new Google OAuth identity challenge**, with account selection and a zero-age request. RMS verifies the returning Google subject, verified email and bound staff identity *without creating or updating identity links*. Google may maintain its own sign-in session, so this step-up is **not a guarantee of a fresh password or MFA challenge**; enforce additional IdP session and MFA requirements at the organization level when necessary.
+
+A successful challenge opens a distinct applicant session with a server-side 10-minute hard expiry. The banner identifies the support mode and expiry. Session IDs are regenerated on both transitions; the start and stop audit records identify the administrator, target profile/user, reason, session correlation ID and network IP. The stop action works even after the kill switch is activated. Expiry or revocation restores the authorized administrator, or signs out if the administrator was disabled.
+
+Do not enable production support until manual review confirms the appropriate legal/policy basis for privileged PII viewing, access-log retention, and any required user notification. A server-side environment variable alone cannot substitute for those operational approvals. Also confirm HTTPS-only cookies and secure sessions in production.
+
+### Production acceptance checks
+
+- Unlisted HR administrator: **403**.
+- Listed HR user without a verified, pre-linked matching Google subject: **403**.
+- Google OAuth callback with wrong Google subject, unverified email or expired pending challenge: **403, no applicant login**.
+- Applicant account with a staff role: **403**.
+- Allowed pages: dashboard, existing owned-application details, profile **view only**, and vacancies.
+- Blocked pages/actions: assessments, enrollment and application submission, edits, saved answers, profile update, claims, logout and staff admin pages.
+- At 10 minutes and after an emergency kill switch: automatic return to admin and documented audit event.
+- Browser view caches disabled during support viewing; never include protected applicant details in URLs or log metadata.
+
+Enable this feature in production **only after separately approving and checking the actual account IDs**. Normal local test impersonation remains controlled by its original `RMS_APPLICANT_IMPERSONATION_ENABLED` flag.

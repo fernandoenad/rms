@@ -34,6 +34,11 @@ return [
     // Non-production, read-only applicant account impersonation is opt-in.
     'applicant_impersonation_enabled' => (bool) env('RMS_APPLICANT_IMPERSONATION_ENABLED', false),
 
+    // Separate production support gate: OFF by default. Require an explicit
+    // list of staff user IDs; never infer support privileges from role alone.
+    'support_impersonation_enabled' => (bool) env('RMS_SUPPORT_IMPERSONATION_ENABLED', false),
+    'support_impersonation_admin_ids' => env('RMS_SUPPORT_IMPERSONATION_ADMIN_IDS', ''),
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode
