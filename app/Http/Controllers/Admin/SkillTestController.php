@@ -941,6 +941,7 @@ class SkillTestController extends Controller
             $governance->recordSkillExposure($skillTest->fresh());
             $governance->snapshotSkill($skillTest->fresh(),'published');
             $governance->log('skill_test_published', ['skill_test_id'=>$skillTest->id]);
+            try { app(\App\Services\Applicant\PublishedAssessmentScheduleNotifier::class)->skills($skillTest); } catch (\Throwable $e) { report($e); }
 
             return back()->with('status', 'Skills test published after readiness validation.');
         }

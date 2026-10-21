@@ -257,6 +257,7 @@ class WrittenExamController extends Controller
             $exam->update(['status' => 1]);
             $governance->recordWrittenExposure($exam->fresh());
             $governance->snapshotExam($exam->fresh(),'published');
+            try { app(\App\Services\Applicant\PublishedAssessmentScheduleNotifier::class)->written($exam); } catch (\Throwable $e) { report($e); }
             $governance->log('exam_published', [
                 'assessment_group_id' => $exam->assessment_group_id,
                 'exam_id' => $exam->id,
