@@ -7,7 +7,8 @@
         || request()->routeIs('admin.skills.*');
     $qualityActive = request()->routeIs('admin.assessment_bank.*');
     $adminActive = request()->routeIs('admin.assessment_snapshots.*')
-        || request()->routeIs('admin.assessment_permissions.*');
+        || request()->routeIs('admin.assessment_permissions.*')
+        || request()->routeIs('admin.assessment_nullifications.*');
 @endphp
 
 <div class="card card-outline card-light mb-3 assessment-center-nav">
@@ -44,6 +45,9 @@
                             <i class="fas fa-camera mr-2 text-muted"></i> Snapshots
                         </a>
                         @if(auth()->user() && auth()->user()->role && (int)auth()->user()->role->level===1)
+                        <a class="dropdown-item" href="{{ route('admin.assessment_nullifications.index') }}">
+                            <i class="fas fa-gavel mr-2 text-muted"></i> Board Nullifications
+                        </a>
                         <a class="dropdown-item" href="{{ route('admin.assessment_permissions.index') }}">
                             <i class="fas fa-user-shield mr-2 text-muted"></i> Access Roles
                         </a>

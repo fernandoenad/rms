@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Application;
+use App\Models\AssessmentNullificationItem;
 use App\Models\Assessment;
 use App\Models\AssessmentGroup;
 use App\Models\ExamAttempt;
@@ -15,6 +16,15 @@ use Illuminate\Support\Facades\DB;
 
 class AssessmentScoreSyncService
 {
+    public function isCriterionNullified(int $applicationId, string $criterion): bool
+    {
+        return AssessmentNullificationItem::query()
+            ->where('application_id', $applicationId)
+            ->where('criterion_key', $criterion)
+            ->whereHas('batch', fn ($q) => $q->where('status', 'active'))
+            ->exists();
+    }
+
     public function criteriaForVacancy(Vacancy $vacancy): array
     {
         if (!$vacancy->template_id) {
@@ -64,6 +74,9 @@ class AssessmentScoreSyncService
             ->orderBy('id')
             ->chunkById(250, function ($attempts) use ($group, &$synced, &$skipped) {
                 foreach ($attempts as $attempt) {
+                    if ($this->isCriterionNullified((int) $attempt->application_id, (string) $group->assessment_score_key)) {
+                        continue;
+                    }
                     $ok = $this->syncApplicationCriterion(
                         (int) $attempt->application_id,
                         (int) $group->vacancy_id,
@@ -135,6 +148,9 @@ class AssessmentScoreSyncService
             ->orderBy('id')
             ->chunkById(250, function ($attempts) use ($group,&$synced,&$skipped) {
                 foreach ($attempts as $attempt) {
+                    if ($this->isCriterionNullified((int) $attempt->application_id, (string) $group->assessment_score_key)) {
+                        continue;
+                    }
                     $ok = $this->syncApplicationCriterion(
                         (int)$attempt->application_id,
                         (int)$group->vacancy_id,
@@ -172,6 +188,9 @@ class AssessmentScoreSyncService
             ->orderBy('id')
             ->chunkById(250, function ($attempts) use ($test, &$synced, &$skipped) {
                 foreach ($attempts as $attempt) {
+                    if ($this->isCriterionNullified((int) $attempt->application_id, (string) $test->assessment_score_key)) {
+                        continue;
+                    }
                     $ok = $this->syncApplicationCriterion(
                         (int) $attempt->application_id,
                         (int) $test->vacancy_id,
@@ -245,6 +264,12 @@ class AssessmentScoreSyncService
                 ->first();
 
             if (!$assessment) {
+                return false;
+            }
+
+            // Always check under the same applicant score lock used by the
+            // nullification operation. This blocks concurrent score restores.
+            if ($this->isCriterionNullified($applicationId, $criterionKey)) {
                 return false;
             }
 

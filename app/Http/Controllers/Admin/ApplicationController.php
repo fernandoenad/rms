@@ -277,7 +277,8 @@ class ApplicationController extends Controller
 
         $assessment = Assessment::where('application_id', '=', $application->id)->first();
 
-        $assessment->update(['assessment' => json_encode($filteredFormData), 'score' => $totalPoints, 'status' => 3]); 
+        app(\App\Services\AssessmentNullificationService::class)
+            ->updateManualAssessment($assessment, $filteredFormData, 3);
 
         $data['application_id'] = $application->id;
         $data['author'] =  auth()->user()->name;

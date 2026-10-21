@@ -73,6 +73,9 @@ class AssessmentIntegrityService
                             continue;
                         }
 
+                        if ($this->scoreSync->isCriterionNullified((int) $attempt->application_id, $criterion)) {
+                            continue; // Board nullification supersedes the historical attempt score.
+                        }
                         $expected = $this->scale((float) $attempt->percentage, (float) $criteria[$criterion]);
 
                         $candidates->push([
@@ -138,6 +141,9 @@ class AssessmentIntegrityService
                             continue;
                         }
 
+                        if ($this->scoreSync->isCriterionNullified((int) $attempt->application_id, (string) $criterion)) {
+                            continue;
+                        }
                         $expected = $this->scale((float) $attempt->final_score, (float) $criteria[$criterion]);
 
                         $candidates->push([

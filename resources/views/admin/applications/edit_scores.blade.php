@@ -64,12 +64,13 @@
                                     $template = App\Models\Template::find($application->vacancy->template_id);
                                     $assessment_template = json_decode($template->template, true);
                                     $total_points = 0;
+                                    $nullifiedKeys = app(\App\Services\AssessmentNullificationService::class)->lockedCriteria((int) $application->id);
                                 @endphp 
 
                                 @foreach($assessment_scores as $key => $value)
                                     @php $total_points += is_numeric($value) ? $value : 0; @endphp
                                     <tr>
-                                        <th>{{ $key }} ({{ $assessment_template[$key] }})</th>
+                                        <th>{{ $key }} ({{ $assessment_template[$key] }}) @if(in_array($key,$nullifiedKeys,true))<span class="badge badge-warning">Nullified by Board</span>@endif</th>
                                         <td>
                                             <div class="form-group">
                                                 <input type="{{ is_numeric($value) ? 'number' : 'text' }}" class="form-control" placeholder="Enter {{$key}} points" 
@@ -77,7 +78,8 @@
                                                     max="{{ $assessment_template[$key] }}"
                                                     step="{{ is_numeric($value) ? '0.001' : '' }}"
                                                     {{$application->vacancy->level2_status == 3 ? 'disabled' :'' }}
-                                                    value="{{ $value }}">
+                                                    value="{{ $value }}"
+                                                    {{ in_array($key,$nullifiedKeys,true) ? 'readonly' : '' }}>
                                                 @error($key)
                                                     <span class="text-danger"><small>{{ $message }}</small></span>
                                                 @enderror

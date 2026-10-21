@@ -184,6 +184,7 @@
                                     </div>
                                 </div>
                                 <div class="chart tab-pane" id="my-scores">
+                                    @php $boardNullifiedCriteria = app(\App\Services\AssessmentNullificationService::class)->lockedCriteria((int) $application->id); @endphp
                                     <div class="card-body table-responsive p-0">
                                         <table class="table table-hover text-nowrap table-borderless">
                                             <tbody>
@@ -196,7 +197,7 @@
 
                                                     @foreach($assessment_scores as $key => $value)
                                                         <tr>
-                                                            <th>{{ $key }}</th>
+                                                            <th>{{ $key }} @if(in_array($key, $boardNullifiedCriteria, true))<span class="badge badge-warning">Nullified</span>@endif</th>
                                                             <td>
                                                                 {{ $application->assessment->status == 3 ? $value : '-' }}
                                                             </td>
@@ -273,6 +274,7 @@
                                                         $attempt = $exam->attempts->first();
                                                         $submitted = $attempt && $attempt->status == 2;
                                                         $scoresReleased = !$exam->assessmentGroup || $exam->assessmentGroup->scoresAreReleased();
+                                                        $writtenNullified = in_array((string) ($exam->assessmentGroup?->assessment_score_key ?: $exam->assessment_score_key), $boardNullifiedCriteria, true);
                                                         $examOpen = (!$exam->start_date || now()->gte($exam->start_date))
                                                             && (!$exam->end_date || now()->lt($exam->end_date));
                                                         $examUpcoming = $exam->start_date && now()->lt($exam->start_date);
@@ -296,7 +298,9 @@
                                                         <td>{{ $exam->duration }} min</td>
                                                         <td>
                                                             @if($submitted)
-                                                                @if($scoresReleased)
+                                                                @if($writtenNullified)
+                                                                    <span class="badge badge-warning">Nullified by Board decision</span>
+                                                                @elseif($scoresReleased)
                                                                     {{ $attempt->correct_answers ?? '-' }} / {{ $attempt->total_items ?? '-' }}
                                                                     @if($attempt->percentage !== null) ({{ $attempt->percentage }}%) @endif
                                                                 @else
@@ -356,6 +360,7 @@
                                                         $skillSubmitted = $skillAttempt && $skillAttempt->status == 2;
                                                         $skillVoided = $skillAttempt && $skillAttempt->status == 3;
                                                         $skillScoreReleased = $skillTest->scoresAreReleased();
+                                                        $skillNullified = in_array((string) ($skillTest->skillTestGroup?->assessment_score_key ?: $skillTest->assessment_score_key), $boardNullifiedCriteria, true);
                                                         $skillOpen = $skillTest->status
                                                             && $skillTest->start_date
                                                             && $skillTest->end_date
@@ -384,7 +389,9 @@
                                                         <td>{{ $skillTest->duration }} min</td>
                                                         <td>
                                                             @if($skillSubmitted)
-                                                                @if($skillScoreReleased && $skillAttempt->final_score !== null)
+                                                                @if($skillNullified)
+                                                                    <span class="badge badge-warning">Nullified by Board decision</span>
+                                                                @elseif($skillScoreReleased && $skillAttempt->final_score !== null)
                                                                     {{ number_format((float)$skillAttempt->final_score, 2) }} / 100
                                                                     ({{ number_format((float)$skillAttempt->final_score, 2) }}%)
                                                                 @elseif($skillScoreReleased)
