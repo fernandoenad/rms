@@ -8,7 +8,8 @@
     $qualityActive = request()->routeIs('admin.assessment_bank.*');
     $adminActive = request()->routeIs('admin.integrity_flags.*') || request()->routeIs('admin.assessment_snapshots.*')
         || request()->routeIs('admin.assessment_permissions.*')
-        || request()->routeIs('admin.assessment_nullifications.*');
+        || request()->routeIs('admin.assessment_nullifications.*')
+        || request()->routeIs('admin.assessment_device_sessions.*');
 @endphp
 
 <div class="card card-outline card-light mb-3 assessment-center-nav">
