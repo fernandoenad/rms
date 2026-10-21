@@ -12,7 +12,7 @@ class HomeController extends Controller
         // under the same posting schedule rules as the Vacancies page.
         $featuredVacancies = Vacancy::openForApplications()
             ->orderByDesc('id')
-            ->limit(3)
+            ->limit(4)
             ->get();
 
         return view('guest.home', compact('featuredVacancies'));
