@@ -31,6 +31,9 @@ return [
 
     'env' => env('APP_ENV', 'production'),
 
+    // Non-production, read-only applicant account impersonation is opt-in.
+    'applicant_impersonation_enabled' => (bool) env('RMS_APPLICANT_IMPERSONATION_ENABLED', false),
+
     /*
     |--------------------------------------------------------------------------
     | Application Debug Mode
