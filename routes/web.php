@@ -163,12 +163,25 @@ Route::post('/skills/attempts/{attempt}/submit', [GuestSkillTestAttempt::class, 
 // auth routes
 Auth::routes(['register' => false]);
 
+// Return from impersonation without depending on an admin role in the target account.
+Route::post('/applicant/impersonation/stop', [\App\Http\Controllers\Admin\ApplicantAccountController::class, 'stopImpersonation'])
+    ->middleware('auth')->name('admin.applicant_accounts.impersonation.stop');
+
 // user login
 Route::group(['middleware' => ['active']], function () {
     Route::get('/admin', [AdminHome::class, 'index'])->name('admin.index');
     Route::get('/admin/get-notifications', [AdminHome::class, 'get_notifications'])->name('admin.get_notifications');
     Route::get('/admin/change_password', [AdminHome::class, 'change_password'])->name('admin.change_password');
     Route::put('/admin/change_password', [AdminHome::class, 'change_password_ok'])->name('admin.change_password_ok');
+
+    Route::get('/admin/applicant-accounts', [\App\Http\Controllers\Admin\ApplicantAccountController::class, 'index'])
+        ->name('admin.applicant_accounts.index');
+    Route::get('/admin/applicant-accounts/{profile}', [\App\Http\Controllers\Admin\ApplicantAccountController::class, 'show'])
+        ->name('admin.applicant_accounts.show');
+    Route::post('/admin/applicant-accounts/{profile}/reconcile', [\App\Http\Controllers\Admin\ApplicantAccountController::class, 'reconcile'])
+        ->name('admin.applicant_accounts.reconcile');
+    Route::post('/admin/applicant-accounts/{profile}/impersonate', [\App\Http\Controllers\Admin\ApplicantAccountController::class, 'impersonate'])
+        ->name('admin.applicant_accounts.impersonation.start');
 
     Route::get('/admin/applications', [AdminApplication::class, 'index'])->name('admin.applications.index');
     Route::put('/admin/applications', [AdminApplication::class, 'search'])->name('admin.applications.search');
