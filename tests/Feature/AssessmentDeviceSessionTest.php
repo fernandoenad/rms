@@ -7,6 +7,7 @@ use App\Models\ApplicantProfile;
 use App\Models\Application;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
+use App\Models\Role;
 use App\Models\SkillTest;
 use App\Models\SkillTestAttempt;
 use App\Models\Template;
@@ -137,6 +138,36 @@ class AssessmentDeviceSessionTest extends TestCase
             'kind' => 'written', 'attempt_id' => $written->id,
             'session_hash' => 'cccccccccccccccccccccccccccccccccccccccc',
         ]);
+    }
+
+    public function test_hr_can_audit_recovery_but_other_staff_cannot_reset_a_device_lock(): void
+    {
+        [$user, $written] = $this->attempts();
+        $service = app(AssessmentDeviceSessionService::class);
+        $first = $this->requestFor($user, 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee');
+        $second = $this->requestFor($user, 'ffffffffffffffffffffffffffffffffffffffff');
+        $service->claim($first, 'written', $written->id);
+
+        $staff = User::factory()->create();
+        Role::create(['user_id' => $staff->id, 'level' => 2, 'status' => 1]);
+        $this->actingAs($staff)->post(route('admin.assessment_device_sessions.release', $user), [
+            'reason' => 'Non-HR staff must never release applicant assessment locks.',
+        ])->assertForbidden();
+
+        $hr = User::factory()->create();
+        Role::create(['user_id' => $hr->id, 'level' => 1, 'status' => 1]);
+        $this->actingAs($hr)->get(route('admin.assessment_device_sessions.index'))
+            ->assertOk()->assertSee('Device Sessions');
+        $this->post(route('admin.assessment_device_sessions.release', $user), [
+            'reason' => 'Original examination device was lost and identity was independently verified.',
+        ])->assertRedirect(route('admin.assessment_device_sessions.index'));
+
+        $this->assertDatabaseHas('applicant_audit_logs', [
+            'actor_user_id' => $hr->id,
+            'event_type' => 'assessment_device_sessions_reset_by_hr',
+        ]);
+        $this->assertSame(0, $service->releaseForSession($first));
+        $service->claim($second, 'written', $written->id);
     }
 
     public function test_completed_attempt_never_acquires_a_live_session_lock(): void
