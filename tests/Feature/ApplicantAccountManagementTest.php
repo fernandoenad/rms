@@ -297,8 +297,14 @@ class ApplicantAccountManagementTest extends TestCase
         $admin = $this->admin();
         config()->set('app.support_impersonation_admin_ids', (string) $admin->id);
         $profile = $this->account('viewonly@example.test');
-        app(\App\Services\Applicant\ApplicantImpersonationSession::class)
-            ->start(request(), $admin, $profile, 'support', 'Synthetic support-session timeout test');
+        $this->actingAs($profile->user)->withSession([
+            'rms_impersonation_admin_id' => $admin->id,
+            'rms_impersonation_target_id' => $profile->user_id,
+            'rms_impersonation_profile_id' => $profile->id,
+            'rms_impersonation_mode' => 'support',
+            'rms_impersonation_session_id' => 'synthetic-support-expiration',
+            'rms_impersonation_expires_at' => now()->addMinutes(10)->timestamp,
+        ]);
 
         $this->travel(11)->minutes();
         $this->get(route('applicant.dashboard'))
@@ -308,9 +314,14 @@ class ApplicantAccountManagementTest extends TestCase
             'event_type' => 'support_impersonation_ended',
         ]);
 
-        $session = app(\App\Services\Applicant\ApplicantImpersonationSession::class);
-        $session->start(request(), $admin, $profile, 'support',
-            'Synthetic support-session emergency kill switch test');
+        $this->actingAs($profile->user)->withSession([
+            'rms_impersonation_admin_id' => $admin->id,
+            'rms_impersonation_target_id' => $profile->user_id,
+            'rms_impersonation_profile_id' => $profile->id,
+            'rms_impersonation_mode' => 'support',
+            'rms_impersonation_session_id' => 'synthetic-support-revocation',
+            'rms_impersonation_expires_at' => now()->addMinutes(10)->timestamp,
+        ]);
         config()->set('app.support_impersonation_enabled', false);
         $this->get(route('applicant.dashboard'))
             ->assertRedirect(route('admin.applicant_accounts.index'));
