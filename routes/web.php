@@ -131,31 +131,31 @@ Route::post('/applications/{application}/inquire2', [OpenAIController::class, 'i
 Route::post('/applications/{application}/assessment/{exam}/start', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'start'])
     ->middleware('throttle:assessment-start')->name('guest.assessments.attempts.start');
 Route::get('/assessments/attempts/{attempt}', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'take'])
-    ->middleware('throttle:assessment-take')->name('guest.assessments.attempts.take');
+    ->middleware('throttle:assessment-take')->middleware('assessment.device-session:written')->name('guest.assessments.attempts.take');
 Route::get('/assessments/attempts/{attempt}/time-status', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'timeStatus'])
-    ->middleware('throttle:assessment-review')->name('guest.assessments.attempts.time_status');
+    ->middleware('throttle:assessment-review')->middleware('assessment.device-session:written')->name('guest.assessments.attempts.time_status');
 Route::get('/assessments/attempts/{attempt}/review', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'reviewStatus'])
-    ->middleware('throttle:assessment-review')->name('guest.assessments.attempts.review');
+    ->middleware('throttle:assessment-review')->middleware('assessment.device-session:written')->name('guest.assessments.attempts.review');
 Route::post('/assessments/attempts/{attempt}/answer', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'saveAnswer'])
-    ->middleware('throttle:assessment-answer')->name('guest.assessments.attempts.answer');
+    ->middleware('throttle:assessment-answer')->middleware('assessment.device-session:written')->name('guest.assessments.attempts.answer');
 Route::post('/assessments/attempts/{attempt}/submit', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'submit'])
-    ->middleware('throttle:assessment-submit')->name('guest.assessments.attempts.submit');
+    ->middleware('throttle:assessment-submit')->middleware('assessment.device-session:written')->name('guest.assessments.attempts.submit');
 Route::post('/assessments/attempts/{attempt}/event', [\App\Http\Controllers\Guest\ExamAttemptController::class, 'eventLog'])
-    ->middleware('throttle:assessment-event')->name('guest.assessments.attempts.event');
+    ->middleware('throttle:assessment-event')->middleware('assessment.device-session:written')->name('guest.assessments.attempts.event');
 Route::post('/applications/{application}/skills/{skillTest}/start', [GuestSkillTestAttempt::class, 'start'])
     ->middleware('throttle:skill-start')->name('guest.skills.start');
 Route::get('/skills/attempts/{attempt}', [GuestSkillTestAttempt::class, 'take'])
-    ->middleware('throttle:skill-take')->name('guest.skills.attempts.take');
+    ->middleware('throttle:skill-take')->middleware('assessment.device-session:skills')->name('guest.skills.attempts.take');
 Route::get('/skills/attempts/{attempt}/time-status', [GuestSkillTestAttempt::class, 'timeStatus'])
-    ->middleware('throttle:assessment-review')->name('guest.skills.attempts.time_status');
+    ->middleware('throttle:assessment-review')->middleware('assessment.device-session:skills')->name('guest.skills.attempts.time_status');
 Route::post('/skills/attempts/{attempt}/inline', [GuestSkillTestAttempt::class, 'saveInline'])
-    ->middleware('throttle:skill-save')->name('guest.skills.attempts.inline');
+    ->middleware('throttle:skill-save')->middleware('assessment.device-session:skills')->name('guest.skills.attempts.inline');
 Route::post('/skills/attempts/{attempt}/upload', [GuestSkillTestAttempt::class, 'upload'])
-    ->middleware('throttle:skill-upload')->name('guest.skills.attempts.upload');
+    ->middleware('throttle:skill-upload')->middleware('assessment.device-session:skills')->name('guest.skills.attempts.upload');
 Route::post('/skills/attempts/{attempt}/event', [GuestSkillTestAttempt::class, 'eventLog'])
-    ->middleware('throttle:assessment-event')->name('guest.skills.attempts.event');
+    ->middleware('throttle:assessment-event')->middleware('assessment.device-session:skills')->name('guest.skills.attempts.event');
 Route::post('/skills/attempts/{attempt}/submit', [GuestSkillTestAttempt::class, 'submit'])
-    ->middleware('throttle:skill-submit')->name('guest.skills.attempts.submit');
+    ->middleware('throttle:skill-submit')->middleware('assessment.device-session:skills')->name('guest.skills.attempts.submit');
 
 
 });
