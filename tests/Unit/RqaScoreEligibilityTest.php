@@ -23,6 +23,7 @@ class RqaScoreEligibilityTest extends TestCase
             'Non-Teaching', 'non teaching', 'Teaching-Related',
             'Teaching-Related-Admin', 'Teaching Related Administrator',
             'School Administrator', 'Teaching-related/School Administrator',
+            'SG 11', 'NonTeaching', 'TeachingRelated Admin',
         ] as $category) {
             $vacancy = $this->vacancy($category);
             $this->assertTrue(RqaScoreEligibility::includesBelowFifty($vacancy), $category);
