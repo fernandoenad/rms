@@ -238,6 +238,12 @@ Route::group(['middleware' => ['active']], function () {
     Route::post('/admin/vacancies/{vacancy}/draft', [AdminVacancy::class, 'returnToDraft'])->name('admin.vacancies.draft');
 
     Route::get('/admin/assessment-center', [AdminAssessmentCenter::class, 'index'])->name('admin.assessment_center.index');
+    Route::get('/admin/assessment-center/device-sessions',
+        [\App\Http\Controllers\Admin\AssessmentDeviceSessionController::class, 'index'])
+        ->name('admin.assessment_device_sessions.index');
+    Route::post('/admin/assessment-center/device-sessions/{user}/release',
+        [\App\Http\Controllers\Admin\AssessmentDeviceSessionController::class, 'release'])
+        ->name('admin.assessment_device_sessions.release');
     Route::get('/admin/assessment-center/integrity', [AdminAssessmentIntegrity::class, 'index'])->name('admin.assessment_center.integrity');
     Route::get('/admin/assessment-center/integrity-flags', [\App\Http\Controllers\Admin\ApplicantIntegrityFlagController::class, 'index'])
         ->name('admin.integrity_flags.index');
