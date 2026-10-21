@@ -235,6 +235,77 @@ class BoardAssessmentNullificationTest extends TestCase
         $this->assertSame(3, (int) $f['assessment']->fresh()->status);
     }
 
+    public function test_stale_fingerprint_fails_without_any_score_change(): void
+    {
+        $f = $this->fixture();
+        $this->actingAs($this->staff());
+        $input = $this->input($f);
+        $input['scope_fingerprint'] = str_repeat('f', 64);
+
+        $this->post(route('admin.assessment_nullifications.store'), $input)
+            ->assertSessionHasErrors('selection');
+
+        $this->assertDatabaseCount('assessment_nullification_batches', 0);
+        $this->assertSame(63.0, (float) $f['assessment']->fresh()->score);
+    }
+
+    public function test_nullifying_written_only_does_not_change_skills(): void
+    {
+        $f = $this->fixture();
+        $this->actingAs($this->staff());
+        $scope = app(AssessmentNullificationService::class)->preview(
+            $f['vacancy']->id, $f['written']->id, null
+        );
+        $input = $this->input($f);
+        $input['skills_group_id'] = null;
+        $input['scope_fingerprint'] = $scope['fingerprint'];
+
+        app(AssessmentNullificationService::class)->nullify($input, (int) auth()->id());
+
+        $scores = json_decode((string) $f['assessment']->fresh()->assessment, true);
+        $this->assertSame(0.0, (float) $scores['Written_Examination']);
+        $this->assertSame(18.0, (float) $scores['Skills_Test']);
+        $this->assertSame(48.0, (float) $f['assessment']->fresh()->score);
+    }
+
+    public function test_restoration_fails_atomically_if_the_protected_zero_was_modified(): void
+    {
+        $f = $this->fixture();
+        $this->actingAs($this->staff());
+        $batch = app(AssessmentNullificationService::class)->nullify($this->input($f), (int) auth()->id());
+        $scores = json_decode((string) $f['assessment']->fresh()->assessment, true);
+        $scores['Written_Examination'] = 1;
+        $f['assessment']->update(['assessment' => json_encode($scores), 'score' => 31]);
+
+        try {
+            app(AssessmentNullificationService::class)->restore(
+                $batch, (int) auth()->id(), 'Board correction 2026-103',
+                'Authorized officer reviewed an inconsistent official score.'
+            );
+            $this->fail('Conflicting scores should block restoration.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('restoration', $exception->errors());
+        }
+
+        $this->assertSame('active', $batch->fresh()->status);
+        $this->assertSame(31.0, (float) $f['assessment']->fresh()->score);
+    }
+
+    public function test_manual_hr_controller_rejects_tampering_with_nullified_criterion(): void
+    {
+        $f = $this->fixture();
+        $this->actingAs($this->staff());
+        app(AssessmentNullificationService::class)->nullify($this->input($f), (int) auth()->id());
+
+        $this->put(route('admin.applications.update_scores', $f['app']), [
+            'Written_Examination' => 15,
+            'Skills_Test' => 0,
+            'Interview' => 30,
+        ])->assertSessionHasErrors('Written_Examination');
+
+        $this->assertSame(30.0, (float) $f['assessment']->fresh()->score);
+    }
+
     public function test_unfinished_attempt_prevents_bulk_nullification(): void
     {
         $f = $this->fixture();
