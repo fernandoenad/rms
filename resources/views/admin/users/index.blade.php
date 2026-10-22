@@ -44,7 +44,20 @@
                         </a>
                     </div>
                     <div class="card-body">
-                        <table id="applications" class="table table-bordered table-striped">
+                        <form method="GET" action="{{ route('admin.users.index') }}" class="form-row align-items-end mb-3">
+                            <div class="col-sm-9 col-lg-10 mb-2">
+                                <label for="staffSearch">Search staff by name or email</label>
+                                <input id="staffSearch" type="search" name="q" class="form-control"
+                                       maxlength="255" value="{{ $search ?? '' }}"
+                                       placeholder="Search staff accounts">
+                            </div>
+                            <div class="col-sm-3 col-lg-2 mb-2">
+                                <button class="btn btn-primary btn-block" type="submit">Search</button>
+                            </div>
+                        </form>
+                        <p class="text-muted small mb-2">Staff accounts only. Showing up to 25 results per page.</p>
+                        <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -56,8 +69,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @if(sizeof($users) > 0)
-                                    @foreach($users as $user)
+                                @forelse($users as $user)
                                         <tr>
                                             <td>{{$user->id}}</td>
                                             <td>{{$user->email}}</td>
@@ -77,15 +89,17 @@
                                                 
                                             </td>
                                         </tr>
-                                    @endforeach
-                                @else
+                                @empty
                                     <tr>
-                                        <td colspan="6">No staff users found. Applicant-only accounts are managed separately.</td>
+                                        <td colspan="6">No matching staff users found. Applicant-only accounts are managed separately.</td>
                                     </tr>
-                                @endif
+                                @endforelse
                             </tbody>
-
-                    </table>
+                        </table>
+                        </div>
+                        <div class="mt-3">
+                            {{ $users->links('pagination::simple-bootstrap-4') }}
+                        </div>
                 </div>
             </div>
         </div>
@@ -99,16 +113,5 @@
 @section('css')
 @stop
 
-@section('plugins.Datatables', true)
-
-@section('js')
-    <script> console.log('Hi!'); </script>
-    <script>
-        $(function () {
-            $("#applications").DataTable({
-            "responsive": true, "lengthChange": false, "autoWidth": false, "pageLength": 5,
-            "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-            }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-        });
-    </script>
-@stop
+{{-- This staff directory uses server-side pagination instead of loading all rows
+     into the browser or initializing a client-side DataTable. --}}
