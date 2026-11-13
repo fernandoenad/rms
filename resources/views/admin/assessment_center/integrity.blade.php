@@ -56,6 +56,23 @@
     </div>
 </div>
 
+@if($summary['total'] > 0)
+<div class="d-flex justify-content-between align-items-center flex-wrap mb-3">
+    <div class="small text-muted mb-2 mb-md-0">
+        Repair all {{ number_format($summary['total']) }} matching anomalies across every page{{ $type || $search ? ' (current filters)' : '' }}.
+    </div>
+    <form method="post" action="{{ route('admin.assessment_center.integrity.repair_all') }}"
+          onsubmit="return confirm('Repair ALL {{ $summary['total'] }} matching score-integrity anomalies across every page? RMS authoritative scores will overwrite the mapped assessment criteria. Each successful repair will be audit-logged.');">
+        @csrf
+        @if($type)<input type="hidden" name="type" value="{{ $type }}">@endif
+        @if($search)<input type="hidden" name="q" value="{{ $search }}">@endif
+        <button type="submit" class="btn btn-danger">
+            <i class="fas fa-shield-alt mr-1"></i> Fix All Integrity Issues ({{ number_format($summary['total']) }})
+        </button>
+    </form>
+</div>
+@endif
+
 <div class="card card-outline card-warning">
     <div class="card-header">
         <strong><i class="fas fa-search mr-1"></i> Sameness Check</strong>
@@ -168,6 +185,6 @@
 </div>
 
 <div class="alert alert-warning small">
-    <strong>Important:</strong> "Fix Integrity Anomaly" treats the RMS Assessment Center result as authoritative and rewrites only the mapped assessment criterion using the same score-scaling logic used by normal score synchronization. The action is recorded in the Assessment Center audit log.
+    <strong>Important:</strong> "Fix Integrity Anomaly" treats the RMS Assessment Center result as authoritative and rewrites only the mapped assessment criterion using the same score-scaling logic used by normal score synchronization. Individual and bulk repairs are recorded in the Assessment Center audit log. The bulk action applies to all matching records, not just the visible page, and reports unsuccessful repairs.
 </div>
 @stop
