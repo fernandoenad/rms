@@ -80,7 +80,6 @@ class AssessmentIntegrityController extends Controller
 
         $this->logRepair($governance, $anomaly);
 
-
         return back()->with(
             'status',
             'Integrity anomaly repaired. The applicant assessment now uses the authoritative RMS Assessment Center score.'
@@ -109,15 +108,6 @@ class AssessmentIntegrityController extends Controller
 
         foreach ($anomalies as $anomaly) {
             try {
-                // Recheck before changing data: a preceding repair may have resolved it.
-                $stillAnomalous = $integrity->anomalies($anomaly['type'])
-                    ->contains(fn ($row) => (int) $row['source_id'] === (int) $anomaly['source_id']
-                        && (int) $row['application']->id === (int) $anomaly['application']->id
-                        && $row['criterion'] === $anomaly['criterion']);
-                if (!$stillAnomalous) {
-                    continue;
-                }
-
                 if (!$integrity->repair($anomaly['type'], (int) $anomaly['source_id'])) {
                     $failed++;
                     continue;
