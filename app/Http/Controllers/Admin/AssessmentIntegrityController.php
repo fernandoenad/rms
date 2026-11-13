@@ -78,6 +78,57 @@ class AssessmentIntegrityController extends Controller
             return back()->with('status', 'RMS could not repair this score because the authoritative score is not currently eligible for synchronization.');
         }
 
+        $this->logRepair($governance, $anomaly);
+
+        return back()->with(
+            'status',
+            'Integrity anomaly repaired. The applicant assessment now uses the authoritative RMS Assessment Center score.'
+        );
+    }
+
+    /**
+     * Repair every matching mismatch, including records beyond the current page.
+     * Each attempt uses the same eligibility checks and audit event as single repair.
+     */
+    public function repairAll(
+        Request $request,
+        AssessmentIntegrityService $integrity,
+        AssessmentGovernanceService $governance
+    ) {
+        $data = $request->validate([
+            'type' => 'nullable|in:written,skills',
+            'q' => 'nullable|string|max:150',
+        ]);
+
+        $type = $data['type'] ?? null;
+        $search = trim((string) ($data['q'] ?? ''));
+        $anomalies = $integrity->anomalies($type, $search ?: null);
+        $repaired = 0;
+        $failed = 0;
+
+        foreach ($anomalies as $anomaly) {
+            try {
+                if (!$integrity->repair($anomaly['type'], (int) $anomaly['source_id'])) {
+                    $failed++;
+                    continue;
+                }
+
+                $this->logRepair($governance, $anomaly);
+                $repaired++;
+            } catch (\Throwable $e) {
+                report($e);
+                $failed++;
+            }
+        }
+
+        return redirect()->route('admin.assessment_center.integrity', array_filter([
+            'type' => $type,
+            'q' => $search,
+        ]))->with('status', "Bulk integrity repair complete: {$repaired} repaired, {$failed} failed or ineligible. Recheck remaining mismatches before continuing.");
+    }
+
+    protected function logRepair(AssessmentGovernanceService $governance, array $anomaly): void
+    {
         $governance->log('assessment_score_integrity_repaired', [
             'assessment_group_id' => $anomaly['assessment_group_id'] ?? null,
             'exam_id' => $anomaly['exam_id'] ?? null,
@@ -94,10 +145,5 @@ class AssessmentIntegrityController extends Controller
             'last_recorded_modifier_at' => optional($anomaly['modifier_at'])->toIso8601String(),
             'reason' => 'Forced assessment criterion back to the authoritative RMS Assessment Center score after integrity mismatch detection.',
         ]);
-
-        return back()->with(
-            'status',
-            'Integrity anomaly repaired. The applicant assessment now uses the authoritative RMS Assessment Center score.'
-        );
     }
 }
