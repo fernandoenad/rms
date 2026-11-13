@@ -18,18 +18,32 @@ class UserController extends Controller
         $this->middleware(['auth', 'admin']);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        // Applicant Google accounts legitimately have no staff role. Showing
-        // them here caused the staff table to dereference a missing role and
-        // emit HTTP 500. They belong in the separate Applicant Management UI.
-        $users = User::query()
-            ->whereHas('role')
-            ->with('role')
-            ->orderBy('name')
-            ->get();
+        // The legacy all-user ->get() request loaded every staff user into
+        // PHP memory and scaled with the entire applicant/staff account base.
+        // Bound each web request to 25 staff profiles with their staff roles.
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:255'],
+        ]);
+        $search = trim((string) ($validated['q'] ?? ''));
 
-        return view('admin.users.index', ['users' => $users]);
+        $users = User::query()
+            ->select(['id', 'email', 'name'])
+            ->whereHas('role')
+            ->with(['role:id,user_id,level,status'])
+            ->when($search !== '', fn ($query) => $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('email', 'like', '%'.$search.'%');
+            }))
+            ->orderBy('name')
+            ->orderBy('id')
+            // simplePaginate avoids the full COUNT(*) query required by
+            // regular paginate and fetches no more than one page of rows.
+            ->simplePaginate(25)
+            ->withQueryString();
+
+        return view('admin.users.index', ['users' => $users, 'search' => $search]);
     }
 
     private function requireStaffAccount(User $user): void

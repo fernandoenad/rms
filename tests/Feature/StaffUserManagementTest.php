@@ -40,6 +40,48 @@ class StaffUserManagementTest extends TestCase
         $this->assertDatabaseHas('roles', ['user_id' => $employee->id, 'level' => 2]);
     }
 
+    public function test_staff_directory_paginates_and_searches_without_loading_every_account(): void
+    {
+        $admin = $this->staff();
+        $admin->update(['name' => 'Admin Person']);
+        for ($i = 1; $i <= 30; $i++) {
+            $member = $this->staff(2, sprintf('staff%02d@example.test', $i));
+            $member->update(['name' => sprintf('Staff Person %02d', $i)]);
+        }
+        $applicant = User::factory()->create([
+            'name' => 'Staff Person 99',
+            'email' => 'applicant-only@example.test',
+        ]);
+        ApplicantProfile::create(['user_id' => $applicant->id]);
+
+        $this->actingAs($admin)->get(route('admin.users.index'))
+            ->assertOk()
+            ->assertViewHas('users', fn ($rows) =>
+                $rows->count() === 25 && $rows->hasMorePages())
+            ->assertSee('Staff Person 01')
+            ->assertDontSee('Staff Person 30')
+            ->assertDontSee('Staff Person 99')
+            ->assertSee('page=2');
+
+        $this->get(route('admin.users.index', ['page' => 2]))
+            ->assertOk()
+            ->assertViewHas('users', fn ($rows) =>
+                $rows->count() === 6 && !$rows->hasMorePages())
+            ->assertSee('Staff Person 30')
+            ->assertDontSee('Staff Person 01');
+
+        $this->get(route('admin.users.index', ['q' => 'staff30@example.test']))
+            ->assertOk()
+            ->assertViewHas('users', fn ($rows) => $rows->count() === 1)
+            ->assertSee('staff30@example.test')
+            ->assertDontSee('staff29@example.test');
+
+        $this->get(route('admin.users.index', ['q' => 'applicant-only@example.test']))
+            ->assertOk()
+            ->assertViewHas('users', fn ($rows) => $rows->count() === 0)
+            ->assertSee('No matching staff users found');
+    }
+
     public function test_applicant_only_account_cannot_be_edited_reset_or_deleted_via_staff_routes(): void
     {
         $hr = $this->staff();
